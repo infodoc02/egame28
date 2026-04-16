@@ -1,0 +1,10 @@
+streamlit
+pandas
+firebase-admin
+google-cloud-firestore
+arabic-reshaper
+python-bidi
+python-dateutil
+requests
+pyTelegramBotAPI
+python-dateutil
