@@ -8,12 +8,7 @@ import telebot
 from firebase_admin import credentials, db, initialize_app
 
 
-# --- Config (match app.py) ---
-base_path = os.path.dirname(__file__)
-json_path = os.path.join(base_path, "service_account.json")
-DB_URL = "https://info-2b186-default-rtdb.europe-west1.firebasedatabase.app/"
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "8323521886:AAHpn4-AW4AY9K891LHSC9PbWdHFCgD_q9U")
-BOT_USERNAME = os.getenv("INFODOC_BOT_USERNAME", "infodoc02_bot")  # app.py generate_telegram_qr()
+
 
 
 def normalize_phone(phone: str) -> str:
