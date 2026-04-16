@@ -15,19 +15,29 @@ DB_URL = st.secrets.get("DB_URL", "https://your-default-db.firebaseio.com/")
 
 def ensure_firebase():
     if not firebase_admin._apps:
-        # 1. جلب معلومات Firebase من Secrets
-        firebase_secrets = dict(st.secrets["firebase"])
-        
-        # تصحيح مشكل السطر الجديد في الـ Private Key
-        firebase_secrets["private_key"] = firebase_secrets["private_key"].replace("\\n", "\n")
-        
-        # 2. جلب رابط قاعدة البيانات
-        db_url = st.secrets["DB_URL"]
-        
-        cred = credentials.Certificate(firebase_secrets)
-        firebase_admin.initialize_app(cred, {
-            'databaseURL': db_url
-        })
+        try:
+            # نجلب البيانات من Secrets كقاموس (Dict)
+            # لازم في Secrets يكون عندك قسم [firebase]
+            firebase_dict = dict(st.secrets["firebase"])
+            
+            # تصحيح مشكل الأسطر الجديدة في المفتاح الخاص
+            if "private_key" in firebase_dict:
+                firebase_dict["private_key"] = firebase_dict["private_key"].replace("\\n", "\n")
+            
+            # نمرر القاموس مباشرة للـ Certificate
+            cred = credentials.Certificate(firebase_dict)
+            
+            # نجلب رابط قاعدة البيانات من Secrets أيضاً
+            db_url = st.secrets.get("DB_URL", "")
+            
+            firebase_admin.initialize_app(cred, {
+                'databaseURL': db_url
+            })
+        except Exception as e:
+            st.error(f"خطأ في الاتصال بـ Firebase: {e}")
+
+# استدعاء الدالة
+ensure_firebase()
 
 def normalize_phone(phone: str) -> str:
     phone = str(phone or "").replace("+213", "0").replace(" ", "").replace(".0", "").strip()
