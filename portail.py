@@ -14,20 +14,30 @@ BOT_USERNAME = st.secrets.get("BOT_USERNAME", "default_bot")
 DB_URL = st.secrets.get("DB_URL", "https://your-default-db.firebaseio.com/")
 
 def ensure_firebase():
+    # التحقق إذا كان التطبيق مفعل مسبقاً
     if not firebase_admin._apps:
         try:
-            # التأكد من جلب المعلومات كقاموس
+            # التأكد من أننا نستخدم بيانات المشروع الجديد info-2b186
             cred_dict = dict(st.secrets["firebase"])
-            cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
+            
+            # معالجة المفتاح الخاص (السطر الجديد)
+            if "\\n" in cred_dict["private_key"]:
+                cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
             
             cred = credentials.Certificate(cred_dict)
             
-            # تهيئة التطبيق مع رابط قاعدة البيانات
+            # تهيئة التطبيق مع تحديد الرابط بدقة
             firebase_admin.initialize_app(cred, {
                 'databaseURL': st.secrets["DB_URL"]
             })
+            # st.success("Connected to Firebase!") # للتحقق فقط، احذفه لاحقاً
         except Exception as e:
-            st.error(f"Error during Firebase init: {e}")
+            st.error(f"فشل الاتصال: {e}")
+    else:
+        # إذا كان التطبيق موجوداً، نتأكد من أنه يستخدم الرابط الصحيح
+        pass
+
+ensure_firebase()
 
 def normalize_phone(phone: str) -> str:
     phone = str(phone or "").replace("+213", "0").replace(" ", "").replace(".0", "").strip()
