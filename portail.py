@@ -214,7 +214,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-phone = st.text_input("رقم الهاتف", placeholder="مثال: 0555123456", label_visibility="collapsed")
+phone = st.text_input("رقم الهاتف", placeholder="0XXXXXXXXX", label_visibility="collapsed")
 phone_n = normalize_phone(phone)
 
 if phone_n and len(phone_n) >= 9:
