@@ -7,9 +7,25 @@ import streamlit as st
 import telebot
 from firebase_admin import credentials, db, initialize_app
 
+# جلب توكن تيليجرام بسهولة
+TELEGRAM_TOKEN = st.secrets["TELEGRAM_TOKEN"]
+BOT_USERNAME = st.secrets["BOT_USERNAME"]
 
-
-
+def ensure_firebase():
+    if not firebase_admin._apps:
+        # 1. جلب معلومات Firebase من Secrets
+        firebase_secrets = dict(st.secrets["firebase"])
+        
+        # تصحيح مشكل السطر الجديد في الـ Private Key
+        firebase_secrets["private_key"] = firebase_secrets["private_key"].replace("\\n", "\n")
+        
+        # 2. جلب رابط قاعدة البيانات
+        db_url = st.secrets["DB_URL"]
+        
+        cred = credentials.Certificate(firebase_secrets)
+        firebase_admin.initialize_app(cred, {
+            'databaseURL': db_url
+        })
 
 def normalize_phone(phone: str) -> str:
     phone = str(phone or "").replace("+213", "0").replace(" ", "").replace(".0", "").strip()
