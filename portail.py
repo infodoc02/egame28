@@ -6,10 +6,12 @@ import pandas as pd
 import streamlit as st
 import telebot
 from firebase_admin import credentials, db, initialize_app
+import streamlit as st
 
-# جلب توكن تيليجرام بسهولة
-TELEGRAM_TOKEN = st.secrets["TELEGRAM_TOKEN"]
-BOT_USERNAME = st.secrets["BOT_USERNAME"]
+# الطريقة المباشرة (تخدم إذا كان الملف موجود في Secrets)
+TELEGRAM_TOKEN = st.secrets.get("TELEGRAM_TOKEN", "fallback_token_here")
+BOT_USERNAME = st.secrets.get("BOT_USERNAME", "default_bot")
+DB_URL = st.secrets.get("DB_URL", "https://your-default-db.firebaseio.com/")
 
 def ensure_firebase():
     if not firebase_admin._apps:
