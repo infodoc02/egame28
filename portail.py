@@ -1,5 +1,6 @@
 import os
 import threading
+import re
 from datetime import datetime
 import firebase_admin
 import pandas as pd
@@ -41,12 +42,13 @@ def ensure_firebase():
 ensure_firebase()
 
 def normalize_phone(phone: str) -> str:
-    phone = str(phone or "").replace("+213", "0").replace(" ", "").replace(".0", "").strip()
-    if phone.startswith("213"):
-        phone = "0" + phone[3:]
-    if len(phone) == 9 and phone[0] in ["5", "6", "7"]:
-        phone = "0" + phone
-    return phone
+    p = str(phone or "").replace(".0", "").strip()
+    p = re.sub(r"\D", "", p)
+    if p.startswith("213"):
+        p = "0" + p[3:]
+    if len(p) == 9 and p[0] in ["5", "6", "7"]:
+        p = "0" + p
+    return p
 
 def telegram_qr_bytes(phone: str):
     qr = qrcode.QRCode(version=1, box_size=8, border=2)
@@ -146,10 +148,6 @@ def fetch_customer_devices(phone: str) -> pd.DataFrame:
     if not df.empty and "ID" in df.columns:
         df["ID"] = pd.to_numeric(df["ID"], errors="coerce").fillna(0).astype(int)
         df = df.sort_values("ID", ascending=False)
-    # Hide delivered & paid tickets from customer list
-    if not df.empty and "Statut" in df.columns:
-        statut_clean = df["Statut"].astype(str).str.strip()
-        df = df[statut_clean != "Livré & Payé"]
     return df
 
 
@@ -175,30 +173,56 @@ if "bot_thread" not in st.session_state:
 st.markdown(
     """
     <style>
+    .stApp {
+        background:
+            radial-gradient(circle at 10% 10%, rgba(56,189,248,.20) 0%, transparent 25%),
+            radial-gradient(circle at 85% 20%, rgba(34,197,94,.14) 0%, transparent 23%),
+            radial-gradient(circle at 70% 80%, rgba(59,130,246,.16) 0%, transparent 30%),
+            linear-gradient(135deg, #020617 0%, #0b1220 35%, #0f172a 100%);
+        color: #e5ecf8;
+    }
+    .main .block-container { padding-top: 1.6rem; }
+    .bg-circuit {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0.35;
+        background-image:
+            linear-gradient(rgba(56,189,248,0.18) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(56,189,248,0.18) 1px, transparent 1px);
+        background-size: 38px 38px;
+        mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    }
     @keyframes floatGlow {
         0% { transform: translateY(0px); opacity: 0.55; }
         50% { transform: translateY(-8px); opacity: 0.95; }
         100% { transform: translateY(0px); opacity: 0.55; }
     }
-    @keyframes pulseLine {
+    @keyframes pulseLineA {
         0% { background-position: 0% 50%; }
         100% { background-position: 200% 50%; }
     }
+    @keyframes pulseLineB {
+        0% { transform: translateY(-40%); opacity: 0; }
+        35% { opacity: .55; }
+        100% { transform: translateY(180%); opacity: 0; }
+    }
     .portal-wrap {
         position: relative;
-        border-radius: 18px;
+        border-radius: 22px;
         overflow: hidden;
-        margin-bottom: 1rem;
-        border: 1px solid rgba(59,130,246,0.30);
+        margin-bottom: 1.1rem;
+        border: 1px solid rgba(56,189,248,0.45);
     }
     .circuit-bg {
         position: absolute;
         inset: 0;
         background:
-            radial-gradient(circle at 18% 20%, rgba(56,189,248,0.35), transparent 22%),
-            radial-gradient(circle at 82% 28%, rgba(34,197,94,0.25), transparent 22%),
-            radial-gradient(circle at 35% 78%, rgba(59,130,246,0.30), transparent 25%),
-            linear-gradient(135deg, #020617 0%, #0f172a 45%, #1e3a8a 100%);
+            radial-gradient(circle at 18% 20%, rgba(56,189,248,0.50), transparent 28%),
+            radial-gradient(circle at 82% 28%, rgba(34,197,94,0.35), transparent 27%),
+            radial-gradient(circle at 35% 78%, rgba(59,130,246,0.45), transparent 30%),
+            linear-gradient(135deg, #020617 0%, #0b1220 40%, #1e3a8a 100%);
     }
     .circuit-lines {
         position: absolute;
@@ -212,16 +236,24 @@ st.markdown(
             transparent 100%
         );
         background-size: 200% 100%;
-        animation: pulseLine 8s linear infinite;
+        animation: pulseLineA 7s linear infinite;
         mix-blend-mode: screen;
+    }
+    .scan-line {
+        position: absolute;
+        left: 0; right: 0;
+        height: 120px;
+        background: linear-gradient(180deg, transparent 0%, rgba(56,189,248,0.22) 45%, transparent 100%);
+        animation: pulseLineB 4.5s linear infinite;
+        pointer-events: none;
     }
     .hero-card {
         position: relative;
         z-index: 2;
-        border-radius: 16px;
-        padding: 1.25rem 1.35rem;
+        border-radius: 20px;
+        padding: 1.5rem 1.5rem;
         color: #eef6ff;
-        backdrop-filter: blur(1px);
+        backdrop-filter: blur(1.5px);
     }
     .chip-dot {
         width: 10px; height: 10px; border-radius: 50%;
@@ -230,37 +262,59 @@ st.markdown(
         box-shadow: 0 0 14px rgba(56,189,248,0.9);
     }
     .hero-card {
-        margin-bottom: 0.25rem;
-        box-shadow: 0 15px 35px rgba(2, 6, 23, 0.45);
+        margin-bottom: 0.35rem;
+        box-shadow: 0 18px 40px rgba(2, 6, 23, 0.55);
     }
-    .hero-title { font-size: 1.55rem; font-weight: 900; margin-bottom: 0.2rem; letter-spacing: .2px; }
+    .hero-title { font-size: 1.72rem; font-weight: 900; margin-bottom: 0.2rem; letter-spacing: .3px; }
     .hero-subtitle { font-size: 0.96rem; opacity: 0.95; }
     .section-card {
-        border: 1px solid #dbeafe;
-        border-radius: 14px;
-        padding: 0.95rem 1rem;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+        border: 1px solid rgba(56,189,248,0.45);
+        border-radius: 16px;
+        padding: 1rem 1.05rem;
+        background: rgba(15, 23, 42, 0.55);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.30);
         margin-bottom: 0.8rem;
     }
     .mini-tech {
-        border: 1px solid rgba(148,163,184,0.25);
-        background: #0b1220;
-        color: #cbd5e1;
+        border: 1px solid rgba(56,189,248,0.35);
+        background: rgba(15, 23, 42, 0.75);
+        color: #dbeafe;
         border-radius: 12px;
         padding: 0.65rem 0.8rem;
         font-size: 0.84rem;
         margin-bottom: 0.65rem;
     }
+    .dev-card {
+        border: 1px solid rgba(56,189,248,0.35);
+        border-radius: 14px;
+        padding: 0.8rem 0.9rem;
+        background: rgba(15, 23, 42, 0.72);
+        margin-bottom: .55rem;
+    }
+    .dev-head { font-weight: 800; color: #f8fbff; margin-bottom: .22rem; }
+    .dev-sub { color: #bfd4ff; font-size: .88rem; }
+    .chip {
+        display: inline-block;
+        padding: .16rem .52rem;
+        border-radius: 999px;
+        font-size: .75rem;
+        font-weight: 700;
+        margin-top: .32rem;
+    }
+    .chip-ready { background: rgba(34,197,94,.18); color: #86efac; border: 1px solid rgba(134,239,172,.35); }
+    .chip-work { background: rgba(56,189,248,.18); color: #7dd3fc; border: 1px solid rgba(125,211,252,.35); }
+    .chip-other { background: rgba(251,191,36,.18); color: #fde68a; border: 1px solid rgba(253,230,138,.35); }
     </style>
     """,
     unsafe_allow_html=True,
 )
+st.markdown('<div class="bg-circuit"></div>', unsafe_allow_html=True)
 st.markdown(
     """
     <div class="portal-wrap">
         <div class="circuit-bg"></div>
         <div class="circuit-lines"></div>
+        <div class="scan-line"></div>
         <div class="hero-card">
             <div class="hero-title"><span class="chip-dot"></span>بوابة الزبائن InfoDoc</div>
             <div class="hero-subtitle">متابعة احترافية لحالة الأجهزة، الأسعار، والتنبيهات الفورية عبر Telegram.</div>
@@ -273,7 +327,7 @@ st.markdown(
 st.markdown(
     """
     <div class="section-card">
-        <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 0.35rem;">
+        <div style="font-size: 0.95rem; font-weight: 700; color: #dbeafe; margin-bottom: 0.35rem;">
             📞 أدخل رقم هاتفك
         </div>
     </div>
@@ -313,10 +367,31 @@ if phone_n and len(phone_n) >= 9:
     st.divider()
     st.subheader("📋 أجهزتي")
     if not df.empty:
-        show_cols = []
-        for c in ["ID", "Appareil", "Panne", "Statut", "Prix", "Date_Entree", "Date_Sortie"]:
-            if c in df.columns:
-                show_cols.append(c)
-        st.dataframe(df[show_cols], use_container_width=True, hide_index=True)
+        for _, r in df.iterrows():
+            stt = str(r.get("Statut", "")).strip()
+            cls = "chip-other"
+            if stt == "Prêt":
+                cls = "chip-ready"
+            elif stt in ["En Cours", "En attente"]:
+                cls = "chip-work"
+            st.markdown(
+                f"""
+                <div class="dev-card">
+                    <div class="dev-head">#{int(pd.to_numeric(r.get("ID", 0), errors="coerce") or 0)} - {str(r.get("Appareil", "---"))}</div>
+                    <div class="dev-sub">العطل: {str(r.get("Panne", "---"))}</div>
+                    <div class="dev-sub">السعر: {float(pd.to_numeric(r.get("Prix", 0), errors="coerce") or 0):,.0f} DA</div>
+                    <div class="dev-sub">الدخول: {str(r.get("Date_Entree", "---"))}</div>
+                    <span class="chip {cls}">{stt or '---'}</span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        with st.expander("عرض جدول الأجهزة (تفصيلي)"):
+            show_cols = []
+            for c in ["ID", "Appareil", "Panne", "Statut", "Prix", "Date_Entree", "Date_Sortie"]:
+                if c in df.columns:
+                    show_cols.append(c)
+            st.dataframe(df[show_cols], use_container_width=True, hide_index=True)
 else:
     st.info("أدخل رقم هاتفك لعرض قائمة الأجهزة.")
