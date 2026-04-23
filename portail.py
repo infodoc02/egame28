@@ -5,8 +5,9 @@ import firebase_admin
 import pandas as pd
 import streamlit as st
 import telebot
+import qrcode
+from io import BytesIO
 from firebase_admin import credentials, db, initialize_app
-import streamlit as st
 
 # الطريقة المباشرة (تخدم إذا كان الملف موجود في Secrets)
 TELEGRAM_TOKEN = st.secrets.get("TELEGRAM_TOKEN", "fallback_token_here")
@@ -47,11 +48,14 @@ def normalize_phone(phone: str) -> str:
         phone = "0" + phone
     return phone
 
-
-def ensure_firebase():
-    if not firebase_admin._apps:
-        cred = credentials.Certificate(json_path)
-        initialize_app(cred, {"databaseURL": DB_URL})
+def telegram_qr_bytes(phone: str):
+    qr = qrcode.QRCode(version=1, box_size=8, border=2)
+    qr.add_data(telegram_link(phone))
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 def telegram_link(phone: str) -> str:
@@ -171,23 +175,82 @@ if "bot_thread" not in st.session_state:
 st.markdown(
     """
     <style>
-    .hero-card {
-        background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
-        border-radius: 14px;
-        padding: 1.1rem 1.3rem;
-        color: white;
-        margin-bottom: 1rem;
-        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
+    @keyframes floatGlow {
+        0% { transform: translateY(0px); opacity: 0.55; }
+        50% { transform: translateY(-8px); opacity: 0.95; }
+        100% { transform: translateY(0px); opacity: 0.55; }
     }
-    .hero-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.25rem; }
-    .hero-subtitle { font-size: 0.95rem; opacity: 0.92; }
+    @keyframes pulseLine {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 200% 50%; }
+    }
+    .portal-wrap {
+        position: relative;
+        border-radius: 18px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(59,130,246,0.30);
+    }
+    .circuit-bg {
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 18% 20%, rgba(56,189,248,0.35), transparent 22%),
+            radial-gradient(circle at 82% 28%, rgba(34,197,94,0.25), transparent 22%),
+            radial-gradient(circle at 35% 78%, rgba(59,130,246,0.30), transparent 25%),
+            linear-gradient(135deg, #020617 0%, #0f172a 45%, #1e3a8a 100%);
+    }
+    .circuit-lines {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(14,165,233,0.0) 15%,
+            rgba(14,165,233,0.45) 50%,
+            rgba(14,165,233,0.0) 85%,
+            transparent 100%
+        );
+        background-size: 200% 100%;
+        animation: pulseLine 8s linear infinite;
+        mix-blend-mode: screen;
+    }
+    .hero-card {
+        position: relative;
+        z-index: 2;
+        border-radius: 16px;
+        padding: 1.25rem 1.35rem;
+        color: #eef6ff;
+        backdrop-filter: blur(1px);
+    }
+    .chip-dot {
+        width: 10px; height: 10px; border-radius: 50%;
+        background: #38bdf8; display: inline-block; margin-inline-end: 8px;
+        animation: floatGlow 2.3s ease-in-out infinite;
+        box-shadow: 0 0 14px rgba(56,189,248,0.9);
+    }
+    .hero-card {
+        margin-bottom: 0.25rem;
+        box-shadow: 0 15px 35px rgba(2, 6, 23, 0.45);
+    }
+    .hero-title { font-size: 1.55rem; font-weight: 900; margin-bottom: 0.2rem; letter-spacing: .2px; }
+    .hero-subtitle { font-size: 0.96rem; opacity: 0.95; }
     .section-card {
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 0.9rem 1rem;
-        background: #ffffff;
-        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+        border: 1px solid #dbeafe;
+        border-radius: 14px;
+        padding: 0.95rem 1rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
         margin-bottom: 0.8rem;
+    }
+    .mini-tech {
+        border: 1px solid rgba(148,163,184,0.25);
+        background: #0b1220;
+        color: #cbd5e1;
+        border-radius: 12px;
+        padding: 0.65rem 0.8rem;
+        font-size: 0.84rem;
+        margin-bottom: 0.65rem;
     }
     </style>
     """,
@@ -195,9 +258,13 @@ st.markdown(
 )
 st.markdown(
     """
-    <div class="hero-card">
-        <div class="hero-title">📱 بوابة الزبائن InfoDoc</div>
-        <div class="hero-subtitle">تابع حالة جهازك، السعر، وفعل إشعارات Telegram مباشرة.</div>
+    <div class="portal-wrap">
+        <div class="circuit-bg"></div>
+        <div class="circuit-lines"></div>
+        <div class="hero-card">
+            <div class="hero-title"><span class="chip-dot"></span>بوابة الزبائن InfoDoc</div>
+            <div class="hero-subtitle">متابعة احترافية لحالة الأجهزة، الأسعار، والتنبيهات الفورية عبر Telegram.</div>
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -218,6 +285,11 @@ phone = st.text_input("رقم الهاتف", placeholder="0XXXXXXXXX", label_vis
 phone_n = normalize_phone(phone)
 
 if phone_n and len(phone_n) >= 9:
+    a1, a2, a3 = st.columns(3)
+    a1.markdown('<div class="mini-tech">🔧 Diagnostic Live</div>', unsafe_allow_html=True)
+    a2.markdown('<div class="mini-tech">📡 Telegram Alert Ready</div>', unsafe_allow_html=True)
+    a3.markdown('<div class="mini-tech">🧠 Smart Ticket Tracking</div>', unsafe_allow_html=True)
+
     df = fetch_customer_devices(phone_n)
 
     if df.empty:
@@ -231,8 +303,12 @@ if phone_n and len(phone_n) >= 9:
         st.success("✅ الإشعارات مفعّلة (Telegram مرتبط).")
     else:
         st.warning("⚠️ الإشعارات غير مفعّلة بعد.")
-        st.link_button("🚀 تفعيل الإشعارات عبر Telegram", telegram_link(phone_n))
-        st.caption("بعد فتح الرابط اضغط Start داخل Telegram لإتمام الربط.")
+        t1, t2 = st.columns([2, 1])
+        with t1:
+            st.link_button("🚀 تفعيل الإشعارات عبر Telegram", telegram_link(phone_n))
+            st.caption("بعد فتح الرابط اضغط Start داخل Telegram لإتمام الربط.")
+        with t2:
+            st.image(telegram_qr_bytes(phone_n), caption="QR Telegram", width=120)
 
     st.divider()
     st.subheader("📋 أجهزتي")
@@ -244,4 +320,3 @@ if phone_n and len(phone_n) >= 9:
         st.dataframe(df[show_cols], use_container_width=True, hide_index=True)
 else:
     st.info("أدخل رقم هاتفك لعرض قائمة الأجهزة.")
-
