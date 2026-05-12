@@ -365,23 +365,6 @@ st.markdown('<div class="bg-circuit"></div>', unsafe_allow_html=True)
 shop_open = get_shop_status()
 status_html = '<span class="status-badge status-open">● Ouvert - مفتوح</span>' if shop_open else '<span class="status-badge status-closed">○ Fermé - مغلق</span>'
 
-st.markdown(
-    f"""
-    <div class="portal-wrap">
-        <div class="circuit-bg"></div>
-        <div class="circuit-lines"></div>
-        <div class="scan-line"></div>
-        <div class="hero-card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="hero-title"><span class="chip-dot"></span>بوابة الزبائن InfoDoc</div>
-                {status_html}
-            </div>
-            <div class="hero-subtitle">متابعة احترافية لحالة الأجهزة، الأسعار، والتنبيهات الفورية عبر Telegram.</div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 
 st.markdown(
     """
