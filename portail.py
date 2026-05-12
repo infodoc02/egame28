@@ -157,6 +157,41 @@ def is_telegram_linked(df: pd.DataFrame) -> bool:
     tg = df["Telegram_ID"].astype(str).str.strip()
     return ((tg.str.isdigit()) & (tg.str.len() > 5)).any()
 
+# --- دالة جلب الحالة ---
+def get_shop_status():
+    try:
+        # نقرأ من فرع shop_settings في Firebase
+        status = db.reference("shop_settings/is_open").get()
+        return True if status is None else status
+    except Exception:
+        return True # في حال فشل الاتصال نعتبره مفتوحاً افتراضياً
+
+# --- استدعاء الحالة وتحويلها لـ HTML ---
+shop_open = get_shop_status()
+
+if shop_open:
+    status_html = '<span class="status-badge status-open">● Ouvert - مفتوح</span>'
+else:
+    status_html = '<span class="status-badge status-closed">○ Fermé - مغلق</span>'
+
+# --- عرض واجهة الهيرو ---
+st.markdown(
+    f"""
+    <div class="portal-wrap">
+        <div class="circuit-bg"></div>
+        <div class="circuit-lines"></div>
+        <div class="scan-line"></div>
+        <div class="hero-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div class="hero-title"><span class="chip-dot"></span>بوابة الزبائن InfoDoc</div>
+                {status_html}
+            </div>
+            <div class="hero-subtitle">متابعة احترافية لحالة الأجهزة، الأسعار، والتنبيهات الفورية عبر Telegram.</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 # --- App ---
 st.set_page_config(page_title="InfoDoc - Portail Client", page_icon="📱", layout="wide")
@@ -173,6 +208,24 @@ if "bot_thread" not in st.session_state:
 st.markdown(
     """
     <style>
+
+    /* أنميشن النبض للمحل المفتوح */
+    @keyframes pulseStatus {
+        0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .status-open { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; animation: pulseStatus 2s infinite; }
+    .status-closed { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
     .stApp {
         background:
             radial-gradient(circle at 10% 10%, rgba(56,189,248,.20) 0%, transparent 25%),
@@ -309,14 +362,20 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown('<div class="bg-circuit"></div>', unsafe_allow_html=True)
+shop_open = get_shop_status()
+status_html = '<span class="status-badge status-open">● Ouvert - مفتوح</span>' if shop_open else '<span class="status-badge status-closed">○ Fermé - مغلق</span>'
+
 st.markdown(
-    """
+    f"""
     <div class="portal-wrap">
         <div class="circuit-bg"></div>
         <div class="circuit-lines"></div>
         <div class="scan-line"></div>
         <div class="hero-card">
-            <div class="hero-title"><span class="chip-dot"></span>بوابة الزبائن InfoDoc</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="hero-title"><span class="chip-dot"></span>بوابة الزبائن InfoDoc</div>
+                {status_html}
+            </div>
             <div class="hero-subtitle">متابعة احترافية لحالة الأجهزة، الأسعار، والتنبيهات الفورية عبر Telegram.</div>
         </div>
     </div>
