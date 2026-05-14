@@ -56,6 +56,41 @@ def get_warranty_stats(date_sortie_str):
 # ==============================================================================
 st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
+    
+    .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
+    
+    /* الحاوية الرئيسية */
+    .hero-container {
+        background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+        border: 1px solid #30363d; border-radius: 15px; padding: 25px;
+        margin-bottom: 20px; text-align: center;
+    }
+
+    .main-title {
+        font-family: 'Orbitron', sans-serif; color: #58a6ff;
+        font-size: clamp(2rem, 8vw, 3.5rem); font-weight: 900;
+        text-shadow: 0 0 15px rgba(88, 166, 255, 0.5); margin-bottom: 5px;
+    }
+
+    /* أزرار التواصل */
+    .custom-btn {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px; padding: 15px; text-decoration: none !important; color: white !important;
+        transition: 0.3s; min-height: 100px; margin-bottom: 10px;
+    }
+    .custom-btn:hover { border-color: #58a6ff; background: rgba(88, 166, 255, 0.15); transform: translateY(-3px); }
+
+    /* أنيميشن الحالة */
+    @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.7; } }
+    @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; } 50% { opacity: 0.7; } }
+    
+    .status-badge { padding: 8px 20px; border-radius: 10px; font-weight: bold; display: inline-block; font-family: 'Cairo'; }
+    .status-open { color: #3fb950; border: 2px solid #3fb950; animation: blink-green 2s infinite; }
+    .status-closed { color: #f85149; border: 2px solid #f85149; animation: blink-red 2s infinite; }
+
+
     /* 1. الستايل العام لكل الأكسباندرز (باش ما يبقاوش كحولة بزاف) */
     div[data-testid="stExpander"] {
         border: 1px solid #30363d !important;
