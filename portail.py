@@ -51,6 +51,18 @@ def get_warranty_stats(date_sortie_str):
         except: continue
     return None
 
+# 1. دالة تحديد الأولوية (حطها الفوق مع الدوال المساعدة أو مباشرة قبل الفرز)
+def get_status_priority(status):
+    s = str(status).strip()
+    if s == "Prêt": return 1
+    elif s == "Annulé": return 2
+    elif s == "Non Réparable": return 3
+    elif s == "Réparable": return 4
+    elif s == "En Cours": return 5
+    elif s == "En Attente": return 6
+    elif "Livré" in s: return 7  # يجمع Livré & Payé و Livré (Dette)
+    else: return 99  # أي حالة غير معروفة تجي مع اللخر
+
 # ==============================================================================
 # 3. التنسيقات البصرية (CSS) - النسخة النهائية المنظمة
 # ==============================================================================
@@ -297,7 +309,12 @@ if user_phone:
                     ''', unsafe_allow_html=True)
                 
                 # ترتيب الأجهزة (التي قيد الصيانة أولاً)
-                my_devices.sort(key=lambda x: (str(x.get("Date_Sortie", "")) != "", x.get("ID", 0)), reverse=True)
+                my_devices.sort(
+                    key=lambda x: (
+                        get_status_priority(x.get("Statut", "En Cours")), 
+                        -int(x.get("ID", 0)) if str(x.get("ID", 0)).isdigit() else 0
+                    )
+                )
                 
                 # عرض الأجهزة
                 for dev in my_devices:
