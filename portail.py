@@ -8,13 +8,9 @@ import streamlit as st
 import telebot
 import qrcode
 from io import BytesIO
-from firebase_admin import credentials, db, initialize_app
+from firebase_admin import credentials, db
 
-# --- Configuration ---
-TELEGRAM_TOKEN = st.secrets.get("TELEGRAM_TOKEN", "fallback_token_here")
-BOT_USERNAME = st.secrets.get("BOT_USERNAME", "default_bot")
-DB_URL = st.secrets.get("DB_URL", "https://your-default-db.firebaseio.com/")
-
+# --- 1. Configuration & Firebase ---
 def ensure_firebase():
     if not firebase_admin._apps:
         try:
@@ -28,7 +24,10 @@ def ensure_firebase():
 
 ensure_firebase()
 
-# --- Logic ---
+TELEGRAM_TOKEN = st.secrets.get("TELEGRAM_TOKEN", "fallback_token_here")
+BOT_USERNAME = st.secrets.get("BOT_USERNAME", "default_bot")
+
+# --- 2. Logic Functions ---
 def normalize_phone(phone: str) -> str:
     p = str(phone or "").replace(".0", "").strip()
     p = re.sub(r"\D", "", p)
@@ -61,73 +60,40 @@ def fetch_customer_devices(phone: str) -> pd.DataFrame:
         df = df.sort_values("ID", ascending=False)
     return df
 
-# --- UI & Professional CSS with Animations ---
+# --- 3. UI Setup & CSS ---
 st.set_page_config(page_title="InfoDoc - Client Portal", page_icon="⚡", layout="wide")
 
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@500;900&display=swap');
     
-    .stApp {
-        background: #010409;
-        color: #FFFFFF !important;
-    }
+    .stApp { background: #010409; color: #FFFFFF !important; }
 
-    /* Animations */
     @keyframes blink-green { 0%, 100% { opacity: 1; box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.5; } }
     @keyframes blink-red { 0%, 100% { opacity: 1; box-shadow: 0 0 15px #f85149; } 50% { opacity: 0.5; } }
-    @keyframes blink-yellow-border { 
-        0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; } 
-        50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; } 
-    }
+    @keyframes blink-yellow-border { 0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; } 50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; } }
 
     .hero-container {
         background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
-        border: 1px solid #30363d;
-        border-radius: 15px;
-        padding: 25px;
-        margin-bottom: 15px;
+        border: 1px solid #30363d; border-radius: 15px; padding: 25px; margin-bottom: 15px;
     }
     
-    .main-title {
-        font-family: 'Orbitron', sans-serif;
-        color: #58a6ff;
-        font-size: 2.2rem;
-        font-weight: 900;
-    }
-
-    /* Status Style */
+    .main-title { font-family: 'Orbitron', sans-serif; color: #58a6ff; font-size: 2.2rem; font-weight: 900; }
     .status-open { color: #3fb950; border: 1px solid #3fb950; padding: 5px 12px; border-radius: 8px; animation: blink-green 2s infinite; font-weight: bold; }
     .status-closed { color: #f85149; border: 1px solid #f85149; padding: 5px 12px; border-radius: 8px; animation: blink-red 2s infinite; font-weight: bold; }
 
-    /* Contact Cards */
     .contact-item {
-        background: #21262d;
-        border-left: 4px solid #58a6ff;
-        padding: 10px 15px;
-        border-radius: 8px;
-        color: #FFFFFF !important;
-        font-family: 'Cairo', sans-serif;
-        font-size: 0.9rem;
+        background: #21262d; border-left: 4px solid #58a6ff; padding: 10px 15px;
+        border-radius: 8px; color: #FFFFFF !important; font-family: 'Cairo', sans-serif; font-size: 0.9rem;
     }
 
-    /* ST EXPANDER BLINKING (Targeting Streamlit's class) */
     div[data-testid="stExpander"] {
-        border: 2px solid #d29922 !important;
-        border-radius: 10px !important;
+        border: 2px solid #d29922 !important; border-radius: 10px !important;
         animation: blink-yellow-border 3s infinite ease-in-out;
-        background: rgba(210, 153, 34, 0.05) !important;
-        direction: rtl;
+        background: rgba(210, 153, 34, 0.05) !important; direction: rtl;
     }
     
-    div[data-testid="stExpander"] summary {
-        color: #ffcc00 !important;
-        font-family: 'Cairo', sans-serif;
-        font-weight: 900 !important;
-        font-size: 1.1rem !important;
-    }
-
-    /* Device Card UI */
+    div[data-testid="stExpander"] summary { color: #ffcc00 !important; font-family: 'Cairo', sans-serif; font-weight: 900 !important; font-size: 1.1rem !important; }
     .dev-card { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; margin-bottom: 15px; overflow: hidden; }
     .dev-header { background: #161b22; padding: 12px 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #30363d; }
     
@@ -135,6 +101,8 @@ st.markdown("""
     .stTextInput input { background-color: #0d1117 !important; color: white !important; border: 1px solid #30363d !important; }
     </style>
     """, unsafe_allow_html=True)
+
+# --- 4. Header & Greeting ---
 current_hour = datetime.now().hour
 greeting = "صباح الخير" if 5 <= current_hour < 12 else "مساء الخير"
 
@@ -144,12 +112,6 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True) 
 
-# --- Header Section ---
-shop_open = get_shop_status()
-status_class = "status-open" if shop_open else "status-closed"
-status_text = "ATELIER OUVERT" if shop_open else "ATELIER FERMÉ"
-
-# --- Header Section (نسخة مصلحة ومدمجة) ---
 shop_open = get_shop_status()
 status_class = "status-open" if shop_open else "status-closed"
 status_text = "ATELIER OUVERT" if shop_open else "ATELIER FERMÉ"
@@ -164,7 +126,6 @@ st.markdown(f"""
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 15px;">
             <div class="contact-item">📞 <b>الهاتف:</b> 0798661900</div>
             
-            <!-- زر الخريطة مدمج كعنصر داخل الشبكة -->
             <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" style="text-decoration: none;">
                 <div style="background: #238636; color: white; text-align: center; padding: 10px; 
                             border-radius: 8px; font-weight: bold; height: 100%; display: flex; 
@@ -180,7 +141,7 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-# --- Expander (Blinking & Right-Aligned) ---
+# --- 5. Info Expander ---
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
     st.markdown("""
         <div style="text-align: right; direction: rtl; font-family: 'Cairo'; line-height: 1.8; padding: 10px; color: #f0f6fc;">
@@ -191,14 +152,12 @@ with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط 
         </div>
     """, unsafe_allow_html=True)
 
-# --- Main Search ---
+# --- 6. Main Content (Search & Tracking) ---
 col_main, col_sync = st.columns([2, 1])
-st.markdown("### 🔍 Track Device")
-phone_input = st.text_input("Registered Phone Number:", placeholder="07XXXXXXXX")
-phone_n = normalize_phone(phone_input)
+
 with col_main:
     st.markdown("### 🔍 Track Device")
-    phone_input = st.text_input("Registered Phone Number:", placeholder="07XXXXXXXX")
+    phone_input = st.text_input("Registered Phone Number:", placeholder="07XXXXXXXX", key="unique_phone_input")
     phone_n = normalize_phone(phone_input)
 
     if phone_n and len(phone_n) >= 9:
@@ -210,11 +169,9 @@ with col_main:
                 stt = str(r.get("Statut", "N/A"))
                 st_color = "#238636" if stt == "Prêt" else "#1f6feb"
                 
-                # حساب النسبة المئوية لشريط التقدم
                 progress_map = {"En attente": 25, "En Cours": 60, "Prêt": 100}
                 current_val = progress_map.get(stt, 10)
                 
-                # شارة الضمان (تظهر فقط إذا كان الجهاز جاهزاً)
                 warranty_badge = ""
                 if stt == "Prêt":
                     warranty_badge = """
@@ -226,43 +183,39 @@ with col_main:
 
                 st.markdown(f"""
                     <div class="dev-card">
-                        <!-- رأس البطاقة -->
                         <div class="dev-header">
                             <b style="color: #58a6ff;">#{int(r.get('ID', 0))} | {r.get('Appareil', 'Device')}</b>
                             <span style="background:{st_color}; padding:2px 8px; border-radius:5px; font-size:0.8rem; font-weight:bold;">{stt}</span>
                         </div>
-                        
-                        <!-- تفاصيل الجهاز -->
                         <div style="padding: 15px;">
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                                 <div><small style="color:#8b949e;">PROBLEM</small><br><b>{r.get('Panne', '---')}</b></div>
                                 <div><small style="color:#8b949e;">PRICE</small><br><b>{float(r.get('Prix', 0)):,.0f} DZD</b></div>
                                 <div><small style="color:#8b949e;">DATE</small><br><b>{r.get('Date_Entree', '---')}</b></div>
                             </div>
-                            
-                            <!-- شريط التقدم مدمج بالداخل -->
                             <div style="width: 100%; background-color: #21262d; border-radius: 10px; margin: 10px 0; height: 8px; overflow: hidden;">
                                 <div style="width: {current_val}%; background: linear-gradient(90deg, #1f6feb, #58a6ff); 
                                      height: 100%; transition: width 1s ease-in-out;">
                                 </div>
                             </div>
-                            
                             {warranty_badge}
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
+
 with col_sync:
     st.markdown("### 🤖 Telegram")
     if phone_n and len(phone_n) >= 9:
-        qr_img = qrcode.make(f"https://t.me/{BOT_USERNAME}?start={phone_n}")
+        qr_url = f"https://t.me/{BOT_USERNAME}?start={phone_n}"
+        qr_img = qrcode.make(qr_url)
         buf = BytesIO()
         qr_img.save(buf, format="PNG")
         st.image(buf.getvalue(), width=150)
-        st.link_button("🚀 Sync Telegram", f"https://t.me/{BOT_USERNAME}?start={phone_n}", use_container_width=True)
+        st.link_button("🚀 Sync Telegram", qr_url, use_container_width=True)
     else:
         st.info("Input phone to sync.")
 
-# --- Threading Bot ---
+# --- 7. Telegram Bot Thread ---
 def run_bot():
     bot = telebot.TeleBot(TELEGRAM_TOKEN)
     @bot.message_handler(commands=["start"])
@@ -283,12 +236,3 @@ def run_bot():
 if "bot_active" not in st.session_state:
     threading.Thread(target=run_bot, daemon=True).start()
     st.session_state["bot_active"] = True
-
-
-
-
-
-
-    
-
-
