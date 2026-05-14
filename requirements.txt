@@ -11,4 +11,3 @@ python-dateutil
 qrcode
 xlsxwriter
 pytz
-os
