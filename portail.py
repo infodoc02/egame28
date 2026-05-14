@@ -171,6 +171,11 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
+# --- 5. الهيدر والمعلومات ---
+shop_open = get_shop_status()
+status_class = "status-open" if shop_open else "status-closed"
+status_text = "ATELIER OUVERT" if shop_open else "ATELIER FERMÉ"
+
 st.markdown(f"""
     <div class="hero-container">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
