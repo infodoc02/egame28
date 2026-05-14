@@ -10,34 +10,23 @@ import qrcode
 from io import BytesIO
 from firebase_admin import credentials, db, initialize_app
 
-# الطريقة المباشرة (تخدم إذا كان الملف موجود في Secrets)
+# --- الإعدادات الأساسية ---
 TELEGRAM_TOKEN = st.secrets.get("TELEGRAM_TOKEN", "fallback_token_here")
 BOT_USERNAME = st.secrets.get("BOT_USERNAME", "default_bot")
 DB_URL = st.secrets.get("DB_URL", "https://your-default-db.firebaseio.com/")
 
 def ensure_firebase():
-    # التحقق إذا كان التطبيق مفعل مسبقاً
     if not firebase_admin._apps:
         try:
-            # التأكد من أننا نستخدم بيانات المشروع الجديد info-2b186
             cred_dict = dict(st.secrets["firebase"])
-            
-            # معالجة المفتاح الخاص (السطر الجديد)
             if "\\n" in cred_dict["private_key"]:
                 cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
-            
             cred = credentials.Certificate(cred_dict)
-            
-            # تهيئة التطبيق مع تحديد الرابط بدقة
             firebase_admin.initialize_app(cred, {
                 'databaseURL': st.secrets["DB_URL"]
             })
-            # st.success("Connected to Firebase!") # للتحقق فقط، احذفه لاحقاً
         except Exception as e:
             st.error(f"فشل الاتصال: {e}")
-    else:
-        # إذا كان التطبيق موجوداً، نتأكد من أنه يستخدم الرابط الصحيح
-        pass
 
 ensure_firebase()
 
@@ -59,10 +48,8 @@ def telegram_qr_bytes(phone: str):
     img.save(buf, format="PNG")
     return buf.getvalue()
 
-
 def telegram_link(phone: str) -> str:
     return f"https://t.me/{BOT_USERNAME}?start={phone}"
-
 
 def safe_send(bot: telebot.TeleBot, chat_id: str, message: str) -> bool:
     if not chat_id:
@@ -73,12 +60,7 @@ def safe_send(bot: telebot.TeleBot, chat_id: str, message: str) -> bool:
     except Exception:
         return False
 
-
 def link_telegram_id_to_phone(phone: str, telegram_id: str) -> int:
-    """
-    Link telegram_id to all atelier tickets matching phone last 9 digits.
-    Returns number of updated records.
-    """
     phone = normalize_phone(phone)
     last9 = phone[-9:]
     ref = db.reference("atelier")
@@ -95,10 +77,8 @@ def link_telegram_id_to_phone(phone: str, telegram_id: str) -> int:
             updated += 1
     return updated
 
-
 def run_bot():
     bot = telebot.TeleBot(TELEGRAM_TOKEN)
-
     @bot.message_handler(commands=["start"])
     def handle_start(message):
         args = message.text.split()
@@ -108,24 +88,16 @@ def run_bot():
             try:
                 updated = link_telegram_id_to_phone(phone, chat_id)
                 if updated > 0:
-                    msg = (
-                        "✅ تم تفعيل إشعارات InfoDoc بنجاح لهذا الرقم.\n\n"
-                        "من الآن فصاعداً ستصلك تحديثات حالة جهازك مباشرة هنا."
-                    )
+                    msg = "✅ تم تفعيل إشعارات InfoDoc بنجاح لهذا الرقم."
                 else:
-                    msg = (
-                        "⚠️ لم نجد جهازاً مسجلاً بهذا الرقم حالياً.\n\n"
-                        "إذا سجلت جهازك لاحقاً بنفس الرقم سيتم الربط تلقائياً."
-                    )
+                    msg = "⚠️ لم نجد جهازاً مسجلاً بهذا الرقم حالياً."
                 safe_send(bot, chat_id, msg)
             except Exception:
-                safe_send(bot, chat_id, "❌ حدث خطأ أثناء الربط، حاول لاحقاً.")
+                safe_send(bot, chat_id, "❌ حدث خطأ أثناء الربط.")
         else:
-            safe_send(bot, chat_id, "👋 مرحباً بك. فعّل الإشعارات من بوابة InfoDoc.")
-
+            safe_send(bot, chat_id, "👋 مرحباً بك في InfoDoc.")
     bot.remove_webhook()
     bot.polling(none_stop=True, skip_pending=True)
-
 
 def fetch_customer_devices(phone: str) -> pd.DataFrame:
     phone = normalize_phone(phone)
@@ -150,53 +122,21 @@ def fetch_customer_devices(phone: str) -> pd.DataFrame:
         df = df.sort_values("ID", ascending=False)
     return df
 
-
 def is_telegram_linked(df: pd.DataFrame) -> bool:
     if df.empty or "Telegram_ID" not in df.columns:
         return False
     tg = df["Telegram_ID"].astype(str).str.strip()
     return ((tg.str.isdigit()) & (tg.str.len() > 5)).any()
 
-# --- دالة جلب الحالة ---
 def get_shop_status():
     try:
-        # نقرأ من فرع shop_settings في Firebase
         status = db.reference("shop_settings/is_open").get()
         return True if status is None else status
     except Exception:
-        return True # في حال فشل الاتصال نعتبره مفتوحاً افتراضياً
+        return True
 
-# --- استدعاء الحالة وتحويلها لـ HTML ---
-shop_open = get_shop_status()
-
-if shop_open:
-    status_html = '<span class="status-badge status-open">● Ouvert - مفتوح</span>'
-else:
-    status_html = '<span class="status-badge status-closed">○ Fermé - مغلق</span>'
-
-# --- عرض واجهة الهيرو ---
-st.markdown(
-    f"""
-    <div class="portal-wrap">
-        <div class="circuit-bg"></div>
-        <div class="circuit-lines"></div>
-        <div class="scan-line"></div>
-        <div class="hero-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <div class="hero-title"><span class="chip-dot"></span>بوابة الزبائن InfoDoc</div>
-                {status_html}
-            </div>
-            <div class="hero-subtitle">متابعة احترافية لحالة الأجهزة، الأسعار، والتنبيهات الفورية عبر Telegram.</div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-# --- App ---
+# --- واجهة Streamlit والإعدادات البصرية ---
 st.set_page_config(page_title="InfoDoc - Portail Client", page_icon="📱", layout="wide")
-
-ensure_firebase()
 
 if "bot_thread" not in st.session_state:
     try:
@@ -205,235 +145,142 @@ if "bot_thread" not in st.session_state:
     except Exception:
         st.session_state["bot_thread"] = False
 
-st.markdown(
-    """
+# --- CSS الكامل بدون حذف ---
+st.markdown("""
     <style>
-
-    /* أنميشن النبض للمحل المفتوح */
     @keyframes pulseStatus {
         0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
         70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
         100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
     .status-badge {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: bold;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
+        padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;
+        display: inline-flex; align-items: center; gap: 6px;
     }
     .status-open { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; animation: pulseStatus 2s infinite; }
     .status-closed { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
     .stApp {
-        background:
-            radial-gradient(circle at 10% 10%, rgba(56,189,248,.20) 0%, transparent 25%),
-            radial-gradient(circle at 85% 20%, rgba(34,197,94,.14) 0%, transparent 23%),
-            radial-gradient(circle at 70% 80%, rgba(59,130,246,.16) 0%, transparent 30%),
-            linear-gradient(135deg, #020617 0%, #0b1220 35%, #0f172a 100%);
+        background: radial-gradient(circle at 10% 10%, rgba(56,189,248,.20) 0%, transparent 25%),
+                    radial-gradient(circle at 85% 20%, rgba(34,197,94,.14) 0%, transparent 23%),
+                    linear-gradient(135deg, #020617 0%, #0b1220 35%, #0f172a 100%);
         color: #e5ecf8;
     }
-    .main .block-container { padding-top: 1.6rem; }
     .bg-circuit {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: -1;
-        opacity: 0.35;
-        background-image:
-            linear-gradient(rgba(56,189,248,0.18) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(56,189,248,0.18) 1px, transparent 1px);
+        position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0.35;
+        background-image: linear-gradient(rgba(56,189,248,0.18) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(56,189,248,0.18) 1px, transparent 1px);
         background-size: 38px 38px;
-        mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
     }
-    @keyframes floatGlow {
-        0% { transform: translateY(0px); opacity: 0.55; }
-        50% { transform: translateY(-8px); opacity: 0.95; }
-        100% { transform: translateY(0px); opacity: 0.55; }
-    }
-    @keyframes pulseLineA {
-        0% { background-position: 0% 50%; }
-        100% { background-position: 200% 50%; }
-    }
-    @keyframes pulseLineB {
-        0% { transform: translateY(-40%); opacity: 0; }
-        35% { opacity: .55; }
-        100% { transform: translateY(180%); opacity: 0; }
-    }
-    .portal-wrap {
-        position: relative;
-        border-radius: 22px;
-        overflow: hidden;
-        margin-bottom: 1.1rem;
-        border: 1px solid rgba(56,189,248,0.45);
-    }
-    .circuit-bg {
-        position: absolute;
-        inset: 0;
-        background:
-            radial-gradient(circle at 18% 20%, rgba(56,189,248,0.50), transparent 28%),
-            radial-gradient(circle at 82% 28%, rgba(34,197,94,0.35), transparent 27%),
-            radial-gradient(circle at 35% 78%, rgba(59,130,246,0.45), transparent 30%),
-            linear-gradient(135deg, #020617 0%, #0b1220 40%, #1e3a8a 100%);
-    }
-    .circuit-lines {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(14,165,233,0.0) 15%,
-            rgba(14,165,233,0.45) 50%,
-            rgba(14,165,233,0.0) 85%,
-            transparent 100%
-        );
-        background-size: 200% 100%;
-        animation: pulseLineA 7s linear infinite;
-        mix-blend-mode: screen;
-    }
+    .portal-wrap { position: relative; border-radius: 22px; overflow: hidden; margin-bottom: 1.1rem; border: 1px solid rgba(56,189,248,0.45); }
+    .circuit-bg { position: absolute; inset: 0; background: linear-gradient(135deg, #020617 0%, #0b1220 40%, #1e3a8a 100%); }
     .scan-line {
-        position: absolute;
-        left: 0; right: 0;
-        height: 120px;
-        background: linear-gradient(180deg, transparent 0%, rgba(56,189,248,0.22) 45%, transparent 100%);
+        position: absolute; left: 0; right: 0; height: 100px;
+        background: linear-gradient(180deg, transparent 0%, rgba(56,189,248,0.2) 50%, transparent 100%);
         animation: pulseLineB 4.5s linear infinite;
-        pointer-events: none;
     }
-    .hero-card {
-        position: relative;
-        z-index: 2;
-        border-radius: 20px;
-        padding: 1.5rem 1.5rem;
-        color: #eef6ff;
-        backdrop-filter: blur(1.5px);
+    @keyframes pulseLineB { 0% { transform: translateY(-100%); } 100% { transform: translateY(300%); } }
+    .hero-card { position: relative; z-index: 2; padding: 1.5rem; backdrop-filter: blur(2px); }
+    .hero-title { font-size: 1.7rem; font-weight: 900; }
+    .contact-info-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;
     }
-    .chip-dot {
-        width: 10px; height: 10px; border-radius: 50%;
-        background: #38bdf8; display: inline-block; margin-inline-end: 8px;
-        animation: floatGlow 2.3s ease-in-out infinite;
-        box-shadow: 0 0 14px rgba(56,189,248,0.9);
-    }
-    .hero-card {
-        margin-bottom: 0.35rem;
-        box-shadow: 0 18px 40px rgba(2, 6, 23, 0.55);
-    }
-    .hero-title { font-size: 1.72rem; font-weight: 900; margin-bottom: 0.2rem; letter-spacing: .3px; }
-    .hero-subtitle { font-size: 0.96rem; opacity: 0.95; }
-    .section-card {
-        border: 1px solid rgba(56,189,248,0.45);
-        border-radius: 16px;
-        padding: 1rem 1.05rem;
-        background: rgba(15, 23, 42, 0.55);
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.30);
-        margin-bottom: 0.8rem;
-    }
-    .mini-tech {
-        border: 1px solid rgba(56,189,248,0.35);
-        background: rgba(15, 23, 42, 0.75);
-        color: #dbeafe;
-        border-radius: 12px;
-        padding: 0.65rem 0.8rem;
-        font-size: 0.84rem;
-        margin-bottom: 0.65rem;
-    }
-    .dev-card {
-        border: 1px solid rgba(56,189,248,0.35);
-        border-radius: 14px;
-        padding: 0.8rem 0.9rem;
-        background: rgba(15, 23, 42, 0.72);
-        margin-bottom: .55rem;
-    }
-    .dev-head { font-weight: 800; color: #f8fbff; margin-bottom: .22rem; }
-    .dev-sub { color: #bfd4ff; font-size: .88rem; }
-    .chip {
-        display: inline-block;
-        padding: .16rem .52rem;
-        border-radius: 999px;
-        font-size: .75rem;
-        font-weight: 700;
-        margin-top: .32rem;
-    }
+    .contact-item { font-size: 0.85rem; display: flex; align-items: center; gap: 8px; color: #bfd4ff; }
+    .section-card { border: 1px solid rgba(56,189,248,0.45); border-radius: 16px; padding: 1rem; background: rgba(15, 23, 42, 0.55); margin-bottom: 0.8rem; }
+    .dev-card { border: 1px solid rgba(56,189,248,0.35); border-radius: 14px; padding: 0.9rem; background: rgba(15, 23, 42, 0.72); margin-bottom: .55rem; }
+    .dev-head { font-weight: 800; color: #f8fbff; }
+    .chip { display: inline-block; padding: .2rem .6rem; border-radius: 999px; font-size: .75rem; font-weight: 700; margin-top: 5px; }
     .chip-ready { background: rgba(34,197,94,.18); color: #86efac; border: 1px solid rgba(134,239,172,.35); }
     .chip-work { background: rgba(56,189,248,.18); color: #7dd3fc; border: 1px solid rgba(125,211,252,.35); }
     .chip-other { background: rgba(251,191,36,.18); color: #fde68a; border: 1px solid rgba(253,230,138,.35); }
+    .notice-box {
+        background: rgba(251, 191, 36, 0.1); border-right: 4px solid #fbbf24;
+        padding: 15px; border-radius: 8px; font-size: 0.9rem; line-height: 1.6; color: #fde68a;
+    }
     </style>
-    """,
-    unsafe_allow_html=True,
-)
+    """, unsafe_allow_html=True)
+
 st.markdown('<div class="bg-circuit"></div>', unsafe_allow_html=True)
+
+# --- عرض معلومات المحل في الهيرو ---
 shop_open = get_shop_status()
 status_html = '<span class="status-badge status-open">● Ouvert - مفتوح</span>' if shop_open else '<span class="status-badge status-closed">○ Fermé - مغلق</span>'
 
-
-st.markdown(
-    """
-    <div class="section-card">
-        <div style="font-size: 0.95rem; font-weight: 700; color: #dbeafe; margin-bottom: 0.35rem;">
-            📞 أدخل رقم هاتفك
+st.markdown(f"""
+    <div class="portal-wrap">
+        <div class="circuit-bg"></div>
+        <div class="scan-line"></div>
+        <div class="hero-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <div class="hero-title">بوابة الزبائن InfoDoc</div>
+                {status_html}
+            </div>
+            <div class="contact-info-grid">
+                <div class="contact-item">📞 0798661900</div>
+                <div class="contact-item">📍 الشلف وسط المدينة - OPGI</div>
+                <div class="contact-item">🔵 Facebook: InfoDoc</div>
+                <div class="contact-item">⚫ TikTok: @infodoc02</div>
+            </div>
         </div>
     </div>
-    """,
-    unsafe_allow_html=True,
-)
+    """, unsafe_allow_html=True)
 
-phone = st.text_input("رقم الهاتف", placeholder="0XXXXXXXXX", label_visibility="collapsed")
+# --- قسم الملاحظات والقوانين الجديدة ---
+with st.container():
+    st.markdown("""
+    <div class="notice-box">
+        <b>📝 ملاحظات هامة:</b><br>
+        • في حالة كان الجهاز قابل للتصليح ورفضتم التصليح، يترتب دفع مبلغ <b>1000 دج</b> ثمن الفحص والفتح والغلق.<br>
+        • أسعار التصليح (عند العمل على البطاقة الأم) تبدأ من <b>3000 دج</b>.<br>
+        • <b>نظام الأسعار:</b> إذا كان السعر بين 3000 و 4000 دج نصلح مباشرة، فوق 4000 دج ننتظر موافقتكم عبر رسالة.<br>
+        • <b>للتواصل الجيد:</b> يرجى تحميل تطبيق <b>تلغرام</b> وربطه عبر الزر أدناه لتلقي التنبيهات فوراً.
+    </div>
+    """, unsafe_allow_html=True)
+
+st.write("")
+
+# --- منطقة الاستعلام ---
+st.markdown('<div class="section-card">🔍 أدخل رقم هاتفك المسجل لمتابعة أجهزتك</div>', unsafe_allow_html=True)
+phone = st.text_input("phone", placeholder="0XXXXXXXXX", label_visibility="collapsed")
 phone_n = normalize_phone(phone)
 
 if phone_n and len(phone_n) >= 9:
-    a1, a2, a3 = st.columns(3)
-    a1.markdown('<div class="mini-tech">🔧 Diagnostic Live</div>', unsafe_allow_html=True)
-    a2.markdown('<div class="mini-tech">📡 Telegram Alert Ready</div>', unsafe_allow_html=True)
-    a3.markdown('<div class="mini-tech">🧠 Smart Ticket Tracking</div>', unsafe_allow_html=True)
-
+    # جلب البيانات
     df = fetch_customer_devices(phone_n)
-
-    if df.empty:
-        st.warning("⚠️ لا يوجد أجهزة مسجلة بهذا الرقم حالياً.")
-        st.info("إذا كنت تريد تفعيل الإشعارات مسبقاً، يمكنك ذلك وسيتم الربط تلقائياً عند تسجيل جهازك بنفس الرقم.")
-    else:
-        st.success(f"✅ تم العثور على {len(df)} جهاز/تذكرة لهذا الرقم.")
-
-    st.subheader("🔔 تفعيل إشعارات Telegram")
-    if not df.empty and is_telegram_linked(df):
-        st.success("✅ الإشعارات مفعّلة (Telegram مرتبط).")
-    else:
-        st.warning("⚠️ الإشعارات غير مفعّلة بعد.")
-        t1, t2 = st.columns([2, 1])
-        with t1:
-            st.link_button("🚀 تفعيل الإشعارات عبر Telegram", telegram_link(phone_n))
-            st.caption("بعد فتح الرابط اضغط Start داخل Telegram لإتمام الربط.")
-        with t2:
-            st.image(telegram_qr_bytes(phone_n), caption="QR Telegram", width=120)
+    
+    # تفعيل التلغرام
+    st.subheader("🔔 إشعارات Telegram")
+    col_t1, col_t2 = st.columns([2, 1])
+    with col_t1:
+        st.info("لضمان وصول التحديثات فوراً، تأكد من ربط حسابك بالضغط على الزر")
+        st.link_button("🚀 تفعيل الإشعارات عبر Telegram", telegram_link(phone_n))
+    with col_t2:
+        st.image(telegram_qr_bytes(phone_n), caption="QR Code للربط", width=120)
 
     st.divider()
-    st.subheader("📋 أجهزتي")
-    if not df.empty:
+    
+    # عرض الأجهزة
+    st.subheader("📋 قائمة أجهزتي")
+    if df.empty:
+        st.warning("⚠️ لا توجد أجهزة مسجلة بهذا الرقم حالياً.")
+    else:
         for _, r in df.iterrows():
             stt = str(r.get("Statut", "")).strip()
-            cls = "chip-other"
-            if stt == "Prêt":
-                cls = "chip-ready"
-            elif stt in ["En Cours", "En attente"]:
-                cls = "chip-work"
-            st.markdown(
-                f"""
+            cls = "chip-ready" if stt == "Prêt" else "chip-work" if stt in ["En Cours", "En attente"] else "chip-other"
+            
+            st.markdown(f"""
                 <div class="dev-card">
                     <div class="dev-head">#{int(pd.to_numeric(r.get("ID", 0), errors="coerce") or 0)} - {str(r.get("Appareil", "---"))}</div>
-                    <div class="dev-sub">العطل: {str(r.get("Panne", "---"))}</div>
-                    <div class="dev-sub">السعر: {float(pd.to_numeric(r.get("Prix", 0), errors="coerce") or 0):,.0f} DA</div>
-                    <div class="dev-sub">الدخول: {str(r.get("Date_Entree", "---"))}</div>
+                    <div style="font-size: 0.88rem; margin-top: 5px; opacity: 0.9;">
+                        <b>العطل:</b> {str(r.get("Panne", "---"))}<br>
+                        <b>السعر:</b> {float(pd.to_numeric(r.get("Prix", 0), errors="coerce") or 0):,.0f} DA<br>
+                        <b>تاريخ الدخول:</b> {str(r.get("Date_Entree", "---"))}
+                    </div>
                     <span class="chip {cls}">{stt or '---'}</span>
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                """, unsafe_allow_html=True)
 
-        with st.expander("عرض جدول الأجهزة (تفصيلي)"):
-            show_cols = []
-            for c in ["ID", "Appareil", "Panne", "Statut", "Prix", "Date_Entree", "Date_Sortie"]:
-                if c in df.columns:
-                    show_cols.append(c)
-            st.dataframe(df[show_cols], use_container_width=True, hide_index=True)
+        with st.expander("عرض الجدول الكامل"):
+            st.dataframe(df, use_container_width=True, hide_index=True)
 else:
-    st.info("أدخل رقم هاتفك لعرض قائمة الأجهزة.")
+    st.info("الرجاء إدخال رقم هاتفك بالأسفل")
