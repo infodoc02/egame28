@@ -31,59 +31,68 @@ def normalize_phone(phone: str) -> str:
     if len(p) == 9 and p[0] in ["5", "6", "7"]: p = "0" + p
     return p
 
-# دالة حساب الضمان (تعديل جديد بناءً على طلبك)
 def get_warranty_stats(date_sortie_str):
-    if not date_sortie_str or date_sortie_str == "---":
+    if not date_sortie_str or str(date_sortie_str).strip() == "---":
         return None
-    try:
-        date_s = datetime.strptime(date_sortie_str, "%d-%m-%Y")
-        diff_days = (datetime.now() - date_s).days
-        percent = min(max((diff_days / 30) * 100, 0), 100)
-        expired = diff_days > 30
-        return {"percent": percent, "is_expired": expired}
-    except: return None
+    # تجربة أكثر من صيغة للتاريخ لضمان المرونة
+    for fmt in ("%d-%m-%Y", "%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            date_s = datetime.strptime(str(date_sortie_str).strip(), fmt)
+            diff_days = (datetime.now() - date_s).days
+            # حساب النسبة المتبقية من الشهر (30 يوم)
+            # إذا مر 0 يوم النسبة 100%، إذا مر 30 يوم النسبة 0%
+            remaining_days = max(30 - diff_days, 0)
+            percent = (remaining_days / 30) * 100
+            expired = diff_days > 30
+            return {"percent": percent, "is_expired": expired, "days_left": remaining_days}
+        except: continue
+    return None
 
-# --- 3. تصميم الـ CSS ---
+# --- 3. تصميم الـ CSS المطور ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
     
     .stApp { background: #0d1117; color: white; }
-
     .hero-box { background: linear-gradient(180deg, #0d1117 0%, #161b22 100%); border: 1px solid #30363d; border-radius: 15px; padding: 25px; margin-bottom: 20px; }
     .main-title { font-family: 'Orbitron'; color: #58a6ff; font-size: 2.2rem; font-weight: 900; }
     
+    /* أنيميشن الحالات */
     @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; opacity: 1; } 50% { box-shadow: none; opacity: 0.7; } }
     @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; opacity: 1; } 50% { box-shadow: none; opacity: 0.7; } }
     
+    /* أنيميشن زر التلغرام المشع */
+    @keyframes tg-glow {
+        0% { box-shadow: 0 0 5px #229ED9; transform: scale(1); }
+        50% { box-shadow: 0 0 20px #229ED9; transform: scale(1.05); }
+        100% { box-shadow: 0 0 5px #229ED9; transform: scale(1); }
+    }
+
+    /* الزر العائم */
+    .floating-tg {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: #229ED9;
+        color: white !important;
+        padding: 12px 20px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-family: 'Cairo';
+        font-weight: bold;
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: tg-glow 2s infinite;
+        border: 2px solid rgba(255,255,255,0.2);
+    }
+
     .status-open { color: #3fb950; border: 2px solid #3fb950; padding: 6px 15px; border-radius: 8px; animation: blink-green 2s infinite; font-weight: bold; font-family: 'Orbitron'; }
     .status-closed { color: #f85149; border: 2px solid #f85149; padding: 6px 15px; border-radius: 8px; animation: blink-red 2s infinite; font-weight: bold; font-family: 'Orbitron'; }
 
-    div.stDownloadButton > button {
-        background-color: #58a6ff !important;
-        color: #0d1117 !important;
-        border-radius: 8px !important;
-        width: 100% !important;
-        font-weight: bold !important;
-        border: none !important;
-        padding: 10px !important;
-        transition: 0.3s !important;
-    }
-    div.stDownloadButton > button:hover {
-        background-color: #3fb950 !important;
-        transform: scale(1.02);
-    }
-
-    .premium-btn {
-        text-decoration: none; color: white !important; background: #21262d; border: 1px solid #30363d;
-        padding: 15px; border-radius: 12px; text-align: center; font-family: 'Cairo'; font-weight: 700;
-        transition: 0.3s all ease-in-out; display: flex; align-items: center; justify-content: center; gap: 10px;
-    }
-    .premium-btn:hover { background: #30363d; border-color: #58a6ff; transform: translateY(-5px); }
-
     .device-card { background: #161b22; border: 1px solid #30363d; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
-    
-    .w-expired-label { color: #f85149; font-weight: bold; font-family: 'Cairo'; border: 1px solid #f85149; padding: 5px; border-radius: 5px; text-align: center; }
+    .w-expired-label { color: #f85149; font-weight: bold; font-family: 'Cairo'; border: 1px solid #f85149; padding: 5px; border-radius: 5px; text-align: center; margin-top:10px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -108,23 +117,24 @@ st.markdown(f"""
             {status_html}
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px;">
-            <a href="tel:0798661900" class="premium-btn">📞 0798661900</a>
-            <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="premium-btn">📍 موقع المحل</a>
-            <a href="https://www.facebook.com/100095433977319/" target="_blank" class="premium-btn">📘 Facebook</a>
-            <a href="https://www.tiktok.com/@infodoc02" target="_blank" class="premium-btn">📱 TikTok</a>
+            <a href="tel:0798661900" style="text-decoration:none; color:white; background:#21262d; padding:10px; border-radius:8px; text-align:center;">📞 0798661900</a>
+            <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" style="text-decoration:none; color:white; background:#21262d; padding:10px; border-radius:8px; text-align:center;">📍 موقع المحل</a>
+            <a href="https://www.facebook.com/100095433977319/" target="_blank" style="text-decoration:none; color:white; background:#21262d; padding:10px; border-radius:8px; text-align:center;">📘 Facebook</a>
+            <a href="https://www.tiktok.com/@infodoc02" target="_blank" style="text-decoration:none; color:white; background:#21262d; padding:10px; border-radius:8px; text-align:center;">📱 TikTok</a>
         </div>
     </div>
 """, unsafe_allow_html=True)
 
-# --- 5. البحث وتوزيع الألوان للحالات ---
+# --- 5. البحث وتوزيع الألوان ---
 st.markdown("### 🔍 تتبع حالة جهازك")
 phone_raw = st.text_input("أدخل رقم هاتفك المسجل:", key="search_input")
 
-# الحالات المعدلة: Prêt أصبحت 100%
 status_config = {
     "En Cours": {"color": "#1f6feb", "prog": 33},
     "Réparable": {"color": "#39c5bb", "prog": 66},
     "Prêt": {"color": "#3fb950", "prog": 100},
+    "Livré & Payé": {"color": "#a371f7", "prog": 100},
+    "Livré (Dette)": {"color": "#d29922", "prog": 100},
     "Non Réparable": {"color": "#f85149", "prog": 100},
     "Annulé": {"color": "#8b949e", "prog": 0}
 }
@@ -139,9 +149,9 @@ if phone_raw:
             if not my_devices:
                 st.warning("⚠️ لا توجد أجهزة مسجلة بهذا الرقم.")
             else:
-                if not any(str(d.get("Telegram_ID", "")).strip() != "" for d in my_devices):
-                    tg_url = f"https://t.me/{st.secrets.get('BOT_USERNAME')}?start={phone_n}"
-                    st.link_button("🚀 ربط الحساب بالتليغرام لتلقي الإشعارات", tg_url, type="primary", use_container_width=True)
+                # زر التلغرام العائم يظهر هنا
+                tg_url = f"https://t.me/{st.secrets.get('BOT_USERNAME')}?start={phone_n}"
+                st.markdown(f'<a href="{tg_url}" class="floating-tg">🚀 ربط التلغرام</a>', unsafe_allow_html=True)
                 
                 for d in sorted(my_devices, key=lambda x: int(x.get("ID", 0)), reverse=True):
                     stat = d.get("Statut", "En Cours")
@@ -164,21 +174,21 @@ if phone_raw:
                             </div>
                     """, unsafe_allow_html=True)
 
-                    # --- منطق الضمان الجديد (يظهر فقط في حالة Livré & Payé) ---
-                    if stat == "Livré & Payé":
+                    # --- تعديل الضمان: يظهر لأي حالة تحتوي كلمة Livré ---
+                    if "Livré" in stat:
                         w = get_warranty_stats(d.get("Date_Sortie"))
                         if w:
                             if w["is_expired"]:
-                                st.markdown('<div class="w-expired-label">⚠️ garantie expiré</div>', unsafe_allow_html=True)
+                                st.markdown('<div class="w-expired-label">⚠️ Garantie expirée (الضمان منتهي)</div>', unsafe_allow_html=True)
                             else:
                                 st.markdown(f"""
-                                    <div style="margin-top: 10px;">
-                                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #3fb950; margin-bottom: 5px;">
-                                            <span>🛡️ عداد الضمان (شهر واحد)</span>
+                                    <div style="margin-top: 15px; background: rgba(63, 185, 80, 0.1); padding: 10px; border-radius: 10px; border: 1px solid #3fb950;">
+                                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #3fb950; margin-bottom: 5px; font-family:'Cairo';">
+                                            <span>🛡️ عداد الضمان (المتبقي: {int(w['days_left'])} يوم)</span>
                                             <span>{int(w['percent'])}%</span>
                                         </div>
-                                        <div style="width: 100%; background: #21262d; height: 10px; border-radius: 10px; overflow: hidden;">
-                                            <div style="width: {w['percent']}%; background: #3fb950; height: 100%; transition: 0.5s;"></div>
+                                        <div style="width: 100%; background: #21262d; height: 8px; border-radius: 10px; overflow: hidden;">
+                                            <div style="width: {w['percent']}%; background: #3fb950; height: 100%; transition: 1s;"></div>
                                         </div>
                                     </div>
                                 """, unsafe_allow_html=True)
@@ -191,11 +201,8 @@ if phone_raw:
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
-                    
-                    inv_text = f"INFODOC TECHNOLOGY\nID: {d.get('ID')}\nDevice: {d.get('Appareil')}\nPrice: {d.get('Prix')} DZD\nStatus: {stat}"
-                    st.download_button(f"📄 تحميل معلومات الجهاز #{d.get('ID')}", inv_text, file_name=f"InfoDoc_{d.get('ID')}.txt", key=f"inv_{d.get('ID')}")
 
-# --- 6. بوت التليغرام ---
+# --- 6. بوت التليغرام (نفس المنطق) ---
 def start_bot():
     token = st.secrets.get("TELEGRAM_TOKEN")
     if not token: return
@@ -211,7 +218,7 @@ def start_bot():
                 for k, v in data.items():
                     if normalize_phone(v.get("Telephone", "")).endswith(p[-9:]):
                         ref.child(k).update({"Telegram_ID": str(m.chat.id)})
-                bot.reply_to(m, "✅ تم ربط حسابك! ستصلك رسالة هنا فور جاهزية جهازك.")
+                bot.reply_to(m, "✅ تم ربط حسابك بنجاح!")
     bot.polling(none_stop=True)
 
 if "bot_running" not in st.session_state:
