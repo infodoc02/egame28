@@ -188,20 +188,11 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ==============================================================================
 st.markdown("""
     <div style="text-align: center; margin-top: 50px; margin-bottom: 20px;">
-        <h2 style="
-            font-family: 'Cairo', sans-serif; 
-            color: #58a6ff; 
-            text-shadow: 0 0 10px rgba(88, 166, 255, 0.3);
-            font-weight: 900;
-            letter-spacing: 1px;
-        ">
+        <h2 style="font-family: 'Cairo', sans-serif; color: #58a6ff; font-weight: 900;">
             🔍 تتبع أجهزتك الآن
         </h2>
-        <p style="color: #8b949e; font-size: 0.9rem; margin-top: -10px;">
-            أدخل رقم الهاتف المسجل لتفقد حالة الصيانة والضمان
-        </p>
     </div>
-""", unsafe_allow_html=True)user_phone = st.text_input("", placeholder="0XXXXXXXXX", key="phone_box")
+""", unsafe_allow_html=True)
 user_phone = st.text_input("", placeholder="أدخل رقم هاتفك هنا (مثال: 0798661900)", key="phone_input_unique")
 if user_phone:
     norm_phone = normalize_phone(user_phone)
