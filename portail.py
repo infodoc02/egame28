@@ -127,7 +127,6 @@ status_config = {
     "Prêt": {"color": "#3fb950", "prog": 100},
     "Non Réparable": {"color": "#f85149", "prog": 100},
     "Livré & Payé": {"color": "#3fb950", "prog": 100},
-    "Livré (Dette)": {"color": "#d29922", "prog": 100},
     "Annulé": {"color": "#8b949e", "prog": 0}
 }
 
