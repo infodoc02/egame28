@@ -168,15 +168,17 @@ with c4: st.markdown('<a href="https://tiktok.com/..." target="_blank" class="cu
 
 # قسم الشروط (المضيء فقط)
 st.markdown('<div class="terms-section">', unsafe_allow_html=True)
+
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
     st.markdown("""
         <div style="text-align: right; direction: rtl; font-family: 'Cairo'; line-height: 1.8; color: #f0f6fc;">
-            1️⃣ فحص الجهاز المرفوض تصليحه: <b>1000 دج</b>.<br>
-            2️⃣ تصليح الماذر بورد يبدأ من <b>3000 دج</b>.<br>
-            3️⃣ الموافقة التلقائية بين 3000 و 4000 دج.<br>
-            4️⃣ يرجى ربط <b>Telegram</b> لتصلك الإشعارات فوراً.
+            1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<b>رفض الزبون ذلك</b>، يتم دفع <b>1000 دج</b> ثمن الجهد والفحص.<br>
+            2️⃣ أسعار العمل على <b>البطاقة الأم (Carte Mère)</b> تبدأ من <b>3000 دج</b>.<br>
+            3️⃣ <b>الموافقة التلقائية:</b> نصلح مباشرة إذا كان السعر بين 3000 و 4000 دج. فوق ذلك نطلب موافقتك أولاً.
         </div>
     """, unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==============================================================================
