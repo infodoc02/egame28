@@ -135,8 +135,21 @@ st.markdown("""
     .stTextInput input { background-color: #0d1117 !important; color: white !important; border: 1px solid #30363d !important; }
     </style>
     """, unsafe_allow_html=True)
+current_hour = datetime.now().hour
+greeting = "صباح الخير" if 5 <= current_hour < 12 else "مساء الخير"
+
+st.markdown(f"""
+    <div style="text-align: right; color: #8b949e; font-family: 'Cairo'; margin-bottom: 10px;">
+        {greeting} زبوننا الكريم، الوقت الحالي في الشلف: {datetime.now().strftime('%H:%M')}
+    </div>
+""", unsafe_allow_html=True) 
 
 # --- Header Section ---
+shop_open = get_shop_status()
+status_class = "status-open" if shop_open else "status-closed"
+status_text = "ATELIER OUVERT" if shop_open else "ATELIER FERMÉ"
+
+# --- Header Section (نسخة مصلحة ومدمجة) ---
 shop_open = get_shop_status()
 status_class = "status-open" if shop_open else "status-closed"
 status_text = "ATELIER OUVERT" if shop_open else "ATELIER FERMÉ"
@@ -147,9 +160,20 @@ st.markdown(f"""
             <div class="main-title">INFODOC TECHNOLOGY</div>
             <div class="{status_class}">{status_text}</div>
         </div>
+        
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 15px;">
             <div class="contact-item">📞 <b>الهاتف:</b> 0798661900</div>
-            <div class="contact-item">📍 <b>الموقع:</b> الشلف - المركز التجاري OPGI</div>
+            
+            <!-- زر الخريطة مدمج كعنصر داخل الشبكة -->
+            <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" style="text-decoration: none;">
+                <div style="background: #238636; color: white; text-align: center; padding: 10px; 
+                            border-radius: 8px; font-weight: bold; height: 100%; display: flex; 
+                            align-items: center; justify-content: center; transition: 0.3s;"
+                     onmouseover="this.style.background='#2ea043'" onmouseout="this.style.background='#238636'">
+                    📍 اتبع المسار إلى المحل
+                </div>
+            </a>
+
             <div class="contact-item">🔵 <b>Facebook:</b> InfoDoc</div>
             <div class="contact-item">⚫ <b>TikTok:</b> @infodoc02</div>
         </div>
@@ -169,7 +193,9 @@ with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط 
 
 # --- Main Search ---
 col_main, col_sync = st.columns([2, 1])
-
+st.markdown("### 🔍 Track Device")
+phone_input = st.text_input("Registered Phone Number:", placeholder="07XXXXXXXX")
+phone_n = normalize_phone(phone_input)
 with col_main:
     st.markdown("### 🔍 Track Device")
     phone_input = st.text_input("Registered Phone Number:", placeholder="07XXXXXXXX")
@@ -183,20 +209,48 @@ with col_main:
             for _, r in df.iterrows():
                 stt = str(r.get("Statut", "N/A"))
                 st_color = "#238636" if stt == "Prêt" else "#1f6feb"
+                
+                # حساب النسبة المئوية لشريط التقدم
+                progress_map = {"En attente": 25, "En Cours": 60, "Prêt": 100}
+                current_val = progress_map.get(stt, 10)
+                
+                # شارة الضمان (تظهر فقط إذا كان الجهاز جاهزاً)
+                warranty_badge = ""
+                if stt == "Prêt":
+                    warranty_badge = """
+                    <div style="border: 1px solid #238636; color: #3fb950; padding: 2px 10px; 
+                         border-radius: 20px; font-size: 0.7rem; display: inline-block; margin-top: 10px; font-weight: bold;">
+                         🛡️ Garantie Incluse
+                    </div>
+                    """
+
                 st.markdown(f"""
                     <div class="dev-card">
+                        <!-- رأس البطاقة -->
                         <div class="dev-header">
                             <b style="color: #58a6ff;">#{int(r.get('ID', 0))} | {r.get('Appareil', 'Device')}</b>
                             <span style="background:{st_color}; padding:2px 8px; border-radius:5px; font-size:0.8rem; font-weight:bold;">{stt}</span>
                         </div>
-                        <div style="padding: 15px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                            <div><small style="color:#8b949e;">PROBLEM</small><br><b>{r.get('Panne', '---')}</b></div>
-                            <div><small style="color:#8b949e;">PRICE</small><br><b>{float(r.get('Prix', 0)):,.0f} DZD</b></div>
-                            <div><small style="color:#8b949e;">DATE</small><br><b>{r.get('Date_Entree', '---')}</b></div>
+                        
+                        <!-- تفاصيل الجهاز -->
+                        <div style="padding: 15px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                <div><small style="color:#8b949e;">PROBLEM</small><br><b>{r.get('Panne', '---')}</b></div>
+                                <div><small style="color:#8b949e;">PRICE</small><br><b>{float(r.get('Prix', 0)):,.0f} DZD</b></div>
+                                <div><small style="color:#8b949e;">DATE</small><br><b>{r.get('Date_Entree', '---')}</b></div>
+                            </div>
+                            
+                            <!-- شريط التقدم مدمج بالداخل -->
+                            <div style="width: 100%; background-color: #21262d; border-radius: 10px; margin: 10px 0; height: 8px; overflow: hidden;">
+                                <div style="width: {current_val}%; background: linear-gradient(90deg, #1f6feb, #58a6ff); 
+                                     height: 100%; transition: width 1s ease-in-out;">
+                                </div>
+                            </div>
+                            
+                            {warranty_badge}
                         </div>
                     </div>
-                    """, unsafe_allow_html=True)
-
+                """, unsafe_allow_html=True)
 with col_sync:
     st.markdown("### 🤖 Telegram")
     if phone_n and len(phone_n) >= 9:
@@ -229,3 +283,12 @@ def run_bot():
 if "bot_active" not in st.session_state:
     threading.Thread(target=run_bot, daemon=True).start()
     st.session_state["bot_active"] = True
+
+
+
+
+
+
+    
+
+
