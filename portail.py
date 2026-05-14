@@ -202,7 +202,7 @@ st.markdown("""
         </p>
     </div>
 """, unsafe_allow_html=True)
-
+user_phone = st.text_input("", placeholder="أدخل رقم هاتفك هنا (مثال: 0798661900)", key="phone_input_unique")
 if user_phone:
     norm_phone = normalize_phone(user_phone)
     if len(norm_phone) >= 9:
