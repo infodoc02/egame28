@@ -5,13 +5,13 @@ import re
 from datetime import datetime, timedelta
 import threading
 import telebot
+from io import BytesIO
 
-# --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="InfoDoc Portal", page_icon="📱", layout="wide")
+# --- 1. الإعدادات الأساسية ---
+st.set_page_config(page_title="InfoDoc - Client Portal", page_icon="📱", layout="wide")
 
-# --- 2. تهيئة Firebase ---
 @st.cache_resource
-def init_firebase():
+def init_db():
     if not firebase_admin._apps:
         try:
             cred_dict = dict(st.secrets["firebase"])
@@ -23,162 +23,169 @@ def init_firebase():
         except: return False
     return True
 
-init_firebase()
+init_db()
 
-# --- 3. الدوال البرمجية ---
+# --- 2. الدوال المنطقية ---
 def normalize_phone(phone: str) -> str:
     p = re.sub(r"\D", "", str(phone or ""))
     if p.startswith("213"): p = "0" + p[3:]
     if len(p) == 9 and p[0] in ["5", "6", "7"]: p = "0" + p
     return p
 
-def check_warranty(status, date_sortie_str):
-    """الضمان يظهر فقط في حالة LIVRE ET PAYE ويحسب لمدة شهر"""
+def get_warranty_info(status, date_sortie_str):
+    """الضمان يظهر فقط في حالة LIVRE ET PAYE ولمدة شهر"""
     if status != "LIVRE ET PAYE" or not date_sortie_str or date_sortie_str == "---":
-        return None # لا يظهر الضمان نهائياً
-    
-    try:
-        date_sortie = datetime.strptime(date_sortie_str, "%Y-%m-%d")
-        expiry_date = date_sortie + timedelta(days=30)
-        is_expired = datetime.now() > expiry_date
-        return {"expiry": expiry_date.strftime("%Y-%m-%d"), "expired": is_expired}
-    except:
         return None
+    try:
+        date_s = datetime.strptime(date_sortie_str, "%Y-%m-%d")
+        expiry = date_s + timedelta(days=30)
+        expired = datetime.now() > expiry
+        return {"expiry": expiry.strftime("%Y-%m-%d"), "is_expired": expired}
+    except: return None
 
-# --- 4. التصميم (CSS) ---
+# --- 3. تصميم الـ CSS الاحترافي (الوميض + الأزرار) ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700&display=swap');
-    .stApp { background: #0d1117; color: #c9d1d9; }
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
     
-    /* الوماض */
-    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-    .status-online { color: #3fb950; border: 1px solid #238636; padding: 4px 12px; border-radius: 50px; animation: blink 1.5s infinite; font-weight: bold; font-size: 0.8rem; }
-    .status-offline { color: #f85149; border: 1px solid #f85149; padding: 4px 12px; border-radius: 50px; font-weight: bold; font-size: 0.8rem; }
+    .stApp { background: #0d1117; color: white; }
 
-    .hero-title { font-family: 'Orbitron'; color: #58a6ff; font-size: 2rem; margin-bottom: 0; }
+    /* الهيدر والوميض */
+    .hero-box { background: linear-gradient(180deg, #0d1117 0%, #161b22 100%); border: 1px solid #30363d; border-radius: 15px; padding: 25px; margin-bottom: 20px; }
+    .main-title { font-family: 'Orbitron'; color: #58a6ff; font-size: 2.2rem; font-weight: 900; }
     
+    @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; opacity: 1; } 50% { box-shadow: none; opacity: 0.7; } }
+    @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; opacity: 1; } 50% { box-shadow: none; opacity: 0.7; } }
+    
+    .status-open { color: #3fb950; border: 2px solid #3fb950; padding: 6px 15px; border-radius: 8px; animation: blink-green 2s infinite; font-weight: bold; font-family: 'Orbitron'; }
+    .status-closed { color: #f85149; border: 2px solid #f85149; padding: 6px 15px; border-radius: 8px; animation: blink-red 2s infinite; font-weight: bold; font-family: 'Orbitron'; }
+
+    /* أزرار التواصل الـ Premium */
+    .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
+    .premium-btn {
+        text-decoration: none; color: white !important; background: #21262d; border: 1px solid #30363d;
+        padding: 15px; border-radius: 12px; text-align: center; font-family: 'Cairo'; font-weight: 700;
+        transition: 0.3s all ease-in-out; display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .premium-btn:hover { background: #30363d; border-color: #58a6ff; transform: translateY(-5px); box-shadow: 0 5px 15px rgba(88, 166, 255, 0.2); }
+
     /* بطاقة الجهاز */
-    .device-card {
-        background: #161b22; border: 1px solid #30363d; border-radius: 12px; 
-        padding: 18px; margin-bottom: 15px; border-right: 4px solid #30363d;
-    }
-    .card-paid { border-right: 4px solid #3fb950 !important; }
+    .device-card { background: #161b22; border: 1px solid #30363d; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+    .card-livre { border-right: 6px solid #3fb950; }
     
-    .warranty-tag { padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; display: inline-block; margin-top: 10px; }
-    .w-active { background: rgba(63, 185, 80, 0.1); color: #3fb950; border: 1px solid #3fb950; }
-    .w-expired { background: rgba(248, 81, 73, 0.1); color: #f85149; border: 1px solid #f85149; text-decoration: line-through; }
-
-    .contact-btn {
-        text-decoration: none; color: white !important; background: #21262d;
-        border: 1px solid #30363d; padding: 8px 15px; border-radius: 8px;
-        font-size: 0.9rem; transition: 0.3s; display: inline-block;
-    }
-    .contact-btn:hover { border-color: #58a6ff; background: #30363d; }
+    /* الضمان */
+    .w-active { color: #3fb950; font-weight: bold; font-family: 'Cairo'; border: 1px solid #3fb950; padding: 5px 10px; border-radius: 8px; display: inline-block; }
+    .w-expired { color: #f85149; text-decoration: line-through; border: 1px solid #f85149; padding: 5px 10px; border-radius: 8px; display: inline-block; opacity: 0.7; }
+    
+    .stTextInput input { background: #0d1117 !important; border: 1px solid #30363d !important; color: white !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 5. الهيدر ---
-h_col1, h_col2 = st.columns([2, 1])
-with h_col1:
-    greeting = "صباح الخير ☀️" if datetime.now().hour < 12 else "مساء الخير 🌙"
-    st.markdown(f"<div style='color:#8b949e; font-family:Cairo;'>{greeting}، مرحبا بك في</div>", unsafe_allow_html=True)
-    st.markdown("<div class='hero-title'>INFODOC TECHNOLOGY</div>", unsafe_allow_html=True)
-with h_col2:
-    try: is_open = db.reference("shop_settings/is_open").get()
-    except: is_open = True
-    st.markdown(f"<div style='text-align:right; margin-top:20px;'><span class='{'status-online' if is_open else 'status-offline'}'>{'ATELIER OUVERT' if is_open else 'ATELIER FERMÉ'}</span></div>", unsafe_allow_html=True)
-
-# أزرار التواصل
+# --- 4. الترحيب والمعلومات العلوية ---
+curr_h = datetime.now().hour
+greet = "صباح الخير" if 5 <= curr_h < 12 else "مساء الخير"
 st.markdown(f"""
-    <div style="margin: 15px 0; display: flex; gap: 10px; flex-wrap: wrap;">
-        <a href="tel:0798661900" class="contact-btn">📞 0798661900</a>
-        <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="contact-btn">📍 Local</a>
-        <a href="https://www.facebook.com/InfoDoc" target="_blank" class="contact-btn">📘 Facebook</a>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-family: 'Cairo'; color: #8b949e;">
+        <div>{greet} زبوننا الكريم | الوقت الآن: {datetime.now().strftime('%H:%M')}</div>
+        <div style="font-weight: 900; color: #58a6ff;">CHLEF, ALGERIA</div>
     </div>
 """, unsafe_allow_html=True)
 
-st.divider()
+# الهيدر مع الوميض
+try: is_open = db.reference("shop_settings/is_open").get()
+except: is_open = True
+status_html = f'<span class="status-open">ATELIER OUVERT</span>' if is_open else f'<span class="status-closed">ATELIER FERMÉ</span>'
 
-# --- 6. التتبع والاستعلام ---
-phone_input = st.text_input("🔍 أدخل رقم هاتفك للمتابعة:", placeholder="0XXXXXXXXX")
+st.markdown(f"""
+    <div class="hero-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div class="main-title">INFODOC TECHNOLOGY</div>
+            {status_html}
+        </div>
+        <div class="contact-grid">
+            <a href="tel:0798661900" class="premium-btn">📞 0798661900</a>
+            <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="premium-btn">📍 موقع المحل (الشلف)</a>
+            <a href="https://www.facebook.com/InfoDoc" target="_blank" class="premium-btn">📘 Facebook Page</a>
+            <a href="https://www.tiktok.com/@infodoc02" target="_blank" class="premium-btn">📱 TikTok Channel</a>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
 
-if phone_input:
-    phone_n = normalize_phone(phone_input)
+# --- 5. البحث والتتبع ---
+st.markdown("### 🔍 تتبع حالة جهازك")
+phone_raw = st.text_input("أدخل رقم هاتفك المسجل (مثال: 0798661900):", key="search_input")
+
+if phone_raw:
+    phone_n = normalize_phone(phone_raw)
     if len(phone_n) >= 9:
-        raw_data = db.reference("atelier").get()
-        if raw_data:
-            my_devices = [dict(v, _id=k) for k, v in raw_data.items() if normalize_phone(v.get("Telephone", "")).endswith(phone_n[-9:])]
+        raw_db = db.reference("atelier").get()
+        if raw_db:
+            my_devices = [dict(v, _id=k) for k, v in raw_db.items() if normalize_phone(v.get("Telephone", "")).endswith(phone_n[-9:])]
             
             if not my_devices:
-                st.info("لا توجد أجهزة مسجلة بهذا الرقم.")
+                st.warning("⚠️ لا توجد أجهزة مسجلة بهذا الرقم.")
             else:
-                # أ) التحقق من الربط بالتليغرام (زر واحد فقط)
-                is_linked = any(str(dev.get("Telegram_ID", "")).strip() != "" for dev in my_devices)
-                
-                if not is_linked:
-                    st.warning("⚠️ حسابك غير مرتبط بالتليغرام لتلقي الإشعارات.")
+                # أ) زر التليغرام الموحد (يظهر فقط إذا لم يكن هناك أي جهاز مربوط)
+                already_linked = any(str(d.get("Telegram_ID", "")).strip() != "" for d in my_devices)
+                if not already_linked:
+                    st.info("💡 لم تصلك إشعارات بعد؟ اربط حسابك بالتليغرام الآن.")
                     tg_url = f"https://t.me/{st.secrets.get('BOT_USERNAME')}?start={phone_n}"
-                    st.link_button("🚀 ربط الحساب بالتليغرام الآن", tg_url, type="primary", use_container_width=True)
-                else:
-                    st.success("✅ حسابك مرتبط بنجاح، ستصلك الإشعارات فوراً.")
-
-                st.markdown("---")
+                    st.link_button("🚀 ربط الحساب بالتليغرام", tg_url, type="primary", use_container_width=True)
                 
                 # ب) عرض الأجهزة
-                for dev in sorted(my_devices, key=lambda x: int(x.get("ID", 0)), reverse=True):
-                    status = str(dev.get("Statut", "")).upper()
+                for d in sorted(my_devices, key=lambda x: int(x.get("ID", 0)), reverse=True):
+                    stat = str(d.get("Statut", "")).upper()
                     
-                    # حساب النسبة المئوية
-                    prog_map = {"EN ATTENTE": 0, "ENCOURS": 33, "REPARABLE": 66, "PRET": 100, "LIVRE ET PAYE": 100}
-                    prog = prog_map.get(status, 0)
-                    color = "#3fb950" if prog == 100 else "#58a6ff" if prog > 0 else "#8b949e"
-                    card_class = "card-paid" if status == "LIVRE ET PAYE" else ""
-
-                    # حساب الضمان
-                    w_info = check_warranty(status, dev.get("Date_Sortie"))
-                    warranty_html = ""
+                    # منطق شريط التقدم
+                    p_map = {"EN ATTENTE": 0, "ENCOURS": 33, "REPARABLE": 66, "PRET": 100, "LIVRE ET PAYE": 100}
+                    prog = p_map.get(stat, 0)
+                    prog_color = "#3fb950" if prog == 100 else "#1f6feb" if prog > 0 else "#8b949e"
+                    
+                    # منطق الضمان (فقط لـ LIVRE ET PAYE)
+                    w_info = get_warranty_info(stat, d.get("Date_Sortie"))
+                    w_html = ""
                     if w_info:
-                        w_cls = "w-expired" if w_info["expired"] else "w-active"
-                        w_txt = "ضمان منتهي" if w_info["expired"] else f"الضمان ساري إلى: {w_info['expiry']}"
-                        warranty_html = f"<div class='warranty-tag {w_cls}'>🛡️ {w_txt}</div>"
+                        w_class = "w-expired" if w_info["is_expired"] else "w-active"
+                        w_text = f"🛡️ ضمان منتهي ({w_info['expiry']})" if w_info["is_expired"] else f"🛡️ ضمان ساري إلى: {w_info['expiry']}"
+                        w_html = f'<div class="{w_class}">{w_text}</div>'
+
+                    card_cls = "card-livre" if stat == "LIVRE ET PAYE" else ""
 
                     st.markdown(f"""
-                        <div class="device-card {card_class}">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <b style="font-family:Cairo; color:#58a6ff;">#{dev.get('ID')} | {dev.get('Appareil')}</b>
-                                <span style="font-size:0.8rem; background:{color}; color:white; padding:2px 8px; border-radius:4px;">{status}</span>
+                        <div class="device-card {card_cls}">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <b style="font-family: 'Orbitron'; color: #58a6ff; font-size: 1.1rem;">#{d.get('ID')} | {d.get('Appareil')}</b>
+                                <span style="background: {prog_color}; padding: 4px 12px; border-radius: 5px; font-weight: bold; font-size: 0.8rem;">{stat}</span>
                             </div>
-                            <div style="margin-top:10px;">
-                                <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#8b949e;">
-                                    <span>الحالة: {prog}%</span>
-                                    <span>المشكلة: {dev.get('Panne')}</span>
+                            <div style="margin: 15px 0;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #8b949e; margin-bottom: 5px;">
+                                    <span>تقدم العمل: {prog}%</span>
+                                    <span>العطل: {d.get('Panne')}</span>
                                 </div>
-                                <div style="background:#21262d; height:6px; border-radius:10px; margin-top:4px;">
-                                    <div style="background:{color}; width:{prog}%; height:100%; border-radius:10px;"></div>
+                                <div style="width: 100%; background: #21262d; height: 10px; border-radius: 10px; overflow: hidden;">
+                                    <div style="width: {prog}%; background: {prog_color}; height: 100%; transition: 0.5s;"></div>
                                 </div>
                             </div>
-                            <div style="margin-top:10px; display:grid; grid-template-columns:1fr 1fr; font-size:0.85rem; gap:5px;">
-                                <span>📅 دخول: {dev.get('Date_Entree')}</span>
-                                <span>🕒 خروج: {dev.get('Date_Sortie', '---')}</span>
-                                <b style="color:white;">💰 السعر: {dev.get('Prix')} دج</b>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; font-family: 'Cairo';">
+                                <div>📅 الدخول: {d.get('Date_Entree')}</div>
+                                <div>🕒 الخروج: {d.get('Date_Sortie', '---')}</div>
+                                <div style="color: #58a6ff; font-weight: bold;">💰 التكلفة: {d.get('Prix')} دج</div>
+                                <div>{w_html}</div>
                             </div>
-                            {warranty_html}
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    # زر تحميل الفاتورة (يظهر للكل)
-                    if st.button(f"📄 تحميل بيانات الجهاز #{dev.get('ID')}", key=f"btn_{dev.get('ID')}"):
-                        summary = f"ID: {dev.get('ID')}\nDevice: {dev.get('Appareil')}\nStatus: {status}\nPrice: {dev.get('Prix')} DZD"
-                        st.download_button("تأكيد التحميل", summary, file_name=f"InfoDoc_{dev.get('ID')}.txt")
+                    # زر تحميل الفاتورة
+                    inv_data = f"INFODOC TECHNOLOGY\nID: {d.get('ID')}\nDevice: {d.get('Appareil')}\nPrice: {d.get('Prix')} DZD\nWarranty: 1 Month from {d.get('Date_Sortie')}"
+                    st.download_button(f"📄 تحميل فاتورة #{d.get('ID')}", inv_data, file_name=f"InfoDoc_{d.get('ID')}.txt", key=f"inv_{d.get('ID')}")
 
-# --- 7. بوت التليغرام ---
-def run_bot():
+# --- 6. بوت التليغرام (خلفية) ---
+def start_bot():
     token = st.secrets.get("TELEGRAM_TOKEN")
     if not token: return
     bot = telebot.TeleBot(token)
     @bot.message_handler(commands=['start'])
-    def sync(m):
+    def handle(m):
         args = m.text.split()
         if len(args) > 1:
             p = normalize_phone(args[1])
@@ -188,9 +195,9 @@ def run_bot():
                 for k, v in data.items():
                     if normalize_phone(v.get("Telephone", "")).endswith(p[-9:]):
                         ref.child(k).update({"Telegram_ID": str(m.chat.id)})
-                bot.send_message(m.chat.id, "✅ تم ربط جهازك! ستصلك رسالة عند التغيير.")
+                bot.reply_to(m, "✅ تم ربط جهازك بنجاح! ستصلك الإشعارات هنا فور جاهزيته.")
     bot.polling(none_stop=True)
 
-if "bot_active" not in st.session_state:
-    threading.Thread(target=run_bot, daemon=True).start()
-    st.session_state["bot_active"] = True
+if "bot_running" not in st.session_state:
+    threading.Thread(target=start_bot, daemon=True).start()
+    st.session_state["bot_running"] = True
