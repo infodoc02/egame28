@@ -164,11 +164,25 @@ st.markdown('<div style="text-align: center; color: #8b949e; margin-bottom: 20px
 
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@500;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
     
-    .stApp {
-        background: #010409;
-        color: #FFFFFF !important;
+    .stApp { background: #0d1117; color: white; }
+    .hero-box { background: linear-gradient(180deg, #0d1117 0%, #161b22 100%); border: 1px solid #30363d; border-radius: 15px; padding: 25px; margin-bottom: 20px; }
+    .main-title { font-family: 'Orbitron'; color: #58a6ff; font-size: 2.2rem; font-weight: 900; }
+    }
+
+    /* أنيميشن زر التلغرام العلوي */
+    @keyframes pulse-blue {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 158, 217, 0.7); }
+        70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(34, 158, 217, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 158, 217, 0); }
+    }
+
+        .tg-top-btn {
+        display: block; background: #229ED9; color: white !important; text-align: center;
+        padding: 15px; border-radius: 12px; text-decoration: none; font-family: 'Cairo';
+        font-weight: bold; margin-bottom: 20px; animation: pulse-blue 2s infinite;
+        border: 1px solid rgba(255,255,255,0.1);
     }
 
     /* Animations */
@@ -233,6 +247,7 @@ st.markdown("""
     .stTextInput input { background-color: #0d1117 !important; color: white !important; border: 1px solid #30363d !important; }
     </style>
     """, unsafe_allow_html=True)
+
 
 # --- Header Section ---
 shop_open = shop_status
