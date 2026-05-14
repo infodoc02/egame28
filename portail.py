@@ -53,7 +53,6 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
     .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
     
-    /* أنيميشن العنوان الخرافي */
     .main-title {
         font-family: 'Orbitron', sans-serif;
         font-size: 3.5rem;
@@ -83,22 +82,68 @@ st.markdown("""
         to { text-shadow: 0 0 20px #58a6ff, 0 0 40px #58a6ff, 0 0 60px #005cc5; transform: scale(1.02); }
     }
 
+    /* تحسين أزرار التواصل */
+    .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 15px;
+        margin-top: 25px;
+    }
     .contact-btn {
-        text-decoration: none; color: white !important; background: #21262d; 
-        padding: 12px; border-radius: 10px; text-align: center; 
-        border: 1px solid #30363d; transition: all 0.3s ease;
-        display: flex; align-items: center; justify-content: center; gap: 8px;
+        text-decoration: none !important;
+        color: white !important;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px;
+        border-radius: 12px;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        font-weight: bold;
+        backdrop-filter: blur(5px);
     }
     .contact-btn:hover {
         border-color: #58a6ff;
-        box-shadow: 0 0 20px rgba(88, 166, 255, 0.4);
-        transform: translateY(-3px);
+        background: rgba(88, 166, 255, 0.1);
+        box-shadow: 0 8px 25px rgba(88, 166, 255, 0.2);
+        transform: translateY(-5px);
     }
 
-    .status-open { color: #3fb950; border: 2px solid #3fb950; padding: 5px 15px; border-radius: 8px; animation: blink-green 2s infinite; font-weight: bold; font-family: 'Orbitron'; }
-    .status-closed { color: #f85149; border: 2px solid #f85149; padding: 5px 15px; border-radius: 8px; animation: blink-red 2s infinite; font-weight: bold; font-family: 'Orbitron'; }
-    @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.6; } }
-    
+    /* حالة المحل المضيئة */
+    .status-badge {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 900;
+        padding: 8px 25px;
+        border-radius: 50px;
+        display: inline-block;
+        letter-spacing: 2px;
+    }
+    .status-open {
+        color: #00ff41;
+        border: 2px solid #00ff41;
+        box-shadow: 0 0 10px #00ff41, inset 0 0 5px #00ff41;
+        animation: neon-pulse-green 1.5s infinite;
+    }
+    .status-closed {
+        color: #ff3131;
+        border: 2px solid #ff3131;
+        box-shadow: 0 0 10px #ff3131, inset 0 0 5px #ff3131;
+        animation: neon-pulse-red 1.5s infinite;
+    }
+    @keyframes neon-pulse-green {
+        0%, 100% { box-shadow: 0 0 15px #00ff41, inset 0 0 10px #00ff41; opacity: 1; }
+        50% { box-shadow: 0 0 30px #00ff41, inset 0 0 15px #00ff41; opacity: 0.8; }
+    }
+    @keyframes neon-pulse-red {
+        0%, 100% { box-shadow: 0 0 15px #ff3131, inset 0 0 10px #ff3131; opacity: 1; }
+        50% { box-shadow: 0 0 30px #ff3131, inset 0 0 15px #ff3131; opacity: 0.8; }
+    }
+
     .device-card { background: #161b22; border: 1px solid #30363d; border-radius: 15px; padding: 20px; margin-bottom: 25px; transition: 0.3s; }
     .device-card:hover { border-color: #58a6ff; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
     
@@ -132,32 +177,31 @@ curr_h = datetime.now().hour
 greet = "صباح الخير" if 5 <= curr_h < 12 else "مساء الخير"
 try: is_open = db.reference("shop_settings/is_open").get()
 except: is_open = True
-status_html = '<span class="status-open">OPEN</span>' if is_open else '<span class="status-closed">CLOSED</span>'
+status_html = '<span class="status-badge status-open">OPEN</span>' if is_open else '<span class="status-badge status-closed">CLOSED</span>'
 
 st.markdown(f"""
     <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #8b949e; margin-bottom: 10px;">
         <div>{greet} زبوننا الكريم | {datetime.now().strftime('%Y-%m-%d %H:%M')}</div>
         <div style="color: #58a6ff; font-weight: bold;">CHLEF, ALGERIA</div>
     </div>
-    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 15px; padding: 25px; margin-bottom: 20px;">
-        <div style="text-align: center; margin-bottom: 20px;">
+    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 20px; padding: 30px; margin-bottom: 25px; border-top: 4px solid #58a6ff;">
+        <div style="text-align: center;">
             <div class="main-title">INFODOC</div>
             <div class="sub-title">Vente & Reparation</div>
-            <div style="display: flex; justify-content: center; margin-top: 10px;">
+            <div style="margin: 20px 0;">
                 {status_html}
             </div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 25px;">
-            <a href="tel:0798661900" class="contact-btn">📞 اتصل بنا</a>
-            <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="contact-btn">📍 موقعنا</a>
-            <a href="https://www.facebook.com/100095433977319/" target="_blank" class="contact-btn">📘 فيسبوك</a>
-            <a href="https://www.tiktok.com/@infodoc02" target="_blank" class="contact-btn">📱 تيك توك</a>
+        <div class="contact-grid">
+            <a href="tel:0798661900" class="contact-btn"><span style="font-size:1.5rem;">📞</span><span>اتصل بنا</span></a>
+            <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="contact-btn"><span style="font-size:1.5rem;">📍</span><span>موقعنا</span></a>
+            <a href="https://www.facebook.com/100095433977319/" target="_blank" class="contact-btn"><span style="font-size:1.5rem;">📘</span><span>فيسبوك</span></a>
+            <a href="https://www.tiktok.com/@infodoc02" target="_blank" class="contact-btn"><span style="font-size:1.5rem;">📱</span><span>تيك توك</span></a>
         </div>
     </div>
 """, unsafe_allow_html=True)
 
-# باقي الكود كما هو تماماً دون أي تغيير في المنطق...
-# --- 5. البحث وتدفق البيانات ---
+# --- باقي الكود كما هو تماماً ---
 phone_raw = st.text_input("🔍 أدخل رقم هاتفك لتتبع أجهزتك:", placeholder="0XXXXXXXXX")
 
 if phone_raw:
