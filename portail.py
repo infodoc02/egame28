@@ -6,8 +6,8 @@ from datetime import datetime
 import threading
 import telebot
 
-# --- 1. الإعدادات الأساسية ---
-st.set_page_config(page_title="InfoDoc - Client Portal", page_icon="📱", layout="wide")
+# --- 1. الإعدادات والربط ---
+st.set_page_config(page_title="InfoDoc - Client Portal", layout="wide")
 
 @st.cache_resource
 def init_db():
@@ -24,7 +24,7 @@ def init_db():
 
 init_db()
 
-# --- 2. الدوال المنطقية ---
+# --- 2. الدوال المساعدة ---
 def normalize_phone(phone: str) -> str:
     p = re.sub(r"\D", "", str(phone or ""))
     if p.startswith("213"): p = "0" + p[3:]
@@ -34,153 +34,132 @@ def normalize_phone(phone: str) -> str:
 def get_warranty_stats(date_sortie_str):
     if not date_sortie_str or str(date_sortie_str).strip() in ["", "---", "None"]:
         return None
-    
-    # تنظيف النص من أي فراغات إضافية
-    date_clean = str(date_sortie_str).strip()
-    
-    # قائمة الصيغ: أضفنا صيغ تشمل الوقت (الساعات والدقائق)
-    date_formats = [
-        "%Y-%m-%d %H:%M",    # الصيغة التي لديك: 2026-05-07 13:13
-        "%d-%m-%Y %H:%M",    # صيغة يوم-شهر-سنة مع وقت
-        "%Y-%m-%d",          # تاريخ فقط
-        "%d-%m-%Y",          # تاريخ فقط (يوم أولاً)
-        "%d/%m/%Y",          # تاريخ بشرطة مائلة
-        "%d/%m/%Y %H:%M"     # تاريخ مائل مع وقت
-    ]
-    
+    date_formats = ["%Y-%m-%d %H:%M", "%d-%m-%Y %H:%M", "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%d/%m/%Y %H:%M"]
     for fmt in date_formats:
         try:
-            # محاولة تحويل النص إلى كائن تاريخ
-            date_s = datetime.strptime(date_clean, fmt)
-            
-            # حساب الفرق بالأيام
+            date_s = datetime.strptime(str(date_sortie_str).strip(), fmt)
             diff_days = (datetime.now() - date_s).days
-            
-            # حساب الأيام المتبقية من شهر (30 يوم)
             remaining_days = max(30 - diff_days, 0)
             percent = (remaining_days / 30) * 100
-            expired = diff_days > 30
-            
-            return {"percent": percent, "is_expired": expired, "days_left": remaining_days}
-        except ValueError:
-            continue  # إذا فشلت هذه الصيغة، جرب التالية
-            
+            return {"percent": percent, "is_expired": diff_days > 30, "days_left": remaining_days}
+        except: continue
     return None
 
-# --- 3. تصميم الـ CSS ---
+# --- 3. تصميم الـ CSS المخصص ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+    .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
     
-    .stApp { background: #0d1117; color: white; }
-    
-    /* أنيميشن زر التلغرام */
-    @keyframes pulse-blue {
-        0% { transform: scale(1); box-shadow: 0 0 10px rgba(34, 158, 217, 0.4); }
-        50% { transform: scale(1.02); box-shadow: 0 0 25px rgba(34, 158, 217, 0.8); }
-        100% { transform: scale(1); box-shadow: 0 0 10px rgba(34, 158, 217, 0.4); }
+    /* نمط الكارت (المربع المستقل) */
+    .device-card { 
+        background: #161b22; 
+        border: 1px solid #30363d; 
+        border-radius: 12px; 
+        padding: 20px; 
+        margin-bottom: 25px; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     }
-
+    
+    /* زر التلغرام */
     .tg-link-btn {
         display: block; background: #229ED9; color: white !important; 
-        text-align: center; padding: 18px; border-radius: 15px; 
-        text-decoration: none; font-family: 'Cairo'; font-weight: 900;
-        margin: 20px 0; animation: pulse-blue 2s infinite;
-        font-size: 1.1rem; border: 2px solid rgba(255,255,255,0.2);
+        text-align: center; padding: 15px; border-radius: 10px; 
+        text-decoration: none; font-weight: 900; margin-bottom: 20px;
     }
 
-    .device-card { background: #161b22; border: 1px solid #30363d; border-radius: 15px; padding: 20px; margin-bottom: 20px; }
-    .w-expired-box { background: rgba(248, 81, 73, 0.1); color: #f85149; font-weight: bold; font-family: 'Cairo'; border: 1px solid #f85149; padding: 12px; border-radius: 10px; text-align: center; margin-top: 10px; }
+    /* نصوص التنبيه */
+    .exp-red { color: #f85149; font-weight: 900; border: 2px solid #f85149; padding: 10px; border-radius: 8px; text-align: center; margin-top: 10px; }
+    
+    /* بادج الحالة */
+    .badge { padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. واجهة التطبيق ---
-st.markdown('<h1 style="text-align:center; font-family:Orbitron; color:#58a6ff;">INFODOC TECHNOLOGY</h1>', unsafe_allow_html=True)
+# --- 4. واجهة المستخدم ---
+st.markdown('<h1 style="text-align:center; color:#58a6ff;">INFODOC TECHNOLOGY</h1>', unsafe_allow_html=True)
 
-phone_raw = st.text_input("🔍 أدخل رقم هاتفك لتتبع أجهزتك:", key="search_input")
-
-status_config = {
-    "En Cours": {"color": "#1f6feb", "prog": 33},
-    "Réparable": {"color": "#39c5bb", "prog": 66},
-    "Prêt": {"color": "#3fb950", "prog": 100},
-    "Non Réparable": {"color": "#f85149", "prog": 100},
-    "Annulé": {"color": "#8b949e", "prog": 0}
-}
+phone_raw = st.text_input("🔍 أدخل رقم هاتفك المعتمد:", placeholder="0XXXXXXXXX")
 
 if phone_raw:
     phone_n = normalize_phone(phone_raw)
     if len(phone_n) >= 9:
         raw_db = db.reference("atelier").get()
         if raw_db:
-            # جلب الأجهزة المرتبطة بالرقم
-            my_devices = [dict(v, _id=k) for k, v in raw_db.items() if normalize_phone(v.get("Telephone", "")).endswith(phone_n[-9:])]
+            # فلترة الأجهزة وتحديد الترتيب (الأجهزة بدون تاريخ خروج أولاً)
+            all_devices = [dict(v, _id=k) for k, v in raw_db.items() if normalize_phone(v.get("Telephone", "")).endswith(phone_n[-9:])]
             
-            if not my_devices:
-                st.warning("⚠️ لا توجد أجهزة مسجلة بهذا الرقم.")
+            if not all_devices:
+                st.warning("⚠️ لم يتم العثور على أجهزة لهذا الرقم.")
             else:
-                # --- منطق زر التلغرام (يظهر إذا وجدنا جهاز واحد على الأقل غير مربوط) ---
-                has_unlinked = any(str(d.get("Telegram_ID", "")).strip() in ["", "None"] for d in my_devices)
-                if has_unlinked:
+                # ترتيب: الأجهزة التي ليس لها تاريخ خروج (أو تاريخها فارغ) تأتي أولاً
+                sorted_devices = sorted(all_devices, key=lambda x: (str(x.get("Date_Sortie", "")) not in ["", "---", "None"], x.get("ID", 0)), reverse=False)
+
+                # زر التلغرام (يظهر إذا لم يتم الربط)
+                if any(str(d.get("Telegram_ID", "")).strip() in ["", "None"] for d in all_devices):
                     tg_url = f"https://t.me/{st.secrets.get('BOT_USERNAME')}?start={phone_n}"
-                    st.markdown(f'<a href="{tg_url}" target="_blank" class="tg-link-btn">🚀 ربط الهاتف بالتلغرام لتلقي إشعارات فورية</a>', unsafe_allow_html=True)
-                
-                for d in sorted(my_devices, key=lambda x: int(x.get("ID", 0)), reverse=True):
+                    st.markdown(f'<a href="{tg_url}" target="_blank" class="tg-link-btn">📱 ربط الحساب بالتلغرام لتلقي الإشعارات</a>', unsafe_allow_html=True)
+
+                for d in sorted_devices:
                     stat = str(d.get("Statut", "En Cours"))
-                    # التحقق إذا كانت الحالة هي تسليم (بأي شكل من الأشكال)
                     is_delivered = "Livré" in stat
-                    cfg = status_config.get(stat, {"color": "#a371f7", "prog": 100})
                     
+                    # تحديد لون الحالة وبادج الحالة
+                    bg_color = "#30363d" # الافتراضي (رمادي داكن)
+                    if stat == "Prêt": bg_color = "#238636" # أخضر
+                    elif stat == "Annulé": bg_color = "#da3633" # أحمر
+                    elif is_delivered: bg_color = "#6e7681" # رمادي (تم التسليم)
+
                     st.markdown(f"""
-                        <div class="device-card" style="border-right: 6px solid {cfg['color'] if not is_delivered else '#3fb950'};">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <b style="font-family: 'Orbitron'; color: #58a6ff; font-size: 1.1rem;">#{d.get('ID')} | {d.get('Appareil')}</b>
-                                <span style="background: {cfg['color'] if not is_delivered else '#3fb950'}; color: #0d1117; padding: 4px 12px; border-radius: 5px; font-weight: bold; font-size: 0.8rem;">{stat.upper()}</span>
+                        <div class="device-card" style="border-top: 4px solid {bg_color};">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div>
+                                    <h3 style="margin:0; color:#58a6ff;">{d.get('Appareil')}</h3>
+                                    <code style="color:#8b949e;">رقم التذكرة: #{d.get('ID')}</code>
+                                </div>
+                                <span class="badge" style="background:{bg_color}; color:white;">{stat.upper()}</span>
                             </div>
-                            <div style="margin: 15px 0;">
+                            <hr style="border: 0.1px solid #30363d; margin: 15px 0;">
                     """, unsafe_allow_html=True)
 
                     if is_delivered:
-                        # --- شريط الضمان ---
+                        # --- نظام الضمان (أصفر وينقص) ---
                         w = get_warranty_stats(d.get("Date_Sortie"))
                         if w:
                             if w["is_expired"]:
-                                st.markdown('<div class="w-expired-box">❌ GARANTIE EXPIRÉE (الضمان منتهي)</div>', unsafe_allow_html=True)
+                                st.markdown('<div class="exp-red">❌ GARANTIE EXPIRÉE (الضمان منتهي)</div>', unsafe_allow_html=True)
                             else:
                                 st.markdown(f"""
-                                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #3fb950; margin-bottom: 8px; font-family:'Cairo'; font-weight:bold;">
-                                        <span>🛡️ شريط الضمان (متبقي: {int(w['days_left'])} يوم)</span>
-                                        <span>{int(w['percent'])}%</span>
-                                    </div>
-                                    <div style="width: 100%; background: #21262d; height: 12px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(63, 185, 80, 0.3);">
-                                        <div style="width: {w['percent']}%; background: linear-gradient(90deg, #3fb950, #2ea043); height: 100%; transition: 1.5s;"></div>
+                                    <div style="margin-bottom:5px; color:#d29922; font-weight:bold;">🛡️ شريط الضمان (متبقي {int(w['days_left'])} يوم)</div>
+                                    <div style="width: 100%; background: #21262d; height: 12px; border-radius: 10px; overflow: hidden;">
+                                        <div style="width: {w['percent']}%; background: #d29922; height: 100%; transition: 1s;"></div>
                                     </div>
                                 """, unsafe_allow_html=True)
                         else:
-                            st.info("🕒 في انتظار تسجيل تاريخ الخروج لتفعيل الضمان.")
+                            st.info("🕒 الضمان يبدأ فور تسجيل تاريخ الخروج.")
                     else:
-                        # --- شريط الصيانة ---
-                        prog = cfg.get("prog", 0)
+                        # --- نظام الصيانة (أخضر ويتعمر) ---
+                        prog = 33 if stat == "En Cours" else 66 if stat == "Réparable" else 100
                         st.markdown(f"""
-                            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #8b949e; margin-bottom: 5px;">
-                                <span>🛠️ تقدم عملية الصيانة</span>
-                                <span>{prog}%</span>
+                            <div style="margin-bottom:5px; color:#238636; font-weight:bold;">🛠️ تقدم الصيانة</div>
+                            <div style="width: 100%; background: #21262d; height: 12px; border-radius: 10px; overflow: hidden;">
+                                <div style="width: {prog}%; background: #238636; height: 100%; transition: 1s;"></div>
                             </div>
-                            <div style="width: 100%; background: #21262d; height: 10px; border-radius: 10px; overflow: hidden;">
-                                <div style="width: {prog}%; background: {cfg['color']}; height: 100%;"></div>
-                            </div>
-                            <div style="margin-top:10px; font-size:0.9rem; color:#8b949e;">⚠️ المشكل: {d.get('Panne')}</div>
+                            <div style="margin-top:10px; font-size:0.9rem; color:#8b949e;"><b>العطل المذكور:</b> {d.get('Panne')}</div>
                         """, unsafe_allow_html=True)
 
                     st.markdown(f"""
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem; font-family: 'Cairo'; margin-top: 15px; border-top: 1px solid #30363d; padding-top: 10px;">
-                                <div>📅 دخول: {d.get('Date_Entree')}</div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem; margin-top: 15px; background:#0d1117; padding:10px; border-radius:8px;">
+                                <div>📅 استلام: {d.get('Date_Entree')}</div>
                                 <div>🕒 خروج: {d.get('Date_Sortie', '---')}</div>
-                                <div style="color: #58a6ff; font-weight: bold;">💰 السعر: {d.get('Prix')} دج</div>
+                                <div style="color: #58a6ff; font-weight: bold; font-size:1.1rem; grid-column: span 2; text-align:center; border-top:1px solid #30363d; padding-top:5px; margin-top:5px;">
+                                    المبلغ: {d.get('Prix')} دج
+                                </div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
 
-# --- 6. بوت التلغرام ---
+# --- 5. بوت التلغرام (نفس المنطق) ---
 def start_bot():
     token = st.secrets.get("TELEGRAM_TOKEN")
     if not token: return
