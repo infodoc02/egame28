@@ -1,3 +1,4 @@
+
 import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, db
@@ -170,18 +171,35 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# أزرار التواصل (تصحيح مشكلة المربعات باستخدام Columns)
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.markdown('<a href="tel:0798661900" class="custom-btn"><span style="font-size:2rem;">📞</span><b>اتصل بنا</b></a>', unsafe_allow_html=True)
-with col2:
-    st.markdown('<a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="custom-btn"><span style="font-size:2rem;">📍</span><b>موقعنا</b></a>', unsafe_allow_html=True)
-with col3:
-    st.markdown('<a href="https://www.facebook.com/100095433977319/" target="_blank" class="custom-btn"><span style="font-size:2rem;">📘</span><b>فيسبوك</b></a>', unsafe_allow_html=True)
-with col4:
-    st.markdown('<a href="https://www.tiktok.com/@infodoc02" target="_blank" class="custom-btn"><span style="font-size:2rem;">📱</span><b>تيك توك</b></a>', unsafe_allow_html=True)
+st.markdown(f"""
+    <div class="hero-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div class="main-title">INFODOC TECHNOLOGY</div>
+            <div class="{status_class}">{status_text}</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 15px;">
+            <div class="contact-item">📞 <b>الهاتف:</b> 0798661900</div>
+            <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" style="text-decoration: none;">
+                <div style="background: #238636; color: white; text-align: center; padding: 10px; border-radius: 8px; font-weight: bold; transition: 0.3s;">
+                    📍 اتبع المسار إلى المحل (Google Maps)
+                </div>
+            </a>
+            <div class="contact-item">🔵 <b>Facebook:</b> InfoDoc</div>
+            <div class="contact-item">⚫ <b>TikTok:</b> @infodoc02</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-st.markdown("<br>", unsafe_allow_html=True)
+# --- 6. الشروط الموضحة ---
+with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
+    st.markdown("""
+        <div style="text-align: right; direction: rtl; font-family: Cairo; line-height: 1.8;">
+            1️⃣ فحص الجهاز المرفوض تصليحه: <b>1000 دج</b>.<br>
+            2️⃣ صيانة البطاقة الأم تبدأ من <b>3000 دج</b>.<br>
+            3️⃣ الموافقة التلقائية بين 3000 و 4000 دج، ما فوق ذلك نتصل بك.<br>
+            4️⃣ يرجى ربط <b>Telegram</b> لتصلك الإشعارات فوراً.
+        </div>
+    """, unsafe_allow_html=True)
 
 # ==============================================================================
 # 6. نظام البحث وتتبع الأجهزة (Tracking System)
