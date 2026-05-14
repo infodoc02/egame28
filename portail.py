@@ -101,64 +101,59 @@ if phone_raw:
                     st.markdown(f'<a href="{tg_url}" target="_blank" class="tg-link-btn">📱 ربط الحساب بالتلغرام لتلقي الإشعارات</a>', unsafe_allow_html=True)
 
                 for d in sorted_devices:
-                    stat = str(d.get("Statut", "En Cours"))
-                    is_delivered = "Livré" in stat
-                    
-                    # تحديد لون الحالة وبادج الحالة
-                    bg_color = "#30363d" # الافتراضي (رمادي داكن)
-                    if stat == "Prêt": bg_color = "#238636" # أخضر
-                    elif stat == "Annulé": bg_color = "#da3633" # أحمر
-                    elif is_delivered: bg_color = "#6e7681" # رمادي (تم التسليم)
+                    # --- داخل حلقة التكرار للأجهزة (for d in sorted_devices) ---
 
-                    st.markdown(f"""
-                        <div class="device-card" style="border-top: 4px solid {bg_color};">
-                            <div style="display: flex; justify-content: space-between; align-items: start;">
-                                <div>
-                                    <h3 style="margin:0; color:#58a6ff;">{d.get('Appareil')}</h3>
-                                    <code style="color:#8b949e;">رقم التذكرة: #{d.get('ID')}</code>
-                                </div>
-                                <span class="badge" style="background:{bg_color}; color:white;">{stat.upper()}</span>
-                            </div>
-                            <hr style="border: 0.1px solid #30363d; margin: 15px 0;">
-                    """, unsafe_allow_html=True)
+stat = str(d.get("Statut", "En Cours"))
+is_delivered = "Livré" in stat
+bg_color = "#6e7681" if is_delivered else "#30363d" # رمادي إذا تم التسليم
 
-                    if is_delivered:
-                        # --- نظام الضمان (أصفر وينقص) ---
-                        w = get_warranty_stats(d.get("Date_Sortie"))
-                        if w:
-                            if w["is_expired"]:
-                                st.markdown('<div class="exp-red">❌ GARANTIE EXPIRÉE (الضمان منتهي)</div>', unsafe_allow_html=True)
-                            else:
-                                st.markdown(f"""
-                                    <div style="margin-bottom:5px; color:#d29922; font-weight:bold;">🛡️ شريط الضمان (متبقي {int(w['days_left'])} يوم)</div>
-                                    <div style="width: 100%; background: #21262d; height: 12px; border-radius: 10px; overflow: hidden;">
-                                        <div style="width: {w['percent']}%; background: #d29922; height: 100%; transition: 1s;"></div>
-                                    </div>
-                                """, unsafe_allow_html=True)
-                        else:
-                            st.info("🕒 الضمان يبدأ فور تسجيل تاريخ الخروج.")
-                    else:
-                        # --- نظام الصيانة (أخضر ويتعمر) ---
-                        prog = 33 if stat == "En Cours" else 66 if stat == "Réparable" else 100
-                        st.markdown(f"""
-                            <div style="margin-bottom:5px; color:#238636; font-weight:bold;">🛠️ تقدم الصيانة</div>
-                            <div style="width: 100%; background: #21262d; height: 12px; border-radius: 10px; overflow: hidden;">
-                                <div style="width: {prog}%; background: #238636; height: 100%; transition: 1s;"></div>
-                            </div>
-                            <div style="margin-top:10px; font-size:0.9rem; color:#8b949e;"><b>العطل المذكور:</b> {d.get('Panne')}</div>
-                        """, unsafe_allow_html=True)
+st.markdown(f"""
+    <div class="device-card" style="border-top: 4px solid {bg_color};">
+        <!-- الرأس: اسم الجهاز والحالة -->
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+            <div>
+                <h3 style="margin:0; color:#58a6ff; font-family:'Cairo';">{d.get('Appareil')}</h3>
+                <code style="color:#8b949e;">رقم التذكرة: #{d.get('ID')}</code>
+            </div>
+            <span class="badge" style="background:{bg_color}; color:white;">{stat.upper()}</span>
+        </div>
 
-                    st.markdown(f"""
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem; margin-top: 15px; background:#0d1117; padding:10px; border-radius:8px;">
-                                <div>📅 استلام: {d.get('Date_Entree')}</div>
-                                <div>🕒 خروج: {d.get('Date_Sortie', '---')}</div>
-                                <div style="color: #58a6ff; font-weight: bold; font-size:1.1rem; grid-column: span 2; text-align:center; border-top:1px solid #30363d; padding-top:5px; margin-top:5px;">
-                                    المبلغ: {d.get('Prix')} دج
-                                </div>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+        <!-- شريط الضمان أو الصيانة -->
+""")
 
+if is_delivered:
+    w = get_warranty_stats(d.get("Date_Sortie"))
+    if w:
+        if w["is_expired"]:
+            st.markdown('<div class="exp-red">❌ GARANTIE EXPIRÉE (الضمان منتهي)</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+                <div style="margin-bottom:5px; color:#d29922; font-weight:bold; font-size:0.9rem;">🛡️ شريط الضمان (متبقي {int(w['days_left'])} يوم)</div>
+                <div style="width: 100%; background: #21262d; height: 12px; border-radius: 10px; overflow: hidden; margin-bottom: 15px;">
+                    <div style="width: {w['percent']}%; background: #d29922; height: 100%; transition: 1s;"></div>
+                </div>
+            """, unsafe_allow_html=True)
+else:
+    # شريط الصيانة الأخضر
+    prog = 33 if stat == "En Cours" else 66 if stat == "Réparable" else 100
+    st.markdown(f"""
+        <div style="margin-bottom:5px; color:#238636; font-weight:bold; font-size:0.9rem;">🛠️ تقدم الصيانة</div>
+        <div style="width: 100%; background: #21262d; height: 12px; border-radius: 10px; overflow: hidden; margin-bottom: 10px;">
+            <div style="width: {prog}%; background: #238636; height: 100%;"></div>
+        </div>
+    """, unsafe_allow_html=True)
+
+# القسم السفلي: التواريخ والمبلغ (داخل نفس المربع)
+st.markdown(f"""
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85rem; background:#0d1117; padding:12px; border-radius:8px; border: 1px solid #30363d;">
+            <div style="color:#8b949e;">📅 <b>استلام:</b> {d.get('Date_Entree')}</div>
+            <div style="color:#8b949e;">🕒 <b>خروج:</b> {d.get('Date_Sortie', '---')}</div>
+            <div style="color: #ffffff; font-weight: 900; font-size:1.2rem; grid-column: span 2; text-align:center; border-top:1px solid #30363d; padding-top:8px; margin-top:5px;">
+                المبلغ: <span style="color:#58a6ff;">{d.get('Prix')} دج</span>
+            </div>
+        </div>
+    </div> <!-- نهاية المربع الكبير -->
+""", unsafe_allow_html=True)
 # --- 5. بوت التلغرام (نفس المنطق) ---
 def start_bot():
     token = st.secrets.get("TELEGRAM_TOKEN")
