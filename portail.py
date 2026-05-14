@@ -6,8 +6,8 @@ from datetime import datetime
 import threading
 import telebot
 
-# --- 1. الإعدادات والربط ---
-st.set_page_config(page_title="InfoDoc - Client Portal", layout="wide")
+# --- 1. الإعدادات الأساسية ---
+st.set_page_config(page_title="InfoDoc - Client Portal", page_icon="📱", layout="wide")
 
 @st.cache_resource
 def init_db():
@@ -24,7 +24,7 @@ def init_db():
 
 init_db()
 
-# --- 2. الدوال المساعدة ---
+# --- 2. الدوال المنطقية ---
 def normalize_phone(phone: str) -> str:
     p = re.sub(r"\D", "", str(phone or ""))
     if p.startswith("213"): p = "0" + p[3:]
@@ -45,10 +45,11 @@ def get_warranty_stats(date_sortie_str):
         except: continue
     return None
 
-# --- 3. تصميم الـ CSS المخصص ---
+# --- 3. تصميم الـ CSS المطور ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
+    
     .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
     
     /* نمط الكارت (المربع المستقل) */
@@ -61,100 +62,105 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     }
     
-    /* زر التلغرام */
+    /* زر التلغرام المشع */
+    @keyframes pulse-blue {
+        0% { transform: scale(1); box-shadow: 0 0 10px rgba(34, 158, 217, 0.4); }
+        50% { transform: scale(1.02); box-shadow: 0 0 25px rgba(34, 158, 217, 0.8); }
+        100% { transform: scale(1); box-shadow: 0 0 10px rgba(34, 158, 217, 0.4); }
+    }
     .tg-link-btn {
         display: block; background: #229ED9; color: white !important; 
-        text-align: center; padding: 15px; border-radius: 10px; 
-        text-decoration: none; font-weight: 900; margin-bottom: 20px;
+        text-align: center; padding: 15px; border-radius: 12px; 
+        text-decoration: none; font-weight: 900; margin-bottom: 25px;
+        animation: pulse-blue 2s infinite; border: 1px solid rgba(255,255,255,0.1);
     }
 
-    /* نصوص التنبيه */
-    .exp-red { color: #f85149; font-weight: 900; border: 2px solid #f85149; padding: 10px; border-radius: 8px; text-align: center; margin-top: 10px; }
-    
-    /* بادج الحالة */
-    .badge { padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; }
+    .exp-red { background: rgba(248, 81, 73, 0.1); color: #f85149; font-weight: 900; border: 2px solid #f85149; padding: 12px; border-radius: 10px; text-align: center; }
+    .badge { padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; font-family: 'Orbitron'; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. واجهة المستخدم ---
-st.markdown('<h1 style="text-align:center; color:#58a6ff;">INFODOC TECHNOLOGY</h1>', unsafe_allow_html=True)
+# --- 4. واجهة التطبيق ---
+st.markdown('<h1 style="text-align:center; color:#58a6ff; font-family:Orbitron;">INFODOC TECHNOLOGY</h1>', unsafe_allow_html=True)
 
-phone_raw = st.text_input("🔍 أدخل رقم هاتفك المعتمد:", placeholder="0XXXXXXXXX")
+phone_raw = st.text_input("🔍 أدخل رقم هاتفك لتتبع أجهزتك:", placeholder="0XXXXXXXXX")
 
 if phone_raw:
     phone_n = normalize_phone(phone_raw)
     if len(phone_n) >= 9:
         raw_db = db.reference("atelier").get()
         if raw_db:
-            # فلترة الأجهزة وتحديد الترتيب (الأجهزة بدون تاريخ خروج أولاً)
             all_devices = [dict(v, _id=k) for k, v in raw_db.items() if normalize_phone(v.get("Telephone", "")).endswith(phone_n[-9:])]
             
             if not all_devices:
-                st.warning("⚠️ لم يتم العثور على أجهزة لهذا الرقم.")
+                st.warning("⚠️ لم يتم العثور على أجهزة مرتبطة بهذا الرقم.")
             else:
-                # ترتيب: الأجهزة التي ليس لها تاريخ خروج (أو تاريخها فارغ) تأتي أولاً
+                # ترتيب: الأجهزة بدون تاريخ خروج تظهر أولاً
                 sorted_devices = sorted(all_devices, key=lambda x: (str(x.get("Date_Sortie", "")) not in ["", "---", "None"], x.get("ID", 0)), reverse=False)
 
-                # زر التلغرام (يظهر إذا لم يتم الربط)
+                # زر التلغرام (يظهر فقط إذا وجد جهاز غير مربوط)
                 if any(str(d.get("Telegram_ID", "")).strip() in ["", "None"] for d in all_devices):
                     tg_url = f"https://t.me/{st.secrets.get('BOT_USERNAME')}?start={phone_n}"
-                    st.markdown(f'<a href="{tg_url}" target="_blank" class="tg-link-btn">📱 ربط الحساب بالتلغرام لتلقي الإشعارات</a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="{tg_url}" target="_blank" class="tg-link-btn">🚀 ربط الهاتف بالتلغرام لتلقي الإشعارات الفورية</a>', unsafe_allow_html=True)
 
                 for d in sorted_devices:
-                    # --- داخل حلقة التكرار للأجهزة (for d in sorted_devices) ---
+                    stat = str(d.get("Statut", "En Cours"))
+                    is_delivered = "Livré" in stat
+                    
+                    # تحديد الألوان بناءً على طلبك
+                    if stat == "Prêt": bg_color = "#238636" # أخضر
+                    elif stat == "Annulé": bg_color = "#da3633" # أحمر
+                    elif is_delivered: bg_color = "#6e7681" # رمادي
+                    else: bg_color = "#30363d" # رمادي داكن
 
-stat = str(d.get("Statut", "En Cours"))
-is_delivered = "Livré" in stat
-bg_color = "#6e7681" if is_delivered else "#30363d" # رمادي إذا تم التسليم
+                    # بداية المربع الموحد
+                    st.markdown(f"""
+                        <div class="device-card" style="border-top: 5px solid {bg_color};">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                                <div>
+                                    <h3 style="margin:0; color:#58a6ff; font-family:'Cairo';">{d.get('Appareil')}</h3>
+                                    <code style="color:#8b949e;">رقم التذكرة: #{d.get('ID')}</code>
+                                </div>
+                                <span class="badge" style="background:{bg_color}; color:white;">{stat.upper()}</span>
+                            </div>
+                    """, unsafe_allow_html=True)
 
-st.markdown(f"""
-    <div class="device-card" style="border-top: 4px solid {bg_color};">
-        <!-- الرأس: اسم الجهاز والحالة -->
-        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-            <div>
-                <h3 style="margin:0; color:#58a6ff; font-family:'Cairo';">{d.get('Appareil')}</h3>
-                <code style="color:#8b949e;">رقم التذكرة: #{d.get('ID')}</code>
-            </div>
-            <span class="badge" style="background:{bg_color}; color:white;">{stat.upper()}</span>
-        </div>
+                    # منطق الأشرطة
+                    if is_delivered:
+                        w = get_warranty_stats(d.get("Date_Sortie"))
+                        if w:
+                            if w["is_expired"]:
+                                st.markdown('<div class="exp-red" style="margin-bottom:15px;">❌ GARANTIE EXPIRÉE (الضمان منتهي)</div>', unsafe_allow_html=True)
+                            else:
+                                st.markdown(f"""
+                                    <div style="margin-bottom:8px; color:#d29922; font-weight:bold; font-size:0.95rem;">🛡️ شريط الضمان (متبقي {int(w['days_left'])} يوم)</div>
+                                    <div style="width: 100%; background: #21262d; height: 14px; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
+                                        <div style="width: {w['percent']}%; background: #d29922; height: 100%; transition: 1s;"></div>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                    else:
+                        prog_map = {"En Cours": 33, "Réparable": 66, "Prêt": 100}
+                        prog = prog_map.get(stat, 10)
+                        st.markdown(f"""
+                            <div style="margin-bottom:8px; color:#238636; font-weight:bold; font-size:0.95rem;">🛠️ تقدم الصيانة</div>
+                            <div style="width: 100%; background: #21262d; height: 14px; border-radius: 10px; overflow: hidden; margin-bottom: 15px;">
+                                <div style="width: {prog}%; background: #238636; height: 100%; transition: 1s;"></div>
+                            </div>
+                        """, unsafe_allow_html=True)
 
-        <!-- شريط الضمان أو الصيانة -->
-""")
+                    # المعلومات السفلية مدمجة في نفس المربع
+                    st.markdown(f"""
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; background:#0d1117; padding:15px; border-radius:10px; border: 1px solid #30363d;">
+                                <div style="color:#8b949e;">📅 <b>استلام:</b><br>{d.get('Date_Entree')}</div>
+                                <div style="color:#8b949e;">🕒 <b>خروج:</b><br>{d.get('Date_Sortie', '---')}</div>
+                                <div style="color: #ffffff; font-weight: 900; font-size:1.3rem; grid-column: span 2; text-align:center; border-top:1px solid #30363d; padding-top:10px; margin-top:5px;">
+                                    المبلغ: <span style="color:#58a6ff;">{d.get('Prix')} دج</span>
+                                </div>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
 
-if is_delivered:
-    w = get_warranty_stats(d.get("Date_Sortie"))
-    if w:
-        if w["is_expired"]:
-            st.markdown('<div class="exp-red">❌ GARANTIE EXPIRÉE (الضمان منتهي)</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-                <div style="margin-bottom:5px; color:#d29922; font-weight:bold; font-size:0.9rem;">🛡️ شريط الضمان (متبقي {int(w['days_left'])} يوم)</div>
-                <div style="width: 100%; background: #21262d; height: 12px; border-radius: 10px; overflow: hidden; margin-bottom: 15px;">
-                    <div style="width: {w['percent']}%; background: #d29922; height: 100%; transition: 1s;"></div>
-                </div>
-            """, unsafe_allow_html=True)
-else:
-    # شريط الصيانة الأخضر
-    prog = 33 if stat == "En Cours" else 66 if stat == "Réparable" else 100
-    st.markdown(f"""
-        <div style="margin-bottom:5px; color:#238636; font-weight:bold; font-size:0.9rem;">🛠️ تقدم الصيانة</div>
-        <div style="width: 100%; background: #21262d; height: 12px; border-radius: 10px; overflow: hidden; margin-bottom: 10px;">
-            <div style="width: {prog}%; background: #238636; height: 100%;"></div>
-        </div>
-    """, unsafe_allow_html=True)
-
-# القسم السفلي: التواريخ والمبلغ (داخل نفس المربع)
-st.markdown(f"""
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85rem; background:#0d1117; padding:12px; border-radius:8px; border: 1px solid #30363d;">
-            <div style="color:#8b949e;">📅 <b>استلام:</b> {d.get('Date_Entree')}</div>
-            <div style="color:#8b949e;">🕒 <b>خروج:</b> {d.get('Date_Sortie', '---')}</div>
-            <div style="color: #ffffff; font-weight: 900; font-size:1.2rem; grid-column: span 2; text-align:center; border-top:1px solid #30363d; padding-top:8px; margin-top:5px;">
-                المبلغ: <span style="color:#58a6ff;">{d.get('Prix')} دج</span>
-            </div>
-        </div>
-    </div> <!-- نهاية المربع الكبير -->
-""", unsafe_allow_html=True)
-# --- 5. بوت التلغرام (نفس المنطق) ---
+# --- 5. بوت التلغرام (في الخلفية) ---
 def start_bot():
     token = st.secrets.get("TELEGRAM_TOKEN")
     if not token: return
@@ -170,7 +176,7 @@ def start_bot():
                 for k, v in data.items():
                     if normalize_phone(v.get("Telephone", "")).endswith(p[-9:]):
                         ref.child(k).update({"Telegram_ID": str(m.chat.id)})
-                bot.reply_to(m, "✅ تم ربط حسابك بنجاح!")
+                bot.reply_to(m, "✅ ممتاز! تم ربط حسابك بنجاح. ستصلك الإشعارات هنا.")
     bot.polling(none_stop=True)
 
 if "bot_running" not in st.session_state:
