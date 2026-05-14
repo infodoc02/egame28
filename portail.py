@@ -47,7 +47,7 @@ def get_warranty_stats(date_sortie_str):
         except: continue
     return None
 
-# --- 3. تصميم الـ CSS ---
+# --- 3. تصميم الـ CSS الشامل ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
@@ -59,33 +59,45 @@ st.markdown("""
         border: 1px solid #30363d; transition: all 0.3s ease;
         display: flex; align-items: center; justify-content: center; gap: 8px;
     }
-    .contact-btn:hover { border-color: #58a6ff; box-shadow: 0 0 20px rgba(88, 166, 255, 0.4); transform: translateY(-3px); }
+    .contact-btn:hover {
+        border-color: #58a6ff;
+        box-shadow: 0 0 20px rgba(88, 166, 255, 0.4);
+        transform: translateY(-3px);
+    }
 
     .status-open { color: #3fb950; border: 2px solid #3fb950; padding: 5px 15px; border-radius: 8px; animation: blink-green 2s infinite; font-weight: bold; font-family: 'Orbitron'; }
     .status-closed { color: #f85149; border: 2px solid #f85149; padding: 5px 15px; border-radius: 8px; animation: blink-red 2s infinite; font-weight: bold; font-family: 'Orbitron'; }
     @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.6; } }
     
     .device-card { background: #161b22; border: 1px solid #30363d; border-radius: 15px; padding: 20px; margin-bottom: 25px; transition: 0.3s; }
+    .device-card:hover { border-color: #58a6ff; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
     
     .tg-link-btn { 
         display: block; background: #229ED9; color: white !important; 
         text-align: center; padding: 15px; border-radius: 12px; 
         text-decoration: none; font-weight: 900; margin-bottom: 25px;
-        box-shadow: 0 4px 15px rgba(34, 158, 217, 0.3); transition: 0.3s;
+        box-shadow: 0 4px 15px rgba(34, 158, 217, 0.3);
+        transition: 0.3s;
     }
+    .tg-link-btn:hover { box-shadow: 0 0 30px #229ED9; transform: scale(1.02); }
     
     .stDownloadButton button {
         width: 100%; background-color: #21262d !important; color: #58a6ff !important;
         border: 1px solid #30363d !important; border-radius: 8px !important;
-        transition: 0.3s !important; font-weight: bold !important; margin-top: 10px;
+        transition: 0.3s !important; font-weight: bold !important;
     }
-    .stDownloadButton button:hover { border-color: #58a6ff !important; box-shadow: 0 0 15px rgba(88, 166, 255, 0.3) !important; color: white !important; }
+    .stDownloadButton button:hover {
+        border-color: #58a6ff !important;
+        box-shadow: 0 0 15px rgba(88, 166, 255, 0.3) !important;
+        color: white !important;
+    }
 
+    .exp-red { background: rgba(248, 81, 73, 0.1); color: #f85149; font-weight: 900; border: 2px solid #f85149; padding: 12px; border-radius: 10px; text-align: center; }
     .badge { padding: 4px 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; font-family: 'Orbitron'; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. واجهة المستخدم ---
+# --- 4. الترحيب وحالة المحل ---
 curr_h = datetime.now().hour
 greet = "صباح الخير" if 5 <= curr_h < 12 else "مساء الخير"
 try: is_open = db.reference("shop_settings/is_open").get()
@@ -111,6 +123,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
+# --- 5. البحث وتدفق البيانات ---
 phone_raw = st.text_input("🔍 أدخل رقم هاتفك لتتبع أجهزتك:", placeholder="0XXXXXXXXX")
 
 if phone_raw:
@@ -119,12 +132,12 @@ if phone_raw:
         raw_db = db.reference("atelier").get()
         if raw_db:
             all_devices = [dict(v, _id=k) for k, v in raw_db.items() if normalize_phone(v.get("Telephone", "")).endswith(phone_n[-9:])]
+            
             if not all_devices:
                 st.warning("⚠️ لا توجد أجهزة مسجلة بهذا الرقم.")
             else:
                 sorted_devices = sorted(all_devices, key=lambda x: (str(x.get("Date_Sortie", "")) not in ["", "---", "None"], x.get("ID", 0)))
-                
-                # ربط التلغرام
+
                 if any(str(d.get("Telegram_ID", "")).strip() in ["", "None"] for d in all_devices):
                     tg_url = f"https://t.me/{st.secrets.get('BOT_USERNAME')}?start={phone_n}"
                     st.markdown(f'<a href="{tg_url}" target="_blank" class="tg-link-btn">🚀 ربط الحساب بالتلغرام للإشعارات الفورية</a>', unsafe_allow_html=True)
@@ -135,68 +148,68 @@ if phone_raw:
                     stat = str(d.get("Statut", "En Cours"))
                     is_delivered = "Livré" in stat
                     bg_color = "#238636" if stat == "Prêt" else "#da3633" if stat == "Annulé" else "#6e7681" if is_delivered else "#30363d"
-                    
-                    # --- بداية الحاوية (المربع الموحد) ---
+                    # --- بداية المربع الموحد بإزاحة 21 مسافة ---
                     with st.container():
-                        # فتح المربع بـ HTML
-                        st.markdown(f"""
-                            <div class="device-card" style="border-top: 5px solid {bg_color};">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
-                                    <div>
-                                        <h3 style="margin:0; color:#58a6ff; font-family:'Cairo';">{d.get('Appareil')}</h3>
-                                        <code style="color:#8b949e;">رقم التذكرة: #{d.get('ID')}</code>
-                                    </div>
-                                    <span class="badge" style="background:{bg_color}; color:white;">{stat.upper()}</span>
-                                </div>
-                        """, unsafe_allow_html=True)
+                         # 1. فتح حاوية HTML للمربع
+                         st.markdown(f"""
+                             <div class="device-card" style="border-top: 5px solid {bg_color}; background: #161b22; border: 1px solid #30363d; border-radius: 15px; padding: 20px; margin-bottom: 5px;">
+                                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                                     <div>
+                                         <h3 style="margin:0; color:#58a6ff; font-family:'Cairo';">{d.get('Appareil')}</h3>
+                                         <code style="color:#8b949e;">رقم التذكرة: #{d.get('ID')}</code>
+                                     </div>
+                                     <span class="badge" style="background:{bg_color}; color:white; padding: 5px 10px; border-radius: 5px;">{stat.upper()}</span>
+                                 </div>
+                         """, unsafe_allow_html=True)
 
-                        # منطق الضمان أو التقدم (يظهر داخل المربع)
-                        if is_delivered:
-                            w = get_warranty_stats(d.get("Date_Sortie"))
-                            if w and not w["is_expired"]:
-                                st.markdown(f"""
-                                    <div style="margin-bottom:8px; color:#d29922; font-weight:bold; font-size:0.95rem;">🛡️ شريط الضمان (متبقي {int(w['days_left'])} يوم)</div>
-                                    <div style="width: 100%; background: #21262d; height: 14px; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
-                                        <div style="width: {w['percent']}%; background: #d29922; height: 100%;"></div>
-                                    </div>
-                                """, unsafe_allow_html=True)
-                            elif w and w["is_expired"]:
-                                st.markdown('<div style="background: rgba(248, 81, 73, 0.1); color: #f85149; font-weight: 900; border: 2px solid #f85149; padding: 12px; border-radius: 10px; text-align: center; margin-bottom:15px;">❌ GARANTIE EXPIRÉE</div>', unsafe_allow_html=True)
-                        else:
-                            prog = 33 if stat == "En Cours" else 66 if stat == "Réparable" else 100
-                            st.markdown(f"""
-                                <div style="margin-bottom:8px; color:#238636; font-weight:bold; font-size:0.95rem;">🛠️ تقدم الصيانة</div>
-                                <div style="width: 100%; background: #21262d; height: 14px; border-radius: 10px; overflow: hidden; margin-bottom: 15px;">
-                                    <div style="width: {prog}%; background: #238636; height: 100%;"></div>
-                                </div>
-                            """, unsafe_allow_html=True)
+                         # 2. شريط الضمان أو التقدم (داخل المربع)
+                         if is_delivered:
+                             w = get_warranty_stats(d.get("Date_Sortie"))
+                             if w and not w["is_expired"]:
+                                 st.markdown(f"""
+                                     <div style="margin-bottom:8px; color:#d29922; font-weight:bold; font-size:0.95rem;">🛡️ شريط الضمان (متبقي {int(w['days_left'])} يوم)</div>
+                                     <div style="width: 100%; background: #21262d; height: 14px; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
+                                         <div style="width: {w['percent']}%; background: #d29922; height: 100%;"></div>
+                                     </div>
+                                 """, unsafe_allow_html=True)
+                             elif w and w["is_expired"]:
+                                 st.markdown('<div style="background: rgba(248, 81, 73, 0.1); color: #f85149; border: 1px solid #f85149; padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 15px;">❌ GARANTIE EXPIRÉE</div>', unsafe_allow_html=True)
+                         else:
+                             prog = 33 if stat == "En Cours" else 66 if stat == "Réparable" else 100
+                             st.markdown(f"""
+                                 <div style="margin-bottom:8px; color:#238636; font-weight:bold; font-size:0.95rem;">🛠️ تقدم الصيانة</div>
+                                 <div style="width: 100%; background: #21262d; height: 14px; border-radius: 10px; overflow: hidden; margin-bottom: 15px;">
+                                     <div style="width: {prog}%; background: #238636; height: 100%;"></div>
+                                 </div>
+                             """, unsafe_allow_html=True)
 
-                        # المبالغ والتواريخ (داخل المربع)
-                        st.markdown(f"""
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; background:#0d1117; padding:15px; border-radius:10px; border: 1px solid #30363d; margin-bottom: 15px;">
-                                <div style="color:#8b949e;">📅 <b>استلام:</b><br>{d.get('Date_Entree')}</div>
-                                <div style="color:#8b949e;">🕒 <b>خروج:</b><br>{d.get('Date_Sortie', '---')}</div>
-                                <div style="color: #ffffff; font-weight: 900; font-size:1.3rem; grid-column: span 2; text-align:center; border-top:1px solid #30363d; padding-top:10px; margin-top:5px;">
-                                    المبلغ: <span style="color:#58a6ff;">{d.get('Prix')} دج</span>
-                                </div>
-                            </div>
-                        """, unsafe_allow_html=True)
+                         # 3. تفاصيل المبالغ والتواريخ (داخل المربع)
+                         st.markdown(f"""
+                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; background:#0d1117; padding:15px; border-radius:10px; border: 1px solid #30363d; margin-bottom: 15px;">
+                                 <div style="color:#8b949e;">📅 <b>استلام:</b><br>{d.get('Date_Entree')}</div>
+                                 <div style="color:#8b949e;">🕒 <b>خروج:</b><br>{d.get('Date_Sortie', '---')}</div>
+                                 <div style="color: #ffffff; font-weight: 900; font-size:1.3rem; grid-column: span 2; text-align:center; border-top:1px solid #30363d; padding-top:10px; margin-top:5px;">
+                                     المبلغ: <span style="color:#58a6ff;">{d.get('Prix')} دج</span>
+                                 </div>
+                             </div>
+                         """, unsafe_allow_html=True)
 
-                        # زر التحميل (داخل المربع)
-                        try:
-                            single_data = {"رقم التذكرة": [d.get('ID')], "الجهاز": [d.get('Appareil')], "المبلغ": [f"{d.get('Prix')} DZD"]}
-                            df_s = pd.DataFrame(single_data)
-                            output = io.BytesIO()
-                            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                                df_s.to_excel(writer, index=False)
-                            
-                            st.download_button(label=f"📥 تحميل فاتورة {d.get('Appareil')}", data=output.getvalue(), file_name=f"InfoDoc_{d.get('ID')}.xlsx", key=f"dl_{d.get('_id')}")
-                        except: pass
+                         # 4. زر التحميل الفردي (داخل المربع)
+                         try:
+                             s_data = {"ID": [d.get('ID')], "Appareil": [d.get('Appareil')], "Prix": [d.get('Prix')]}
+                             df_s = pd.DataFrame(s_data)
+                             buf = io.BytesIO()
+                             with pd.ExcelWriter(buf, engine='xlsxwriter') as wr:
+                                 df_s.to_excel(wr, index=False)
+                             st.download_button(label=f"📥 فاتورة {d.get('Appareil')}", data=buf.getvalue(), file_name=f"InfoDoc_{d.get('ID')}.xlsx", key=f"dl_{d.get('_id')}")
+                         except: pass
 
-                        # إغلاق المربع بـ HTML
-                        st.markdown("</div>", unsafe_allow_html=True)
+                         # 5. إغلاق الـ div الأساسي للمربع
+                         st.markdown("</div>", unsafe_allow_html=True)
 
-# --- 5. بوت التلغرام ---
+                 
+
+# --- 6. بوت التلغرام ---
 def start_bot():
     token = st.secrets.get("TELEGRAM_TOKEN")
     if not token: return
