@@ -9,10 +9,6 @@ import telebot
 import qrcode
 from io import BytesIO
 from firebase_admin import credentials, db
-import re
-from datetime import datetime, timedelta
-import threading
-import telebot
 
 # --- 1. الإعدادات الأساسية ---
 st.set_page_config(page_title="InfoDoc - Client Portal", page_icon="📱", layout="wide")
@@ -26,19 +22,59 @@ def init_db():
                 cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred, {'databaseURL': st.secrets["DB_URL"]})
-            return True
-        except: return False
-    return True
+        except Exception as e:
+            st.error(f"خطأ في الاتصال بقاعدة البيانات: {e}")
 
 init_db()
 
-# --- 2. الدوال المنطقية ---
+TELEGRAM_TOKEN = st.secrets.get("TELEGRAM_TOKEN", "")
+BOT_USERNAME = st.secrets.get("BOT_USERNAME", "")
+
+# --- 2. الدوال البرمجية (Logic) ---
 def normalize_phone(phone: str) -> str:
-    p = re.sub(r"\D", "", str(phone or ""))
+    p = str(phone or "").replace(".0", "").strip()
+    p = re.sub(r"\D", "", p)
     if p.startswith("213"): p = "0" + p[3:]
     if len(p) == 9 and p[0] in ["5", "6", "7"]: p = "0" + p
     return p
 
+def get_warranty_stats(date_sortie_str):
+    if not date_sortie_str or str(date_sortie_str).strip() in ["", "---", "None"]:
+        return None
+    
+    # تنظيف النص من أي فراغات إضافية
+    date_clean = str(date_sortie_str).strip()
+    
+    # قائمة الصيغ: أضفنا صيغ تشمل الوقت (الساعات والدقائق)
+    date_formats = [
+        "%Y-%m-%d %H:%M",    # الصيغة التي لديك: 2026-05-07 13:13
+        "%d-%m-%Y %H:%M",    # صيغة يوم-شهر-سنة مع وقت
+        "%Y-%m-%d",          # تاريخ فقط
+        "%d-%m-%Y",          # تاريخ فقط (يوم أولاً)
+        "%d/%m/%Y",          # تاريخ بشرطة مائلة
+        "%d/%m/%Y %H:%M"     # تاريخ مائل مع وقت
+    ]
+    
+    for fmt in date_formats:
+        try:
+            # محاولة تحويل النص إلى كائن تاريخ
+            date_s = datetime.strptime(date_clean, fmt)
+            
+            # حساب الفرق بالأيام
+            diff_days = (datetime.now() - date_s).days
+            
+            # حساب الأيام المتبقية من شهر (30 يوم)
+            remaining_days = max(30 - diff_days, 0)
+            percent = (remaining_days / 30) * 100
+            expired = diff_days > 30
+            
+            return {"percent": percent, "is_expired": expired, "days_left": remaining_days}
+        except ValueError:
+            continue  # إذا فشلت هذه الصيغة، جرب التالية
+            
+    return None
+
+# --- 3. تصميم الـ CSS المطور ---
 def get_shop_status():
     try:
         status = db.reference("shop_settings/is_open").get()
@@ -67,18 +103,6 @@ def fetch_customer_devices(phone: str) -> pd.DataFrame:
 # --- 3. تصميم الواجهة (CSS) ---
 st.set_page_config(page_title="InfoDoc - Client Portal", page_icon="⚡", layout="wide")
 
-def get_warranty_info(status, date_sortie_str):
-    # الضمان يظهر فقط في حالة Livré & Payé
-    if status != "Livré & Payé" or not date_sortie_str or date_sortie_str == "---":
-        return None
-    try:
-        date_s = datetime.strptime(date_sortie_str, "%Y-%m-%d")
-        expiry = date_s + timedelta(days=30)
-        expired = datetime.now() > expiry
-        return {"expiry": expiry.strftime("%Y-%m-%d"), "is_expired": expired}
-    except: return None
-
-# --- 3. تصميم الـ CSS (الوميض + الألوان + الأزرار) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@500;900&display=swap');
@@ -180,78 +204,119 @@ with col_main:
                 
                 warranty = f'<div style="border: 1px solid #238636; color: #3fb950; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; display: inline-block; margin-top: 10px;">🛡️ Garantie Incluse</div>' if stt == "Prêt" else ""
 
-# --- 5. البحث وتوزيع الألوان للحالات ---
-st.markdown("### 🔍 تتبع حالة جهازك")
-phone_raw = st.text_input("أدخل رقم هاتفك المسجل:", key="search_input")
+                st.markdown(f"""
+                    <div class="dev-card">
+                        <div class="dev-header">
+                            <b style="color: #58a6ff;">#{int(r.get('ID', 0))} | {r.get('Appareil', 'Device')}</b>
+                            <span style="background:{st_color}; padding:2px 8px; border-radius:5px; font-size:0.8rem; font-weight:bold;">{stt}</span>
+                        </div>
+                        <div style="padding: 15px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                <div><small style="color:#8b949e;">PROBLEM</small><br><b>{r.get('Panne', '---')}</b></div>
+                                <div><small style="color:#8b949e;">PRICE</small><br><b>{float(r.get('Prix', 0)):,.0f} DZD</b></div>
+                                <div><small style="color:#8b949e;">DATE</small><br><b>{r.get('Date_Entree', '---')}</b></div>
+                            </div>
+                            <div style="width: 100%; background: #21262d; border-radius: 10px; height: 8px; overflow: hidden;">
+                                <div style="width: {prog_val}%; background: linear-gradient(90deg, #1f6feb, #58a6ff); height: 100%;"></div>
+                            </div>
+                            {warranty}
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
 
-# قاموس الألوان للحالات
-status_config = {
-    "En Cours": {"color": "#1f6feb", "prog": 33},
-    "Réparable": {"color": "#39c5bb", "prog": 66},
-    "Prêt": {"color": "#3fb950", "prog": 100},
-    "Non Réparable": {"color": "#f85149", "prog": 100},
-    "Livré & Payé": {"color": "#3fb950", "prog": 100},
-    "Livré (Dette)": {"color": "#d29922", "prog": 100},
-    "Annulé": {"color": "#8b949e", "prog": 0}
-}
+with col_sync:
+    st.markdown("### 🤖 Telegram Sync")
+    if phone_n and len(phone_n) >= 9:
+        qr_data = f"https://t.me/{BOT_USERNAME}?start={phone_n}"
+        qr_img = qrcode.make(qr_data)
+        buf = BytesIO()
+        qr_img.save(buf, format="PNG")
+        st.image(buf.getvalue(), width=150)
+        st.link_button("🚀 Sync via Telegram", qr_data, use_container_width=True)
+    else:
+        st.info("أدخل رقم الهاتف للحصول على رابط التليغرام.")
+
+# --- 4. واجهة التطبيق ---
+st.markdown('<h1 style="text-align:center; color:#58a6ff; font-family:Orbitron;">INFODOC TECHNOLOGY</h1>', unsafe_allow_html=True)
+
+phone_raw = st.text_input("🔍 أدخل رقم هاتفك لتتبع أجهزتك:", placeholder="0XXXXXXXXX")
 
 if phone_raw:
     phone_n = normalize_phone(phone_raw)
     if len(phone_n) >= 9:
         raw_db = db.reference("atelier").get()
         if raw_db:
-            my_devices = [dict(v, _id=k) for k, v in raw_db.items() if normalize_phone(v.get("Telephone", "")).endswith(phone_n[-9:])]
+            all_devices = [dict(v, _id=k) for k, v in raw_db.items() if normalize_phone(v.get("Telephone", "")).endswith(phone_n[-9:])]
             
-            if not my_devices:
-                st.warning("⚠️ لا توجد أجهزة مسجلة بهذا الرقم.")
+            if not all_devices:
+                st.warning("⚠️ لم يتم العثور على أجهزة مرتبطة بهذا الرقم.")
             else:
-                # رابط التليغرام
-                if not any(str(d.get("Telegram_ID", "")).strip() != "" for d in my_devices):
-                    tg_url = f"https://t.me/{st.secrets.get('BOT_USERNAME')}?start={phone_n}"
-                    st.link_button("🚀 ربط الحساب بالتليغرام لتلقي الإشعارات", tg_url, type="primary", use_container_width=True)
-                
-                # عرض الأجهزة
-                for d in sorted(my_devices, key=lambda x: int(x.get("ID", 0)), reverse=True):
-                    stat = d.get("Statut", "En Cours")
-                    cfg = status_config.get(stat, {"color": "#8b949e", "prog": 0})
-                    
-                    # الضمان
-                    w_info = get_warranty_info(stat, d.get("Date_Sortie"))
-                    w_html = ""
-                    if w_info:
-                        w_class = "w-expired" if w_info["is_expired"] else "w-active"
-                        w_text = f"🛡️ ضمان منتهي ({w_info['expiry']})" if w_info["is_expired"] else f"🛡️ ضمان ساري لغاية: {w_info['expiry']}"
-                        w_html = f'<div class="{w_class}">{w_text}</div>'
+                # ترتيب: الأجهزة بدون تاريخ خروج تظهر أولاً
+                sorted_devices = sorted(all_devices, key=lambda x: (str(x.get("Date_Sortie", "")) not in ["", "---", "None"], x.get("ID", 0)), reverse=False)
 
+                # زر التلغرام (يظهر فقط إذا وجد جهاز غير مربوط)
+                if any(str(d.get("Telegram_ID", "")).strip() in ["", "None"] for d in all_devices):
+                    tg_url = f"https://t.me/{st.secrets.get('BOT_USERNAME')}?start={phone_n}"
+                    st.markdown(f'<a href="{tg_url}" target="_blank" class="tg-link-btn">🚀 ربط الهاتف بالتلغرام لتلقي الإشعارات الفورية</a>', unsafe_allow_html=True)
+
+                for d in sorted_devices:
+                    stat = str(d.get("Statut", "En Cours"))
+                    is_delivered = "Livré" in stat
+                    
+                    # تحديد الألوان بناءً على طلبك
+                    if stat == "Prêt": bg_color = "#238636" # أخضر
+                    elif stat == "Annulé": bg_color = "#da3633" # أحمر
+                    elif is_delivered: bg_color = "#6e7681" # رمادي
+                    else: bg_color = "#30363d" # رمادي داكن
+
+                    # بداية المربع الموحد
                     st.markdown(f"""
-                        <div class="device-card" style="border-right: 6px solid {cfg['color']};">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <b style="font-family: 'Orbitron'; color: #58a6ff; font-size: 1.1rem;">#{d.get('ID')} | {d.get('Appareil')}</b>
-                                <span style="background: {cfg['color']}; color: #0d1117; padding: 4px 12px; border-radius: 5px; font-weight: bold; font-size: 0.8rem;">{stat.upper()}</span>
-                            </div>
-                            <div style="margin: 15px 0;">
-                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #8b949e; margin-bottom: 5px;">
-                                    <span>تقدم العمل: {cfg['prog']}%</span>
-                                    <span>العطل: {d.get('Panne')}</span>
+                        <div class="device-card" style="border-top: 5px solid {bg_color};">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                                <div>
+                                    <h3 style="margin:0; color:#58a6ff; font-family:'Cairo';">{d.get('Appareil')}</h3>
+                                    <code style="color:#8b949e;">رقم التذكرة: #{d.get('ID')}</code>
                                 </div>
-                                <div style="width: 100%; background: #21262d; height: 10px; border-radius: 10px; overflow: hidden;">
-                                    <div style="width: {cfg['prog']}%; background: {cfg['color']}; height: 100%; transition: 0.5s;"></div>
-                                </div>
+                                <span class="badge" style="background:{bg_color}; color:white;">{stat.upper()}</span>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; font-family: 'Cairo';">
-                                <div>📅 الدخول: {d.get('Date_Entree')}</div>
-                                <div>🕒 الخروج: {d.get('Date_Sortie', '---')}</div>
-                                <div style="color: #58a6ff; font-weight: bold;">💰 السعر: {d.get('Prix')} دج</div>
-                                <div>{w_html}</div>
+                    """, unsafe_allow_html=True)
+
+                    # منطق الأشرطة
+                    if is_delivered:
+                        w = get_warranty_stats(d.get("Date_Sortie"))
+                        if w:
+                            if w["is_expired"]:
+                                st.markdown('<div class="exp-red" style="margin-bottom:15px;">❌ GARANTIE EXPIRÉE (الضمان منتهي)</div>', unsafe_allow_html=True)
+                            else:
+                                st.markdown(f"""
+                                    <div style="margin-bottom:8px; color:#d29922; font-weight:bold; font-size:0.95rem;">🛡️ شريط الضمان (متبقي {int(w['days_left'])} يوم)</div>
+                                    <div style="width: 100%; background: #21262d; height: 14px; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
+                                        <div style="width: {w['percent']}%; background: #d29922; height: 100%; transition: 1s;"></div>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                    else:
+                        prog_map = {"En Cours": 33, "Réparable": 66, "Prêt": 100}
+                        prog = prog_map.get(stat, 10)
+                        st.markdown(f"""
+                            <div style="margin-bottom:8px; color:#238636; font-weight:bold; font-size:0.95rem;">🛠️ تقدم الصيانة</div>
+                            <div style="width: 100%; background: #21262d; height: 14px; border-radius: 10px; overflow: hidden; margin-bottom: 15px;">
+                                <div style="width: {prog}%; background: #238636; height: 100%; transition: 1s;"></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+
+                    # المعلومات السفلية مدمجة في نفس المربع
+                    st.markdown(f"""
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; background:#0d1117; padding:15px; border-radius:10px; border: 1px solid #30363d;">
+                                <div style="color:#8b949e;">📅 <b>استلام:</b><br>{d.get('Date_Entree')}</div>
+                                <div style="color:#8b949e;">🕒 <b>خروج:</b><br>{d.get('Date_Sortie', '---')}</div>
+                                <div style="color: #ffffff; font-weight: 900; font-size:1.3rem; grid-column: span 2; text-align:center; border-top:1px solid #30363d; padding-top:10px; margin-top:5px;">
+                                    المبلغ: <span style="color:#58a6ff;">{d.get('Prix')} دج</span>
+                                </div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
-                    
-                    # زر تحميل الفاتورة (الآن ملون وواضح)
-                    inv_text = f"INFODOC TECHNOLOGY\nID: {d.get('ID')}\nDevice: {d.get('Appareil')}\nPrice: {d.get('Prix')} DZD\nStatus: {stat}"
-                    st.download_button(f"📄 تحميل معلومات الجهاز #{d.get('ID')}", inv_text, file_name=f"InfoDoc_{d.get('ID')}.txt", key=f"inv_{d.get('ID')}")
 
-# --- 6. بوت التليغرام ---
+# --- 5. بوت التلغرام (في الخلفية) ---
 def start_bot():
     token = st.secrets.get("TELEGRAM_TOKEN")
     if not token: return
@@ -267,7 +332,7 @@ def start_bot():
                 for k, v in data.items():
                     if normalize_phone(v.get("Telephone", "")).endswith(p[-9:]):
                         ref.child(k).update({"Telegram_ID": str(m.chat.id)})
-                bot.reply_to(m, "✅ تم ربط حسابك! ستصلك رسالة هنا فور جاهزية جهازك.")
+                bot.reply_to(m, "✅ ممتاز! تم ربط حسابك بنجاح. ستصلك الإشعارات هنا.")
     bot.polling(none_stop=True)
 
 if "bot_running" not in st.session_state:
