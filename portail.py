@@ -162,6 +162,93 @@ st.markdown('<div class="main-title">INFODOC</div>', unsafe_allow_html=True)
 st.markdown('<div style="text-align: center; color: #8b949e; margin-bottom: 20px;">Vente & Réparation Informatique</div>', unsafe_allow_html=True)
 
 # عرض حالة المحل
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
+    
+    .stApp { background: #0d1117; color: white; }
+    .hero-box { background: linear-gradient(180deg, #0d1117 0%, #161b22 100%); border: 1px solid #30363d; border-radius: 15px; padding: 25px; margin-bottom: 20px; }
+    .main-title { font-family: 'Orbitron'; color: #58a6ff; font-size: 2.2rem; font-weight: 900; }
+    }
+
+    /* أنيميشن زر التلغرام العلوي */
+    @keyframes pulse-blue {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 158, 217, 0.7); }
+        70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(34, 158, 217, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 158, 217, 0); }
+    }
+
+        .tg-top-btn {
+        display: block; background: #229ED9; color: white !important; text-align: center;
+        padding: 15px; border-radius: 12px; text-decoration: none; font-family: 'Cairo';
+        font-weight: bold; margin-bottom: 20px; animation: pulse-blue 2s infinite;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Animations */
+    @keyframes blink-green { 0%, 100% { opacity: 1; box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.5; } }
+    @keyframes blink-red { 0%, 100% { opacity: 1; box-shadow: 0 0 15px #f85149; } 50% { opacity: 0.5; } }
+    @keyframes blink-yellow-border { 
+        0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; } 
+        50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; } 
+    }
+
+    .hero-container {
+        background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+        border: 1px solid #30363d;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 15px;
+    }
+    
+    .main-title {
+        font-family: 'Orbitron', sans-serif;
+        color: #58a6ff;
+        font-size: 2.2rem;
+        font-weight: 900;
+    }
+
+    /* Status Style */
+    .status-open { color: #3fb950; border: 1px solid #3fb950; padding: 5px 12px; border-radius: 8px; animation: blink-green 2s infinite; font-weight: bold; }
+    .status-closed { color: #f85149; border: 1px solid #f85149; padding: 5px 12px; border-radius: 8px; animation: blink-red 2s infinite; font-weight: bold; }
+
+    /* Contact Cards */
+    .contact-item {
+        background: #21262d;
+        border-left: 4px solid #58a6ff;
+        padding: 10px 15px;
+        border-radius: 8px;
+        color: #FFFFFF !important;
+        font-family: 'Cairo', sans-serif;
+        font-size: 0.9rem;
+    }
+
+    /* ST EXPANDER BLINKING (Targeting Streamlit's class) */
+    div[data-testid="stExpander"] {
+        border: 2px solid #d29922 !important;
+        border-radius: 10px !important;
+        animation: blink-yellow-border 3s infinite ease-in-out;
+        background: rgba(210, 153, 34, 0.05) !important;
+        direction: rtl;
+    }
+    
+    div[data-testid="stExpander"] summary {
+        color: #ffcc00 !important;
+        font-family: 'Cairo', sans-serif;
+        font-weight: 900 !important;
+        font-size: 1.1rem !important;
+    }
+
+    /* Device Card UI */
+    .dev-card { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; margin-bottom: 15px; overflow: hidden; }
+    .dev-header { background: #161b22; padding: 12px 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #30363d; }
+    
+    p, span, div, label, summary { color: #FFFFFF !important; }
+    .stTextInput input { background-color: #0d1117 !important; color: white !important; border: 1px solid #30363d !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+
 st.markdown(f"""
     <div style="text-align: center; margin-bottom: 30px;">
         <span class="status-badge {'status-open' if shop_status else 'status-closed'}">
