@@ -111,30 +111,37 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
 
-    /* تنسيق عنوان الأكسباندر ليكون عربياً وبالخط المطلوب */
-    .terms-section div[data-testid="stExpander"] summary {
+    /* أنيميشن الإضاءة */
+    @keyframes yellow-glow {
+        0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; }
+        50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
+    }
+
+    /* استهداف الأكسباندر الأول فقط في الصفحة (اللي هو تاع الشروط) */
+    /* أو استهداف الأكسباندر اللي يحتوي على نص معين */
+    div[data-testid="stExpander"]:first-of-type {
+        border: 2px solid #d29922 !important;
+        animation: yellow-glow 3s infinite ease-in-out !important;
+        background: rgba(210, 153, 34, 0.05) !important;
+        direction: rtl !important; /* لضمان الاتجاه من اليمين */
+    }
+
+    /* تنسيق العنوان (اضغط هنا...) */
+    div[data-testid="stExpander"]:first-of-type summary {
         direction: rtl !important;
         text-align: right !important;
+        display: flex !important;
+        flex-direction: row !important; /* ترتيب العناصر داخله */
+        justify-content: flex-start !important;
+        gap: 15px !important;
     }
 
-    .terms-section div[data-testid="stExpander"] summary p {
+    div[data-testid="stExpander"]:first-of-type summary p {
         font-family: 'Cairo', sans-serif !important;
         font-weight: 900 !important;
+        color: #ffcc00 !important;
         font-size: 1.1rem !important;
-        color: #ffcc00 !important; /* اللون الأصفر المضيء */
-        margin-right: 10px !important;
-    }
-
-    /* توجيه عنوان الأكسباندر لليمين */
-    div[data-testid="stExpander"] summary {
-        direction: rtl;
-        text-align: right;
-    }
-
-    /* تحريك السهم الصغير لليسار باش ما يتغطاش بالكتابة */
-    div[data-testid="stExpander"] summary svg {
-        order: -1; /* يخلي السهم يجي في الجهة المقابلة */
-        margin-left: 10px;
+        margin: 0 !important;
     }
     
     /* إذا حبيت تنحي السهم كامل وتقلبو جهة اليسار */
@@ -174,7 +181,6 @@ with c3: st.markdown('<a href="https://fb.com/..." target="_blank" class="custom
 with c4: st.markdown('<a href="https://tiktok.com/..." target="_blank" class="custom-btn"><span>📱</span><b>تيك توك</b></a>', unsafe_allow_html=True)
 
 # قسم الشروط (المضيء فقط)
-st.markdown('<div class="terms-section">', unsafe_allow_html=True)
 
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
     st.markdown("""
