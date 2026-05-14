@@ -286,13 +286,13 @@ if user_phone:
     if len(norm_phone) >= 9:
         raw_data = db.reference("atelier").get()
         if raw_data:
-            # فلترة الأجهزة
+            # 1. فلترة الأجهزة المرتبطة بالرقم
             my_devices = [dict(v, _id=k) for k, v in raw_data.items() if normalize_phone(v.get("Telephone", "")).endswith(norm_phone[-9:])]
-            prix_display = f"{my_devices.get('Prix')} دج" if dev.get('Prix') else "قيد التقييم"
+            
             if not my_devices:
                 st.error("⚠️ عذراً، لم نجد أي جهاز مرتبط بهذا الرقم في نظامنا.")
             else:
-                # عرض زر التلغرام العائم إذا كان هناك جهاز غير مربوط
+                # 2. عرض زر التلغرام العائم (فقط إذا لم يكن مربوطاً مسبقاً)
                 if any(not d.get("Telegram_ID") for d in my_devices):
                     bot_user = st.secrets.get("BOT_USERNAME", "InfoDocBot")
                     st.markdown(f'''
@@ -301,7 +301,7 @@ if user_phone:
                         </a>
                     ''', unsafe_allow_html=True)
                 
-                # ترتيب الأجهزة (التي قيد الصيانة أولاً)
+                # 3. ترتيب الأجهزة حسب الأولوية (الجديد والمستعجل أولاً)
                 my_devices.sort(
                     key=lambda x: (
                         get_status_priority(x.get("Statut", "En Cours")), 
@@ -309,31 +309,41 @@ if user_phone:
                     )
                 )
                 
-                # عرض الأجهزة
+                # 4. حلقة عرض الأجهزة
                 for dev in my_devices:
                     status = str(dev.get("Statut", "En Cours"))
                     is_done = "Livré" in status
-                    # تحديد الألوان بناءً على الحالة
-                    status_color = "#238636" if status == "Prêt" else "#da3633" if status == "Annulé" else "#6e7681" if is_done else "#58a6ff"
-                    border_color = status_color
                     
-                    # 1. رأس البطاقة (مع الخط الجانبي الملون)
+                    # --- إضافة الأيقونات بناءً على الحالة ---
+                    status_icon = "⏳" # الافتراضي
+                    if status == "Prêt": status_icon = "✅"
+                    elif status == "Annulé": status_icon = "❌"
+                    elif status == "Non Réparable": status_icon = "⚠️"
+                    elif status == "Réparable": status_icon = "🛠️"
+                    elif is_done: status_icon = "📦"
+
+                    # تحديد الألوان
+                    status_color = "#238636" if status == "Prêt" else "#da3633" if status == "Annulé" else "#6e7681" if is_done else "#58a6ff"
+                    
+                    # تحسين عرض السعر داخل الحلقة (Loop)
+                    raw_prix = dev.get('Prix')
+                    prix_display = f"{raw_prix} د.ج" if raw_prix and str(raw_prix).isdigit() and int(raw_prix) > 0 else "قيد التقييم..."
+
+                    # 1. رأس البطاقة
                     st.markdown(f"""
-                        <div class="device-header" style="border-right: 6px solid {border_color};">
+                        <div class="device-header" style="border-right: 6px solid {status_color};">
                             <div>
                                 <h3 class="device-title">{dev.get('Appareil')}</h3>
                                 <div class="device-id">Ticket #{dev.get('ID')}</div>
                             </div>
                             <div class="status-badge-mini" style="background-color: {status_color};">
-                                {status}
+                                {status_icon} {status}
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    # 2. الأكسباندر (سيلتصق بالرأس ليبدو كبطاقة واحدة)
+                    # 2. تفاصيل الجهاز
                     with st.expander("📄 عرض التفاصيل والمستحقات"):
-                        
-                        # شريط الحالة والضمان
                         if is_done:
                             w = get_warranty_stats(dev.get("Date_Sortie"))
                             if w and not w["is_expired"]:
@@ -342,12 +352,11 @@ if user_phone:
                             else:
                                 st.error("❌ **فترة الضمان منتهية**")
                         else:
-                            st.info(f"🛠️ **حالة الصيانة الحالية:** {status}")
-                            # شريط تقدم وهمي بناء على الحالة
-                            progress_val = 0.3 if status == "En Cours" else 0.7 if status == "Réparable" else 1.0
-                            st.progress(progress_val)
+                            st.info(f"{status_icon} **الحالة:** {status}")
+                            # شريط تقدم بصري
+                            prog_map = {"En Cours": 0.4, "Réparable": 0.7, "Prêt": 1.0}
+                            st.progress(prog_map.get(status, 0.2))
                         
-                        # جدول التفاصيل الاحترافي
                         st.markdown(f"""
                             <table class="details-table">
                                 <tr>
@@ -361,7 +370,7 @@ if user_phone:
                                 <tr>
                                     <td>💰 التكلفة الإجمالية</td>
                                     <td style="color: #58a6ff; font-weight: 900; font-size: 1.2rem;">
-                                        {dev.get('Prix', '0')} د.ج
+                                        {prix_display}
                                     </td>
                                 </tr>
                             </table>
