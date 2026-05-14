@@ -162,42 +162,48 @@ st.markdown(f'<div style="text-align: center; color: #8b949e; font-size: 0.9rem;
 st.markdown('<div class="main-title">INFODOC</div>', unsafe_allow_html=True)
 st.markdown('<div style="text-align: center; color: #8b949e; margin-bottom: 20px;">Vente & Réparation Informatique</div>', unsafe_allow_html=True)
 
-# عرض حالة المحل
-st.markdown(f"""
-    <div style="text-align: center; margin-bottom: 30px;">
-        <span class="status-badge {'status-open' if shop_status else 'status-closed'}">
-            {'OPEN - مـفـتـوح' if shop_status else 'CLOSED - مـغـلـق'}
-        </span>
-    </div>
-""", unsafe_allow_html=True)
+# --- 4. عرض الواجهة ---
 
-# --- 5. الهيدر والمعلومات ---
-status_class = "status-open" if shop_status else "status-closed"
-status_text = "ATELIER OUVERT" if shop_status else "ATELIER FERMÉ"
+# الوقت الحالي
+now = datetime.now().strftime("%H:%M")
+st.markdown(f"<p style='text-align: right; opacity: 0.7;'>الوقت الحالي في الشلف: {now}</p>", unsafe_allow_html=True)
+
+# الهيدر مع زر الخريطة المدمج
+shop_open = shop_status
+status_class = "status-open" if shop_open else "status-closed"
+status_text = "ATELIER OUVERT" if shop_open else "ATELIER FERMÉ"
 
 st.markdown(f"""
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 15px;">
-        <div class="contact-item">📞 <b>الهاتف:</b> 0798661900</div>
-        <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" style="text-decoration: none;">
-            <div style="background: #238636; color: white; text-align: center; padding: 10px; border-radius: 8px; font-weight: bold; transition: 0.3s;">
-                📍 اتبع المسار إلى المحل (Google Maps)
-            </div>
-        </a>
-        <div class="contact-item">🔵 <b>Facebook:</b> InfoDoc</div>
-        <div class="contact-item">⚫ <b>TikTok:</b> @infodoc02</div>
+    <div class="hero-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div class="main-title">INFODOC TECHNOLOGY</div>
+            <div class="{status_class}">{status_text}</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 15px;">
+            <div class="contact-item">📞 <b>الهاتف:</b> 0798661900</div>
+            <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" style="text-decoration: none;">
+                <div style="background: #238636; color: white; text-align: center; padding: 10px; 
+                            border-radius: 8px; font-weight: bold; height: 100%; display: flex; 
+                            align-items: center; justify-content: center; transition: 0.3s;"
+                     onmouseover="this.style.background='#2ea043'" onmouseout="this.style.background='#238636'">
+                    📍 اتبع المسار إلى المحل (Google Maps)
+                </div>
+            </a>
+            <div class="contact-item">🔵 <b>Facebook:</b> InfoDoc</div>
+            <div class="contact-item">⚫ <b>TikTok:</b> @infodoc02</div>
+        </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-# --- 6. الشروط الموضحة ---
+
+# الشروط
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
     st.markdown("""
-        <div style="text-align: right; direction: rtl; font-family: Cairo; line-height: 1.8;">
-            1️⃣ فحص الجهاز المرفوض تصليحه: <b>1000 دج</b>.<br>
-            2️⃣ صيانة البطاقة الأم تبدأ من <b>3000 دج</b>.<br>
-            3️⃣ الموافقة التلقائية بين 3000 و 4000 دج، ما فوق ذلك نتصل بك.<br>
-            4️⃣ يرجى ربط <b>Telegram</b> لتصلك الإشعارات فوراً.
+        <div style="text-align: right; direction: rtl; line-height: 1.8; padding: 10px;">
+            1️⃣ فحص الجهاز المرفوض تصليحه: <b>1000 دج</b> ثمن الجهد.<br>
+            2️⃣ أسعار البطاقة الأم تبدأ من <b>3000 دج</b>.<br>
+            3️⃣ الموافقة التلقائية بين 3000 و 4000 دج.<br>
+            4️⃣ يرجى ربط التلغرام للحصول على إشعارات فورية.
         </div>
     """, unsafe_allow_html=True)
 
