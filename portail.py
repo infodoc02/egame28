@@ -233,20 +233,30 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 2. عرض المحتوى (HTML)
-st.markdown(f'''
+sst.markdown(f'''
     <div class="hero-container">
-        <div style="color: #8b949e; font-size: 0.9rem;">{greeting} | {now.strftime("%Y-%m-%d %H:%M")}</div>
-        <div class="main-title">INFODOC</div>
-        <div class="sub-title">Vente & Réparation Informatique</div>
+        <!-- التوقيت والترحيب -->
+        <div style="color: #8b949e; font-size: 0.9rem; margin-bottom: 10px;">
+            {greeting} | {now.strftime("%Y-%m-%d %H:%M")}
+        </div>
         
-        <div style="margin-top: 20px;">
+        <!-- العناوين -->
+        <div class="main-title">INFODOC</div>
+        <div class="sub-title" style="color: #8b949e; margin-bottom: 20px;">Vente & Réparation Informatique</div>
+        
+        <!-- حالة المحل -->
+        <div style="margin-bottom: 25px;">
             <span class="status-badge {'status-open' if shop_status else 'status-closed'}">
                 {'● OPEN - مـفـتـوح' if shop_status else '● CLOSED - مـغـلـق'}
             </span>
         </div>
+
+        <!-- زر التليغرام المحسن (داخل الحاوية) -->
+        <a href="https://t.me/{bot_user}?start={norm_phone}" target="_blank" class="tg-top-btn">
+            🚀 ربط الإشعارات الفورية على تليغرام
+        </a>
     </div>
 ''', unsafe_allow_html=True)
-
 # أزرار التواصل (تصحيح مشكلة المربعات باستخدام Columns)
 col1, col2, col3, col4 = st.columns(4)
 with col1:
