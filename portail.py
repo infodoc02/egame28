@@ -187,52 +187,172 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==============================================================================
-# 5. نظام البحث والتتبع
+# 5. نظام البحث والتتبع (بتصميم البطاقات الاحترافية)
 # ==============================================================================
-st.markdown('<h2 style="text-align:center; color:#58a6ff; font-family:Cairo;">🔍 تتبع أجهزتك الآن</h2>', unsafe_allow_html=True)
-user_phone = st.text_input("", placeholder="أدخل رقم هاتفك (مثال: 0798661900)")
+
+# --- 1. CSS خاص بهذا القسم (لزر التلغرام العائم والبطاقات المدمجة) ---
+st.markdown("""
+    <style>
+    /* زر التلغرام العائم */
+    .floating-tg-btn {
+        position: fixed;
+        bottom: 30px;
+        left: 30px; /* تقدر تبدلها right: 30px إذا حبيت */
+        background: linear-gradient(135deg, #229ED9, #1c7cb3);
+        color: white !important;
+        padding: 15px 25px;
+        border-radius: 50px;
+        box-shadow: 0 10px 20px rgba(34, 158, 217, 0.4);
+        z-index: 9999;
+        font-family: 'Cairo', sans-serif;
+        font-weight: 900;
+        font-size: 1.1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: float-pulse 2s infinite ease-in-out;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .floating-tg-btn:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 15px 30px rgba(34, 158, 217, 0.6);
+    }
+
+    @keyframes float-pulse {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-8px); box-shadow: 0 15px 25px rgba(34, 158, 217, 0.5); }
+        100% { transform: translateY(0); }
+    }
+
+    /* رأس البطاقة (المربع الخاص بالجهاز) */
+    .device-header {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-bottom: none; /* نحيو الخط التحتاني باش يلصق مع الأكسباندر */
+        border-radius: 12px 12px 0 0; /* تقويس من الفوق فقط */
+        padding: 20px;
+        margin-top: 30px; /* مسافة بين كل جهاز والآخر */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+    }
+
+    .device-title { margin: 0; color: #ffffff; font-family: 'Orbitron', 'Cairo'; font-size: 1.4rem; font-weight: bold; }
+    .device-id { color: #8b949e; font-size: 0.9rem; font-family: 'Courier New', monospace; }
+    
+    .status-badge-mini {
+        padding: 6px 15px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 900;
+        font-family: 'Orbitron', 'Cairo';
+        color: white;
+        text-transform: uppercase;
+        box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
+    }
+
+    /* تعديل الأكسباندر ليلتصق بالبطاقة */
+    div[data-testid="stExpander"] {
+        background: #0d1117 !important;
+        border: 1px solid #30363d !important;
+        border-top: 1px dashed #30363d !important; /* خط متقطع يفصل بين العنوان والتفاصيل */
+        border-radius: 0 0 12px 12px !important; /* تقويس من التحت فقط */
+        box-shadow: 0 10px 15px rgba(0,0,0,0.3) !important;
+        margin-bottom: 0px !important;
+    }
+    
+    /* جدول التفاصيل الداخلية */
+    .details-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #161b22; border-radius: 8px; overflow: hidden; }
+    .details-table td { padding: 12px; border-bottom: 1px solid #30363d; text-align: center; color: #c9d1d9; }
+    .details-table td:first-child { border-left: 1px solid #30363d; font-weight: bold; color: #8b949e; text-align: right; width: 40%; }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- 2. واجهة البحث ---
+st.markdown('<h2 style="text-align:center; color:#58a6ff; font-family:Cairo; font-weight: 900; margin-top: 40px; text-shadow: 0 0 20px rgba(88,166,255,0.3);">🔍 تتبع أجهزتك الآن</h2>', unsafe_allow_html=True)
+
+user_phone = st.text_input("", placeholder="📱 أدخل رقم هاتفك هنا (مثال: 0798661900)")
 
 if user_phone:
     norm_phone = normalize_phone(user_phone)
     if len(norm_phone) >= 9:
         raw_data = db.reference("atelier").get()
         if raw_data:
+            # فلترة الأجهزة
             my_devices = [dict(v, _id=k) for k, v in raw_data.items() if normalize_phone(v.get("Telephone", "")).endswith(norm_phone[-9:])]
             
             if not my_devices:
-                st.warning("⚠️ لم نجد أي جهاز مرتبط بهذا الرقم.")
+                st.error("⚠️ عذراً، لم نجد أي جهاز مرتبط بهذا الرقم في نظامنا.")
             else:
-                # زر التلغرام
+                # عرض زر التلغرام العائم إذا كان هناك جهاز غير مربوط
                 if any(not d.get("Telegram_ID") for d in my_devices):
                     bot_user = st.secrets.get("BOT_USERNAME", "InfoDocBot")
-                    st.markdown(f'<a href="https://t.me/{bot_user}?start={norm_phone}" class="tg-btn">🚀 ربط الإشعارات الفورية على تليغرام</a>', unsafe_allow_html=True)
+                    st.markdown(f'''
+                        <a href="https://t.me/{bot_user}?start={norm_phone}" target="_blank" class="floating-tg-btn">
+                            🚀 تفعيل إشعارات التلغرام
+                        </a>
+                    ''', unsafe_allow_html=True)
                 
+                # ترتيب الأجهزة (التي قيد الصيانة أولاً)
                 my_devices.sort(key=lambda x: (str(x.get("Date_Sortie", "")) != "", x.get("ID", 0)), reverse=True)
                 
+                # عرض الأجهزة
                 for dev in my_devices:
                     status = str(dev.get("Statut", "En Cours"))
                     is_done = "Livré" in status
+                    # تحديد الألوان بناءً على الحالة
                     status_color = "#238636" if status == "Prêt" else "#da3633" if status == "Annulé" else "#6e7681" if is_done else "#58a6ff"
+                    border_color = status_color
                     
+                    # 1. رأس البطاقة (مع الخط الجانبي الملون)
                     st.markdown(f"""
-                        <div class="device-box" style="border-right: 6px solid {status_color};">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div><h3 style="margin:0;">{dev.get('Appareil')}</h3><small>#{dev.get('ID')}</small></div>
-                                <span style="background:{status_color}; padding:5px 10px; border-radius:5px; font-size:0.8rem;">{status}</span>
+                        <div class="device-header" style="border-right: 6px solid {border_color};">
+                            <div>
+                                <h3 class="device-title">{dev.get('Appareil')}</h3>
+                                <div class="device-id">Ticket #{dev.get('ID')}</div>
+                            </div>
+                            <div class="status-badge-mini" style="background-color: {status_color};">
+                                {status}
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    # هذا الأكسباندر سيكون عادياً (بدون لمعان)
-                    with st.expander("📄 التفاصيل والضمان"):
+                    # 2. الأكسباندر (سيلتصق بالرأس ليبدو كبطاقة واحدة)
+                    with st.expander("📄 عرض التفاصيل والمستحقات"):
+                        
+                        # شريط الحالة والضمان
                         if is_done:
                             w = get_warranty_stats(dev.get("Date_Sortie"))
                             if w and not w["is_expired"]:
-                                st.success(f"🛡️ الضمان سارٍ: {int(w['days_left'])} يوم")
+                                st.success(f"🛡️ **الضمان سارٍ:** متبقي {int(w['days_left'])} يوم")
                                 st.progress(w['percent']/100)
-                            else: st.error("❌ الضمان منتهٍ")
+                            else:
+                                st.error("❌ **فترة الضمان منتهية**")
                         else:
-                            st.info("🛠️ حالة الصيانة: " + status)
+                            st.info(f"🛠️ **حالة الصيانة الحالية:** {status}")
+                            # شريط تقدم وهمي بناء على الحالة
+                            progress_val = 0.3 if status == "En Cours" else 0.7 if status == "Réparable" else 1.0
+                            st.progress(progress_val)
                         
-                        st.write(f"💰 السعر: {dev.get('Prix')} دج")
-                        st.write(f"📅 الاستلام: {dev.get('Date_Entree')}")
+                        # جدول التفاصيل الاحترافي
+                        st.markdown(f"""
+                            <table class="details-table">
+                                <tr>
+                                    <td>📅 تاريخ الاستلام</td>
+                                    <td>{dev.get('Date_Entree', '---')}</td>
+                                </tr>
+                                <tr>
+                                    <td>📅 تاريخ التسليم</td>
+                                    <td>{dev.get('Date_Sortie', '---')}</td>
+                                </tr>
+                                <tr>
+                                    <td>💰 التكلفة الإجمالية</td>
+                                    <td style="color: #58a6ff; font-weight: 900; font-size: 1.2rem;">
+                                        {dev.get('Prix', '0')} د.ج
+                                    </td>
+                                </tr>
+                            </table>
+                        """, unsafe_allow_html=True)
