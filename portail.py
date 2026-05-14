@@ -1,27 +1,17 @@
 import os
 import threading
 import re
-from datetime import datetime
-from io import BytesIO
-
+from datetime import datetime, timedelta
 import firebase_admin
-from firebase_admin import credentials, db
 import pandas as pd
 import streamlit as st
 import telebot
 import qrcode
+from io import BytesIO
+from firebase_admin import credentials, db
 
-# --- 1. إعدادات الصفحة والتهيئة ---
-st.set_page_config(
-    page_title="InfoDoc - Client Portal",
-    page_icon="⚡",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
-
-# دالة لتهيئة Firebase مرة واحدة فقط وبطريقة آمنة
-@st.cache_resource
-def init_firebase():
+# --- 1. إعداد Firebase ---
+def ensure_firebase():
     if not firebase_admin._apps:
         try:
             cred_dict = dict(st.secrets["firebase"])
@@ -29,234 +19,185 @@ def init_firebase():
                 cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred, {'databaseURL': st.secrets["DB_URL"]})
-            return True
         except Exception as e:
-            st.error(f"❌ خطأ في الاتصال بقاعدة البيانات: {e}")
-            return False
-    return True
+            st.error(f"Firebase Error: {e}")
 
-firebase_ready = init_firebase()
+ensure_firebase()
 
-# --- 2. المنطق البرمجي (Logic) ---
+TELEGRAM_TOKEN = st.secrets.get("TELEGRAM_TOKEN", "")
+BOT_USERNAME = st.secrets.get("BOT_USERNAME", "")
+
+# --- 2. الدوال المنطقية ---
 def normalize_phone(phone: str) -> str:
-    """تنظيف وتوحيد أرقام الهواتف الجزائرية"""
     p = str(phone or "").replace(".0", "").strip()
-    p = re.sub(r"\D", "", p) # إزالة أي حرف غير رقمي
+    p = re.sub(r"\D", "", p)
     if p.startswith("213"): p = "0" + p[3:]
-    if p.startswith("00213"): p = "0" + p[5:]
     if len(p) == 9 and p[0] in ["5", "6", "7"]: p = "0" + p
     return p
 
-@st.cache_data(ttl=60) # التخزين المؤقت للبيانات لمدة دقيقة لتقليل الضغط على Firebase
-def fetch_all_data():
+def get_shop_status():
     try:
-        ref = db.reference("atelier").get()
-        return ref if ref else {}
-    except:
-        return {}
+        status = db.reference("shop_settings/is_open").get()
+        return True if status is None else status
+    except: return True
 
-def get_customer_devices(phone_query: str):
-    phone_query = normalize_phone(phone_query)
-    if len(phone_query) < 9: return []
-    
-    all_data = fetch_all_data()
-    last9 = phone_query[-9:]
-    
-    results = []
-    for key, val in all_data.items():
+def fetch_customer_devices(phone: str) -> pd.DataFrame:
+    phone = normalize_phone(phone)
+    if len(phone) < 9: return pd.DataFrame()
+    last9 = phone[-9:]
+    raw = db.reference("atelier").get()
+    if not raw or not isinstance(raw, dict): return pd.DataFrame()
+    rows = []
+    for key, val in raw.items():
         tel = normalize_phone(val.get("Telephone", ""))
         if tel.endswith(last9):
-            val["_id"] = key
-            results.append(val)
-            
-    # ترتيب من الأحدث إلى الأقدم بناءً على ID
-    return sorted(results, key=lambda x: int(x.get("ID", 0)), reverse=True)
+            r = val.copy()
+            r["_id"] = key
+            rows.append(r)
+    df = pd.DataFrame(rows)
+    if not df.empty and "ID" in df.columns:
+        df["ID"] = pd.to_numeric(df["ID"], errors="coerce").fillna(0).astype(int)
+        df = df.sort_values("ID", ascending=False)
+    return df
 
-# --- 3. تصميم الواجهة (Custom CSS) ---
+# --- 3. التصميم (CSS) ---
+st.set_page_config(page_title="InfoDoc - Portal", page_icon="📱", layout="wide")
+
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Orbitron:wght@600;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@500;900&display=swap');
     
-    :root {
-        --primary: #58a6ff;
-        --success: #3fb950;
-        --danger: #f85149;
-        --bg-card: #161b22;
-        --border: #30363d;
-    }
+    .stApp { background: #010409; color: #FFFFFF !important; }
 
-    .stApp { background-color: #010409; color: #adbac7; }
-    
-    /* Hero Section */
-    .hero-container {
-        background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
-        border: 1px solid var(--border);
-        border-radius: 15px;
-        padding: 30px;
-        margin-bottom: 25px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }
-    
-    .main-title { font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 2.5rem; letter-spacing: 2px; }
-    
-    /* Status Badges */
-    .status-badge {
-        padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 0.8rem;
-        text-transform: uppercase; border: 1px solid transparent;
-    }
-    .open { color: var(--success); border-color: var(--success); box-shadow: 0 0 10px rgba(63, 185, 80, 0.2); }
-    .closed { color: var(--danger); border-color: var(--danger); }
+    /* أنيميشن الوميض */
+    @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; opacity: 1; } 50% { opacity: 0.6; box-shadow: none; } }
+    @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; opacity: 1; } 50% { opacity: 0.6; box-shadow: none; } }
 
-    /* Device Card */
-    .dev-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        margin-bottom: 20px;
-        transition: transform 0.3s ease;
-    }
-    .dev-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+    .hero-container { background: linear-gradient(180deg, #0d1117 0%, #161b22 100%); border: 1px solid #30363d; border-radius: 15px; padding: 25px; margin-bottom: 20px; }
+    .main-title { font-family: 'Orbitron', sans-serif; color: #58a6ff; font-size: 2.2rem; font-weight: 900; }
     
-    .card-header {
-        background: rgba(88, 166, 255, 0.1);
-        padding: 12px 20px;
-        border-bottom: 1px solid var(--border);
-        display: flex; justify-content: space-between; align-items: center;
-    }
+    .status-open { color: #3fb950; border: 1px solid #3fb950; padding: 5px 12px; border-radius: 8px; animation: blink-green 2s infinite; font-weight: bold; }
+    .status-closed { color: #f85149; border: 1px solid #f85149; padding: 5px 12px; border-radius: 8px; animation: blink-red 2s infinite; font-weight: bold; }
 
-    /* Links */
-    .contact-card {
-        text-decoration: none; color: white !important;
-        background: #21262d; padding: 10px; border-radius: 8px;
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-        border: 1px solid var(--border); transition: 0.3s;
+    /* مربعات التواصل الاحترافية */
+    .contact-link {
+        text-decoration: none; color: white !important; background: #21262d; border: 1px solid #30363d;
+        padding: 15px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+        gap: 10px; transition: 0.3s; font-family: 'Cairo'; font-weight: bold;
     }
-    .contact-card:hover { background: #30363d; border-color: var(--primary); }
+    .contact-link:hover { background: #30363d; border-color: #58a6ff; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(88,166,255,0.2); }
+
+    .dev-card { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; margin-bottom: 20px; }
+    .dev-header { background: #161b22; padding: 12px 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #30363d; }
     
-    /* Progress Bar */
-    .progress-track { background: #21262d; border-radius: 10px; height: 10px; margin: 15px 0; overflow: hidden; }
-    .progress-fill { height: 100%; transition: width 1s ease-in-out; }
-    
-    [data-testid="stExpander"] { border: 1px solid #d29922 !important; background: rgba(210, 153, 34, 0.05) !important; }
+    .stTextInput input { background-color: #0d1117 !important; color: white !important; border: 1px solid #30363d !important; }
+    footer {visibility: hidden;}
     </style>
-""", unsafe_allow_html=True)
-
-# --- 4. محتوى الصفحة ---
-if firebase_ready:
-    # الترويسة
-    shop_open = db.reference("shop_settings/is_open").get()
-    if shop_open is None: shop_open = True
-    
-    status_cls = "open" if shop_open else "closed"
-    status_txt = "Atelier Ouvert" if shop_open else "Atelier Fermé"
-
-    st.markdown(f"""
-        <div class="hero-container">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                <div>
-                    <div class="main-title">INFODOC <span style="color:white">TECH</span></div>
-                    <p style="font-family: Cairo; color: #8b949e;">مركز الصيانة المعتمد - الشلف</p>
-                </div>
-                <div class="status-badge {status_cls}">{status_txt}</div>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 20px;">
-                <a href="tel:0798661900" class="contact-card">📞 0798661900</a>
-                <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="contact-card">📍 الموقع</a>
-                <a href="https://www.facebook.com/InfoDoc" target="_blank" class="contact-card">📘 Facebook</a>
-            </div>
-        </div>
     """, unsafe_allow_html=True)
 
-    with st.expander("📝 شروط الصيانة والتسعير"):
-        st.markdown("""
-            <div style="direction: rtl; font-family: Cairo; text-align: right;">
-                • فحص الجهاز (في حال عدم التصليح): <b>1000 دج</b><br>
-                • صيانة البطاقة الأم تبدأ من: <b>3000 دج</b><br>
-                • الموافقة التلقائية حتى 4000 دج. ما فوق ذلك يتم الاتصال بك.
-            </div>
-        """, unsafe_allow_html=True)
+# --- 4. رسالة الترحيب ---
+current_hour = datetime.now().hour
+greeting = "صباح الخير" if 5 <= current_hour < 12 else "مساء الخير"
+st.markdown(f"<div style='text-align: right; font-family: Cairo; color: #8b949e;'>{greeting} زبوننا الكريم، الوقت الحالي في الشلف: {datetime.now().strftime('%H:%M')}</div>", unsafe_allow_html=True)
 
-    # قسم التتبع
-    col_left, col_right = st.columns([2, 1])
+# --- 5. الهيدر ---
+shop_open = get_shop_status()
+st_cls = "status-open" if shop_open else "status-closed"
+st_txt = "ATELIER OUVERT" if shop_open else "ATELIER FERMÉ"
 
-    with col_left:
-        st.subheader("🔍 تتبع حالة جهازك")
-        phone_input = st.text_input("أدخل رقم الهاتف المسجل به:", placeholder="0XXXXXXXXX", key="user_phone")
-        
-        if phone_input:
-            devices = get_customer_devices(phone_input)
-            if not devices:
-                st.info("💡 لم يتم العثور على أجهزة مرتبطة بهذا الرقم.")
-            else:
-                for dev in devices:
-                    stat = dev.get("Statut", "En attente")
-                    prog = {"En attente": 20, "En Cours": 60, "Prêt": 100, "Livré": 100}.get(stat, 10)
-                    color = "#3fb950" if stat in ["Prêt", "Livré"] else "#58a6ff"
-                    
-                    st.markdown(f"""
-                        <div class="dev-card">
-                            <div class="card-header">
-                                <span style="font-family: Orbitron; font-weight: bold;">#{dev.get('ID', '0')}</span>
-                                <span style="font-weight: bold; color: {color}">{stat}</span>
-                            </div>
-                            <div style="padding: 20px;">
-                                <h3 style="margin:0; color: white;">{dev.get('Appareil', 'Device')}</h3>
-                                <div style="display: flex; gap: 20px; margin-top: 10px; font-size: 0.9rem; color: #8b949e;">
-                                    <span>🛠️ {dev.get('Panne', '---')}</span>
-                                    <span>💰 {dev.get('Prix', '0')} DZD</span>
-                                </div>
-                                <div class="progress-track">
-                                    <div class="progress-fill" style="width: {prog}%; background: {color};"></div>
-                                </div>
-                                <small>📅 تاريخ الدخول: {dev.get('Date_Entree', '---')}</small>
-                            </div>
+st.markdown(f"""
+    <div class="hero-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div class="main-title">INFODOC TECHNOLOGY</div>
+            <div class="{st_cls}">{st_txt}</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 20px;">
+            <a href="tel:0798661900" class="contact-link">📞 0798661900</a>
+            <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="contact-link" style="border-bottom: 3px solid #238636;">📍 موقع المحل</a>
+            <a href="https://facebook.com/infodoc02" target="_blank" class="contact-link">🔵 Facebook</a>
+            <a href="https://tiktok.com/@infodoc02" target="_blank" class="contact-link">⚫ TikTok</a>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# --- 6. المحتوى الرئيسي ---
+col_main, col_sync = st.columns([2.2, 1])
+
+with col_main:
+    st.markdown("### 🔍 تتبع حالة جهازك")
+    phone_input = st.text_input("أدخل رقم الهاتف المسجل:", placeholder="07XXXXXXXX", key="main_search")
+    phone_n = normalize_phone(phone_input)
+
+    if phone_n and len(phone_n) >= 9:
+        df = fetch_customer_devices(phone_n)
+        if df.empty:
+            st.warning("لم يتم العثور على أجهزة.")
+        else:
+            for _, r in df.iterrows():
+                stt = str(r.get("Statut", "N/A"))
+                # منطق الحالات والتقدم
+                p_map = {"En attente": 20, "En Cours": 50, "Prêt": 85, "Livre et payé": 100}
+                prog = p_map.get(stt, 10)
+                st_color = "#238636" if stt in ["Prêt", "Livre et payé"] else "#1f6feb"
+                
+                # تاريخ الضمان
+                exit_date = r.get('Date_Sortie', '---')
+                warranty_info = f"🛡️ الضمان يبدأ من: {exit_date}" if stt == "Livre et payé" else ""
+
+                st.markdown(f"""
+                    <div class="dev-card">
+                        <div class="dev-header">
+                            <b style="color:#58a6ff;">#{int(r.get('ID',0))} | {r.get('Appareil','Device')}</b>
+                            <span style="background:{st_color}; padding:2px 10px; border-radius:5px; font-weight:bold; font-size:0.8rem;">{stt}</span>
                         </div>
-                    """, unsafe_allow_html=True)
+                        <div style="padding:15px;">
+                            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:15px;">
+                                <div><small style="color:#8b949e;">المشكل</small><br><b>{r.get('Panne','---')}</b></div>
+                                <div><small style="color:#8b949e;">السعر</small><br><b>{float(r.get('Prix',0)):,.0f} DZD</b></div>
+                                <div><small style="color:#8b949e;">الدخول</small><br><b>{r.get('Date_Entree','---')}</b></div>
+                            </div>
+                            <div style="width:100%; background:#21262d; border-radius:10px; height:10px; overflow:hidden; margin-bottom:10px;">
+                                <div style="width:{prog}%; background:linear-gradient(90deg, #1f6feb, #58a6ff); height:100%; transition:1s;"></div>
+                            </div>
+                            <div style="color:#3fb950; font-size:0.8rem; font-weight:bold;">{warranty_info}</div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # زر تحميل الفاتورة (يظهر فقط عند التسليم)
+                if stt == "Livre et payé":
+                    st.download_button(label=f"📄 تحميل فاتورة جهاز #{r.get('ID')}", 
+                                       data=f"INFO DOC TECHNOLOGY\nDevice: {r.get('Appareil')}\nPrice: {r.get('Prix')} DZD\nWarranty: 1 Month from {exit_date}", 
+                                       file_name=f"facture_{r.get('ID')}.txt")
 
-    with col_right:
-        st.subheader("🤖 إشعارات تليغرام")
-        if phone_input and len(normalize_phone(phone_input)) >= 9:
-            clean_p = normalize_phone(phone_input)
-            tg_url = f"https://t.me/{st.secrets.get('BOT_USERNAME')}?start={clean_p}"
-            
-            # توليد QR Code
-            qr = qrcode.QRCode(box_size=10, border=2)
-            qr.add_data(tg_url)
-            qr.make(fit=True)
-            img = qr.make_image(fill_color="white", back_color="#0d1117")
-            
-            buf = BytesIO()
-            img.save(buf, format="PNG")
-            
-            st.image(buf.getvalue(), caption="امسح الكود للتفعيل", width=200)
-            st.link_button("🚀 تفعيل الإشعارات", tg_url, use_container_width=True)
-        else:
-            st.warning("يرجى إدخال رقم الهاتف أولاً لتفعيل الإشعارات.")
+with col_sync:
+    st.markdown("### 🤖 ربط التليغرام")
+    st.info("اربط جهازك لتلقي إشعارات فورية عند الجاهزية.")
+    if phone_n and len(phone_n) >= 9:
+        qr_url = f"https://t.me/{BOT_USERNAME}?start={phone_n}"
+        qr_img = qrcode.make(qr_url)
+        buf = BytesIO()
+        qr_img.save(buf, format="PNG")
+        st.image(buf.getvalue(), caption="امسح الكود للربط")
+        st.link_button("🚀 فتح في تليغرام", qr_url, use_container_width=True)
 
-# --- 5. بوت التليغرام (في خيط منفصل) ---
-def start_bot():
-    token = st.secrets.get("TELEGRAM_TOKEN")
-    if not token: return
-    
-    bot = telebot.TeleBot(token)
-
-    @bot.message_handler(commands=['start'])
-    def handle_start(message):
-        text = message.text.split()
-        if len(text) > 1:
-            phone = normalize_phone(text[1])
-            # تحديث معرف التليغرام في قاعدة البيانات لكل الأجهزة المرتبطة بهذا الرقم
-            all_data = db.reference("atelier").get()
-            if all_data:
-                for k, v in all_data.items():
-                    if normalize_phone(v.get("Telephone", "")).endswith(phone[-9:]):
-                        db.reference(f"atelier/{k}").update({"Telegram_ID": message.chat.id})
-                bot.reply_to(message, "✅ ممتاز! تم ربط حسابك. ستصلك رسالة هنا بمجرد جاهزية جهازك.")
-        else:
-            bot.reply_to(message, "مرحباً بك في InfoDoc! يرجى الدخول عبر الموقع لربط جهازك.")
-
-    bot.infinity_polling()
-
-if "bot_started" not in st.session_state:
-    threading.Thread(target=start_bot, daemon=True).start()
-    st.session_state["bot_started"] = True
+# --- 7. البوت ---
+if "bot_active" not in st.session_state:
+    def run_bot():
+        if not TELEGRAM_TOKEN: return
+        bot = telebot.TeleBot(TELEGRAM_TOKEN)
+        @bot.message_handler(commands=["start"])
+        def sync_acc(m):
+            args = m.text.split()
+            if len(args) > 1:
+                p = normalize_phone(args[1])
+                ref = db.reference("atelier")
+                raw = ref.get()
+                if raw:
+                    for k, v in raw.items():
+                        if normalize_phone(v.get("Telephone","")).endswith(p[-9:]):
+                            ref.child(k).update({"Telegram_ID": str(m.chat.id)})
+                    bot.send_message(m.chat.id, "✅ تم الربط! ستصلك رسالة هنا فور جاهزية جهازك.")
+        bot.polling(none_stop=True)
+    threading.Thread(target=run_bot, daemon=True).start()
+    st.session_state["bot_active"] = True
