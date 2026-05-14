@@ -47,13 +47,13 @@ def get_warranty_stats(date_sortie_str):
         except: continue
     return None
 
-# --- 3. تصميم الـ CSS الشامل (مع تأثيرات الإشعاع) ---
+# --- 3. تصميم الـ CSS الشامل (مع تأثيرات الإشعاع المحدثة) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
     .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
     
-    /* أزرار التواصل مع تأثير الإشعاع عند التمرير */
+    /* أزرار التواصل مع تأثير الإشعاع */
     .contact-btn {
         text-decoration: none; color: white !important; background: #21262d; 
         padding: 12px; border-radius: 10px; text-align: center; 
@@ -61,10 +61,9 @@ st.markdown("""
         display: flex; align-items: center; justify-content: center; gap: 8px;
     }
     .contact-btn:hover {
-        background: #30363d;
         border-color: #58a6ff;
-        box-shadow: 0 0 15px rgba(88, 166, 255, 0.4);
-        transform: translateY(-2px);
+        box-shadow: 0 0 20px rgba(88, 166, 255, 0.4);
+        transform: translateY(-3px);
     }
 
     /* حالة المحل الوامضة */
@@ -73,19 +72,31 @@ st.markdown("""
     @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.6; } }
     
     /* كارت الجهاز */
-    .device-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 20px; margin-bottom: 25px; transition: 0.3s; }
-    .device-card:hover { border-color: #58a6ff; }
+    .device-card { background: #161b22; border: 1px solid #30363d; border-radius: 15px; padding: 20px; margin-bottom: 25px; transition: 0.3s; }
+    .device-card:hover { border-color: #58a6ff; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
     
     /* زر التلغرام النباض */
     .tg-link-btn { 
         display: block; background: #229ED9; color: white !important; 
         text-align: center; padding: 15px; border-radius: 12px; 
-        text-decoration: none; font-weight: 900; margin-bottom: 20px;
+        text-decoration: none; font-weight: 900; margin-bottom: 25px;
         box-shadow: 0 4px 15px rgba(34, 158, 217, 0.3);
         transition: 0.3s;
     }
-    .tg-link-btn:hover { box-shadow: 0 0 25px #229ED9; transform: scale(1.01); }
+    .tg-link-btn:hover { box-shadow: 0 0 30px #229ED9; transform: scale(1.02); }
     
+    /* زر التحميل الخاص بـ Streamlit ليكون مشعاً */
+    .stDownloadButton button {
+        width: 100%; background-color: #21262d !important; color: #58a6ff !important;
+        border: 1px solid #30363d !important; border-radius: 8px !important;
+        transition: 0.3s !important; font-weight: bold !important;
+    }
+    .stDownloadButton button:hover {
+        border-color: #58a6ff !important;
+        box-shadow: 0 0 15px rgba(88, 166, 255, 0.3) !important;
+        color: white !important;
+    }
+
     .exp-red { background: rgba(248, 81, 73, 0.1); color: #f85149; font-weight: 900; border: 2px solid #f85149; padding: 12px; border-radius: 10px; text-align: center; }
     .badge { padding: 4px 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; font-family: 'Orbitron'; }
     </style>
@@ -136,17 +147,6 @@ if phone_raw:
                     tg_url = f"https://t.me/{st.secrets.get('BOT_USERNAME')}?start={phone_n}"
                     st.markdown(f'<a href="{tg_url}" target="_blank" class="tg-link-btn">🚀 ربط الحساب بالتلغرام للإشعارات الفورية</a>', unsafe_allow_html=True)
 
-                # زر تحميل الفاتورة مع معالجة الخطأ
-                try:
-                    df = pd.DataFrame(all_devices)[["ID", "Appareil", "Statut", "Prix", "Date_Entree", "Date_Sortie"]]
-                    output = io.BytesIO()
-                    # استخدام المحرك الافتراضي لتجنب المشاكل إذا لم تثبت xlsxwriter بعد
-                    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                        df.to_excel(writer, index=False)
-                    st.download_button(label="📥 تحميل قائمة الفواتير (Excel)", data=output.getvalue(), file_name=f"InfoDoc_{phone_n}.xlsx")
-                except Exception as e:
-                    st.info("جاري تجهيز نظام تحميل الفواتير...")
-
                 st.markdown("---")
 
                 for d in sorted_devices:
@@ -154,6 +154,7 @@ if phone_raw:
                     is_delivered = "Livré" in stat
                     bg_color = "#238636" if stat == "Prêt" else "#da3633" if stat == "Annulé" else "#6e7681" if is_delivered else "#30363d"
 
+                    # المربع الموحد
                     st.markdown(f"""
                         <div class="device-card" style="border-top: 5px solid {bg_color};">
                             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
@@ -165,6 +166,7 @@ if phone_raw:
                             </div>
                     """, unsafe_allow_html=True)
 
+                    # أشرطة الصيانة/الضمان
                     if is_delivered:
                         w = get_warranty_stats(d.get("Date_Sortie"))
                         if w and not w["is_expired"]:
@@ -185,16 +187,44 @@ if phone_raw:
                             </div>
                         """, unsafe_allow_html=True)
 
+                    # تفاصيل المبالغ والتواريخ
                     st.markdown(f"""
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; background:#0d1117; padding:15px; border-radius:10px; border: 1px solid #30363d;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; background:#0d1117; padding:15px; border-radius:10px; border: 1px solid #30363d; margin-bottom: 15px;">
                                 <div style="color:#8b949e;">📅 <b>استلام:</b><br>{d.get('Date_Entree')}</div>
                                 <div style="color:#8b949e;">🕒 <b>خروج:</b><br>{d.get('Date_Sortie', '---')}</div>
                                 <div style="color: #ffffff; font-weight: 900; font-size:1.3rem; grid-column: span 2; text-align:center; border-top:1px solid #30363d; padding-top:10px; margin-top:5px;">
                                     المبلغ: <span style="color:#58a6ff;">{d.get('Prix')} دج</span>
                                 </div>
                             </div>
-                        </div>
                     """, unsafe_allow_html=True)
+
+                    # --- زر التحميل الفردي لكل جهاز ---
+                    try:
+                        # تجهيز بيانات الجهاز الحالي فقط
+                        single_data = {
+                            "رقم التذكرة": [d.get('ID')],
+                            "الجهاز": [d.get('Appareil')],
+                            "العطل": [d.get('Panne')],
+                            "الحالة": [stat],
+                            "المبلغ": [f"{d.get('Prix')} DZD"],
+                            "تاريخ الاستلام": [d.get('Date_Entree')],
+                            "تاريخ الخروج": [d.get('Date_Sortie')]
+                        }
+                        df_single = pd.DataFrame(single_data)
+                        output = io.BytesIO()
+                        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                            df_single.to_excel(writer, index=False, sheet_name='Invoice')
+                        
+                        st.download_button(
+                            label=f"📥 تحميل فاتورة {d.get('Appareil')}",
+                            data=output.getvalue(),
+                            file_name=f"InfoDoc_Ticket_{d.get('ID')}.xlsx",
+                            key=f"btn_{d.get('ID')}" # مفتاح فريد لكل زر
+                        )
+                    except:
+                        st.error("خطأ في إنشاء ملف التحميل")
+
+                    st.markdown("</div>", unsafe_allow_html=True) # إغلاق المربع الكبير
 
 # --- 6. بوت التلغرام ---
 def start_bot():
