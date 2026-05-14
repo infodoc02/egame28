@@ -7,6 +7,7 @@ import threading
 import telebot
 import pandas as pd
 import io
+import pytz
 
 # ==============================================================================
 # 1. إعدادات الصفحة والاتصال (Config & DB)
@@ -157,11 +158,25 @@ st.markdown("""
 # ==============================================================================
 
 # الهيدر
-now = datetime.now()
+algeria_tz = pytz.timezone('Africa/Algiers')
+now = datetime.now(algeria_tz)
 greeting = "عزيزي الزبون صباح الخير" if 5 <= now.hour < 12 else "عزيزي الزبون مساء الخير"
-try: shop_status = db.reference("shop_settings/is_open").get()
-except: shop_status = True
 
+# 2. جلب الحالة من قاعدة البيانات (كما هي)
+try:
+    # جلب القيمة مباشرة (تأكد أن التطبيق الرئيسي يرفعها كـ True أو False)
+    shop_status = db.reference("shop_settings/is_open").get()
+    
+    # في حال كانت القيمة فارغة في القاعدة لأي سبب
+    if shop_status is None:
+        shop_status = False
+except Exception as e:
+    shop_status = False # حالة احتياطية
+
+# 3. التحية بناءً على وقت الجزائر
+greeting = "عزيزي الزبون صباح الخير" if 5 <= now.hour < 12 else "عزيزي الزبون مساء الخير"
+
+# 4. واجهة الهيدر
 st.markdown(f'''
     <div class="hero-container">
         <div style="color: #8b949e; font-size: 0.9rem;">{greeting} | {now.strftime("%Y-%m-%d %H:%M")}</div>
