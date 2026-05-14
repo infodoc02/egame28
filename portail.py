@@ -111,22 +111,7 @@ st.markdown("""
         font-size: 0.9rem;
     }
 
-    /* Progress Bar Custom CSS */
-    .progress-track { background: #30363d; height: 8px; border-radius: 10px; margin: 10px 0; overflow: hidden; }
-    .progress-fill { height: 100%; border-radius: 10px; transition: width 0.5s; }
-
-    /* Warranty Badge */
-    .warranty-badge {
-        background: #238636;
-        color: white !important;
-        font-size: 0.7rem;
-        padding: 2px 10px;
-        border-radius: 20px;
-        font-weight: bold;
-        border: 1px solid #3fb950;
-    }
-
-    /* ST EXPANDER BLINKING */
+    /* ST EXPANDER BLINKING (Targeting Streamlit's class) */
     div[data-testid="stExpander"] {
         border: 2px solid #d29922 !important;
         border-radius: 10px !important;
@@ -144,22 +129,10 @@ st.markdown("""
 
     /* Device Card UI */
     .dev-card { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; margin-bottom: 15px; overflow: hidden; }
-    .dev-header { background: #161b22; padding: 12px 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #30363d; align-items: center; }
+    .dev-header { background: #161b22; padding: 12px 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #30363d; }
     
     p, span, div, label, summary { color: #FFFFFF !important; }
     .stTextInput input { background-color: #0d1117 !important; color: white !important; border: 1px solid #30363d !important; }
-    
-    .map-btn {
-        background: #238636;
-        color: white !important;
-        text-decoration: none;
-        padding: 8px 15px;
-        border-radius: 8px;
-        font-weight: bold;
-        font-size: 0.8rem;
-        display: inline-block;
-        text-align: center;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -174,11 +147,11 @@ st.markdown(f"""
             <div class="main-title">INFODOC TECHNOLOGY</div>
             <div class="{status_class}">{status_text}</div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 15px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 15px;">
             <div class="contact-item">📞 <b>الهاتف:</b> 0798661900</div>
             <div class="contact-item">📍 <b>الموقع:</b> الشلف - المركز التجاري OPGI</div>
-            <a href="https://www.google.com/maps?q=36.1648,1.3317" class="map-btn">📍 عرض على الخريطة</a>
             <div class="contact-item">🔵 <b>Facebook:</b> InfoDoc</div>
+            <div class="contact-item">⚫ <b>TikTok:</b> @infodoc02</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -209,32 +182,17 @@ with col_main:
         else:
             for _, r in df.iterrows():
                 stt = str(r.get("Statut", "N/A"))
-                
-                # Progress Logic
-                p_val = 100 if stt == "Prêt" else 50 if stt == "En Cours" else 20
                 st_color = "#238636" if stt == "Prêt" else "#1f6feb"
-                
-                # Warranty Seal
-                warranty_html = '<span class="warranty-badge">🛡️ ضمان 30 يوم</span>' if stt == "Prêt" else ''
-
                 st.markdown(f"""
                     <div class="dev-card">
                         <div class="dev-header">
-                            <div>
-                                <b style="color: #58a6ff;">#{int(r.get('ID', 0))} | {r.get('Appareil', 'Device')}</b>
-                                {warranty_html}
-                            </div>
+                            <b style="color: #58a6ff;">#{int(r.get('ID', 0))} | {r.get('Appareil', 'Device')}</b>
                             <span style="background:{st_color}; padding:2px 8px; border-radius:5px; font-size:0.8rem; font-weight:bold;">{stt}</span>
                         </div>
-                        <div style="padding: 15px;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                                <div><small style="color:#8b949e;">PROBLEM</small><br><b>{r.get('Panne', '---')}</b></div>
-                                <div><small style="color:#8b949e;">PRICE</small><br><b>{float(r.get('Prix', 0)):,.0f} DZD</b></div>
-                                <div><small style="color:#8b949e;">DATE</small><br><b>{r.get('Date_Entree', '---')}</b></div>
-                            </div>
-                            <div class="progress-track">
-                                <div class="progress-fill" style="width: {p_val}%; background: {st_color};"></div>
-                            </div>
+                        <div style="padding: 15px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                            <div><small style="color:#8b949e;">PROBLEM</small><br><b>{r.get('Panne', '---')}</b></div>
+                            <div><small style="color:#8b949e;">PRICE</small><br><b>{float(r.get('Prix', 0)):,.0f} DZD</b></div>
+                            <div><small style="color:#8b949e;">DATE</small><br><b>{r.get('Date_Entree', '---')}</b></div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
