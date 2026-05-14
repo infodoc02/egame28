@@ -103,40 +103,45 @@ st.markdown("""
     .status-closed { color: #f85149; border: 2px solid #f85149; animation: blink-red 2s infinite; }
 
 
-    /* 1. استهداف الأكسباندر اللي يجي مباشرة بعد العنوان المخفي 'terms-anchor' */
-    div:has(span#terms-anchor) + div div[data-testid="stExpander"] {
+    /* 1. الستايل العام لكل الأكسباندرز (باش ما يبقاوش كحولة بزاف) */
+    div[data-testid="stExpander"] {
+        border: 1px solid #30363d !important;
+        background: rgba(22, 27, 34, 0.5) !important;
+        border-radius: 12px !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* أنيميشن الإضاءة */
+    @keyframes yellow-glow {
+        0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; }
+        50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
+    }
+
+    /* استهداف الأكسباندر الأول فقط في الصفحة (اللي هو تاع الشروط) */
+    /* أو استهداف الأكسباندر اللي يحتوي على نص معين */
+    div[data-testid="stExpander"]:first-of-type {
         border: 2px solid #d29922 !important;
         animation: yellow-glow 3s infinite ease-in-out !important;
         background: rgba(210, 153, 34, 0.05) !important;
+        direction: rtl !important; /* لضمان الاتجاه من اليمين */
     }
 
-    /* 2. تنسيق عنوان الشروط (اضغط هنا) يميناً */
-    div:has(span#terms-anchor) + div div[data-testid="stExpander"] summary {
+    /* تنسيق العنوان (اضغط هنا...) */
+    div[data-testid="stExpander"]:first-of-type summary {
         direction: rtl !important;
         text-align: right !important;
         display: flex !important;
-        flex-direction: row-reverse !important;
-        justify-content: flex-end !important;
+        flex-direction: row !important; /* ترتيب العناصر داخله */
+        justify-content: flex-start !important;
+        gap: 15px !important;
     }
 
-    div:has(span#terms-anchor) + div div[data-testid="stExpander"] summary p {
+    div[data-testid="stExpander"]:first-of-type summary p {
         font-family: 'Cairo', sans-serif !important;
         font-weight: 900 !important;
         color: #ffcc00 !important;
         font-size: 1.1rem !important;
         margin: 0 !important;
-        flex-grow: 1;
-    }
-
-    /* 3. سهم الأكسباندر لليسار */
-    div:has(span#terms-anchor) + div div[data-testid="stExpander"] summary svg {
-        order: 2 !important;
-        margin-left: 10px !important;
-    }
-
-    @keyframes yellow-glow {
-        0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; }
-        50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
     }
     
     /* إذا حبيت تنحي السهم كامل وتقلبو جهة اليسار */
