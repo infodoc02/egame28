@@ -122,6 +122,24 @@ st.markdown("""
         font-weight: bold;
         color: #c9d1d9 !important;
     }
+
+    /* توجيه عنوان الأكسباندر لليمين */
+    div[data-testid="stExpander"] summary {
+        direction: rtl;
+        text-align: right;
+    }
+
+    /* تحريك السهم الصغير لليسار باش ما يتغطاش بالكتابة */
+    div[data-testid="stExpander"] summary svg {
+        order: -1; /* يخلي السهم يجي في الجهة المقابلة */
+        margin-left: 10px;
+    }
+    
+    /* إذا حبيت تنحي السهم كامل وتقلبو جهة اليسار */
+    div[data-testid="stExpander"] summary {
+        flex-direction: row-reverse;
+        justify-content: space-between;
+    }
     </style>
 """, unsafe_allow_html=True)
 
