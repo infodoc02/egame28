@@ -61,7 +61,7 @@ def fetch_customer_devices(phone: str) -> pd.DataFrame:
         df = df.sort_values("ID", ascending=False)
     return df
 
-# --- UI & Professional CSS (Enhanced Visibility) ---
+# --- UI & Professional CSS with Animations ---
 st.set_page_config(page_title="InfoDoc - Client Portal", page_icon="⚡", layout="wide")
 
 st.markdown("""
@@ -73,7 +73,18 @@ st.markdown("""
         color: #FFFFFF !important;
     }
 
-    /* Hero & Titles */
+    /* Keyframes for Blinking Status */
+    @keyframes blink-green {
+        0% { opacity: 1; box-shadow: 0 0 15px rgba(63, 185, 80, 0.6); }
+        50% { opacity: 0.4; box-shadow: 0 0 5px rgba(63, 185, 80, 0.2); }
+        100% { opacity: 1; box-shadow: 0 0 15px rgba(63, 185, 80, 0.6); }
+    }
+    @keyframes blink-red {
+        0% { opacity: 1; box-shadow: 0 0 15px rgba(248, 81, 73, 0.6); }
+        50% { opacity: 0.4; box-shadow: 0 0 5px rgba(248, 81, 73, 0.2); }
+        100% { opacity: 1; box-shadow: 0 0 15px rgba(248, 81, 73, 0.6); }
+    }
+
     .hero-container {
         background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
         border: 1px solid #30363d;
@@ -87,20 +98,38 @@ st.markdown("""
         color: #58a6ff;
         font-size: 2.5rem;
         font-weight: 900;
-        text-shadow: 0 0 10px rgba(88, 166, 255, 0.3);
+    }
+
+    /* Status Badges with Animation */
+    .status-active-open {
+        background: rgba(63, 185, 80, 0.15);
+        color: #3fb950 !important;
+        border: 1px solid #3fb950;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: bold;
+        animation: blink-green 2s infinite ease-in-out;
+    }
+    .status-active-closed {
+        background: rgba(248, 81, 73, 0.15);
+        color: #f85149 !important;
+        border: 1px solid #f85149;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: bold;
+        animation: blink-red 2s infinite ease-in-out;
     }
 
     /* Contact Info Section */
     .contact-item {
         background: #21262d;
-        border-left: 3px solid #58a6ff;
+        border-left: 4px solid #58a6ff;
         padding: 12px 20px;
         border-radius: 8px;
         margin-bottom: 10px;
         color: #FFFFFF !important;
         font-family: 'Cairo', sans-serif;
     }
-    .contact-item b { color: #58a6ff; }
 
     /* Arabic Instructions (Right Aligned) */
     .instruction-box {
@@ -116,15 +145,13 @@ st.markdown("""
         line-height: 1.8;
     }
 
-    /* Device Card (Ultra Style) */
+    /* Device Card UI */
     .dev-card {
         background: #0d1117;
         border: 1px solid #30363d;
         border-radius: 12px;
-        padding: 0;
         margin-bottom: 20px;
         overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
     .dev-header {
         background: #161b22;
@@ -132,27 +159,15 @@ st.markdown("""
         border-bottom: 1px solid #30363d;
         display: flex;
         justify-content: space-between;
-        align-items: center;
     }
-    .dev-body { padding: 20px; }
-    
-    /* Status Styles */
-    .status-badge {
-        padding: 4px 12px;
-        border-radius: 6px;
-        font-weight: bold;
-        text-transform: uppercase;
+    .status-label {
+        padding: 4px 10px;
+        border-radius: 5px;
         font-size: 0.8rem;
+        font-weight: bold;
     }
-    .ready { background: #238636; color: white; box-shadow: 0 0 10px rgba(35, 134, 54, 0.4); }
-    .working { background: #1f6feb; color: white; box-shadow: 0 0 10px rgba(31, 111, 235, 0.4); }
-    .waiting { background: #9e6a03; color: white; }
-
-    /* Text Visibility Fix */
-    p, span, div, label { color: #FFFFFF !important; }
-    .label-blue { color: #58a6ff !important; font-weight: bold; font-size: 0.85rem; }
     
-    /* Input Styling */
+    p, span, div, label { color: #FFFFFF !important; }
     .stTextInput input {
         background-color: #0d1117 !important;
         color: white !important;
@@ -163,13 +178,16 @@ st.markdown("""
 
 # --- Shop Info Section ---
 shop_open = get_shop_status()
-status_html = '<span style="color:#3fb950; font-weight:bold;">● OPEN</span>' if shop_open else '<span style="color:#f85149; font-weight:bold;">○ CLOSED</span>'
+if shop_open:
+    status_html = '<div class="status-active-open">ATELIER OUVERT MAINTENANT</div>'
+else:
+    status_html = '<div class="status-active-closed">ATELIER FERMÉ MAINTENANT</div>'
 
 st.markdown(f"""
     <div class="hero-container">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
             <div class="main-title">INFODOC TECHNOLOGY</div>
-            <div style="font-family: 'Orbitron'; font-size: 1.1rem;">{status_html}</div>
+            <div>{status_html}</div>
         </div>
         <hr style="border-color: #30363d; margin: 20px 0;">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
@@ -186,69 +204,55 @@ st.markdown("""
     <div class="instruction-box">
         <h3 style="margin-top:0; color:#d29922; font-weight:900;">⚠️ ملاحظات وشروط الصيانة</h3>
         1️⃣ عند فحص الجهاز وتبين أنه قابل للتصليح ثم <b>رفض الزبون التصليح</b>، يتوجب دفع مبلغ <b>1000 دج</b> ثمن الفحص والفتح والغلق.<br>
-        2️⃣ أسعار التصليح في حالة العمل على <b>البطاقة الأم (Carte Mère)</b> تبدأ من <b>3000 دج</b>.<br>
+        2️⃣ أسعار التصليح في حالة العمل على <b>البطاقة الأم (Carte Mère)</b> تبدأ من <b>3000 دج</b> فما فوق.<br>
         3️⃣ <b>نظام الموافقة:</b> نصلح الجهاز مباشرة إذا كانت التكلفة بين 3000 و 4000 دج. في حال تجاوزت 4000 دج، سنرسل لك رسالة للموافقة أو الرفض.<br>
         4️⃣ <b>للتواصل السريع:</b> نرجو من زبائننا الكرام تحميل تطبيق <b>Telegram</b> وربطه عبر الزر أدناه لتلقي الإشعارات الفورية.
     </div>
     """, unsafe_allow_html=True)
 
-# --- Main Interaction ---
+# --- Main App ---
 col_main, col_sync = st.columns([2, 1])
 
 with col_main:
     st.markdown("### 🔍 Track Device Status")
-    phone_input = st.text_input("Enter your registered phone number:", placeholder="0798661900")
+    phone_input = st.text_input("Enter phone number:", placeholder="07XXXXXXXX")
     phone_n = normalize_phone(phone_input)
 
     if phone_n and len(phone_n) >= 9:
         df = fetch_customer_devices(phone_n)
         if df.empty:
-            st.warning("No records found for this phone number.")
+            st.warning("No records found.")
         else:
             for _, r in df.iterrows():
                 stt = str(r.get("Statut", "N/A"))
-                st_class = "ready" if stt == "Prêt" else "working" if "Cours" in stt else "waiting"
+                color = "#238636" if stt == "Prêt" else "#1f6feb"
                 
                 st.markdown(f"""
                     <div class="dev-card">
                         <div class="dev-header">
-                            <span style="font-family: 'Orbitron'; color: #58a6ff; font-weight: bold; font-size: 1.1rem;">
-                                ID: #{int(r.get('ID', 0))} — {r.get('Appareil', 'Device')}
-                            </span>
-                            <span class="status-badge {st_class}">{stt}</span>
+                            <span style="color: #58a6ff; font-weight: bold;">ID: #{int(r.get('ID', 0))} | {r.get('Appareil', 'Device')}</span>
+                            <span class="status-label" style="background:{color};">{stt}</span>
                         </div>
-                        <div class="dev-body">
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
-                                <div>
-                                    <span class="label-blue">🛠️ PROBLEM</span><br>
-                                    <span style="font-size: 1.1rem;">{r.get('Panne', '---')}</span>
-                                </div>
-                                <div>
-                                    <span class="label-blue">💰 PRICE</span><br>
-                                    <span style="font-size: 1.1rem; color: #f0f6fc;">{float(r.get('Prix', 0)):,.0f} DZD</span>
-                                </div>
-                                <div>
-                                    <span class="label-blue">📅 ENTRY DATE</span><br>
-                                    <span>{r.get('Date_Entree', '---')}</span>
-                                </div>
-                            </div>
+                        <div style="padding: 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                            <div><small style="color:#8b949e;">🛠️ PROBLEM</small><br><b>{r.get('Panne', '---')}</b></div>
+                            <div><small style="color:#8b949e;">💰 PRICE</small><br><b>{float(r.get('Prix', 0)):,.0f} DZD</b></div>
+                            <div><small style="color:#8b949e;">📅 DATE</small><br><b>{r.get('Date_Entree', '---')}</b></div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
 
 with col_sync:
-    st.markdown("### 🤖 Sync Telegram")
+    st.markdown("### 🤖 Telegram Sync")
     if phone_n and len(phone_n) >= 9:
-        st.write("Link your device to receive instant notifications:")
         qr_img = qrcode.make(f"https://t.me/{BOT_USERNAME}?start={phone_n}")
         buf = BytesIO()
         qr_img.save(buf, format="PNG")
-        st.image(buf.getvalue(), caption="Scan to Connect", width=180)
-        st.link_button("🚀 Open Telegram Bot", f"https://t.me/{BOT_USERNAME}?start={phone_n}", use_container_width=True)
+        st.image(buf.getvalue(), caption="Scan to Link Account", width=180)
+        st.link_button("🚀 Start Telegram Bot", f"https://t.me/{BOT_USERNAME}?start={phone_n}", use_container_width=True)
     else:
-        st.info("Please enter your phone number to show the sync link.")
+        st.info("Input phone to sync.")
 
-# --- Bot Backend (Hidden) ---
+# --- Background Bot Thread ---
 def run_bot():
     bot = telebot.TeleBot(TELEGRAM_TOKEN)
     @bot.message_handler(commands=["start"])
@@ -264,7 +268,7 @@ def run_bot():
                     if normalize_phone(v.get("Telephone", "")).endswith(p[-9:]):
                         ref.child(k).update({"Telegram_ID": str(m.chat.id)})
                         updated += 1
-                bot.send_message(m.chat.id, "✅ InfoDoc Sync: Success!" if updated > 0 else "⚠️ No device linked.")
+                bot.send_message(m.chat.id, "✅ InfoDoc Sync: Success!")
     bot.remove_webhook()
     bot.polling(none_stop=True)
 
