@@ -172,28 +172,23 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # --- 5. الهيدر والمعلومات ---
-shop_open = get_shop_status()
-status_class = "status-open" if shop_open else "status-closed"
-status_text = "ATELIER OUVERT" if shop_open else "ATELIER FERMÉ"
+status_class = "status-open" if shop_status else "status-closed"
+status_text = "ATELIER OUVERT" if shop_status else "ATELIER FERMÉ"
 
 st.markdown(f"""
-    <div class="hero-container">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div class="main-title">INFODOC TECHNOLOGY</div>
-            <div class="{status_class}">{status_text}</div>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 15px;">
-            <div class="contact-item">📞 <b>الهاتف:</b> 0798661900</div>
-            <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" style="text-decoration: none;">
-                <div style="background: #238636; color: white; text-align: center; padding: 10px; border-radius: 8px; font-weight: bold; transition: 0.3s;">
-                    📍 اتبع المسار إلى المحل (Google Maps)
-                </div>
-            </a>
-            <div class="contact-item">🔵 <b>Facebook:</b> InfoDoc</div>
-            <div class="contact-item">⚫ <b>TikTok:</b> @infodoc02</div>
-        </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 15px;">
+        <div class="contact-item">📞 <b>الهاتف:</b> 0798661900</div>
+        <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" style="text-decoration: none;">
+            <div style="background: #238636; color: white; text-align: center; padding: 10px; border-radius: 8px; font-weight: bold; transition: 0.3s;">
+                📍 اتبع المسار إلى المحل (Google Maps)
+            </div>
+        </a>
+        <div class="contact-item">🔵 <b>Facebook:</b> InfoDoc</div>
+        <div class="contact-item">⚫ <b>TikTok:</b> @infodoc02</div>
     </div>
-    """, unsafe_allow_html=True)
+</div>
+""", unsafe_allow_html=True)
 
 # --- 6. الشروط الموضحة ---
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
