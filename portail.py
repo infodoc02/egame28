@@ -34,16 +34,37 @@ def normalize_phone(phone: str) -> str:
 def get_warranty_stats(date_sortie_str):
     if not date_sortie_str or str(date_sortie_str).strip() in ["", "---", "None"]:
         return None
-    # تجربة عدة صيغ للتاريخ لضمان عملها
-    for fmt in ("%d-%m-%Y", "%Y-%m-%d", "%d/%m/%Y"):
+    
+    # تنظيف النص من أي فراغات إضافية
+    date_clean = str(date_sortie_str).strip()
+    
+    # قائمة الصيغ: أضفنا صيغ تشمل الوقت (الساعات والدقائق)
+    date_formats = [
+        "%Y-%m-%d %H:%M",    # الصيغة التي لديك: 2026-05-07 13:13
+        "%d-%m-%Y %H:%M",    # صيغة يوم-شهر-سنة مع وقت
+        "%Y-%m-%d",          # تاريخ فقط
+        "%d-%m-%Y",          # تاريخ فقط (يوم أولاً)
+        "%d/%m/%Y",          # تاريخ بشرطة مائلة
+        "%d/%m/%Y %H:%M"     # تاريخ مائل مع وقت
+    ]
+    
+    for fmt in date_formats:
         try:
-            date_s = datetime.strptime(str(date_sortie_str).strip(), fmt)
+            # محاولة تحويل النص إلى كائن تاريخ
+            date_s = datetime.strptime(date_clean, fmt)
+            
+            # حساب الفرق بالأيام
             diff_days = (datetime.now() - date_s).days
+            
+            # حساب الأيام المتبقية من شهر (30 يوم)
             remaining_days = max(30 - diff_days, 0)
             percent = (remaining_days / 30) * 100
             expired = diff_days > 30
+            
             return {"percent": percent, "is_expired": expired, "days_left": remaining_days}
-        except: continue
+        except ValueError:
+            continue  # إذا فشلت هذه الصيغة، جرب التالية
+            
     return None
 
 # --- 3. تصميم الـ CSS ---
