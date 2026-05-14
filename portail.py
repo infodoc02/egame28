@@ -105,7 +105,7 @@ st.markdown(f"""
         <div class="contact-grid">
             <a href="tel:0798661900" class="premium-btn">📞 0798661900</a>
             <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="premium-btn">📍 موقع المحل (الشلف)</a>
-            <a href="https://www.facebook.com/share/p/19PqmAipdZ/" target="_blank" class="premium-btn">📘 Facebook Page</a>
+            <a href="https://www.facebook.com/100095433977319/" target="_blank" class="premium-btn">📘 Facebook Page</a>
             <a href="https://www.tiktok.com/@infodoc02" target="_blank" class="premium-btn">📱 TikTok Channel</a>
         </div>
     </div>
