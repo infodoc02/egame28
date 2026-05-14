@@ -158,7 +158,7 @@ st.markdown("""
 
 # الهيدر
 now = datetime.now()
-greeting = "صباح الخير" if 5 <= now.hour < 12 else "مساء الخير"
+greeting = "عزيزي الزبون صباح الخير" if 5 <= now.hour < 12 else "عزيزي الزبون مساء الخير"
 try: shop_status = db.reference("shop_settings/is_open").get()
 except: shop_status = True
 
@@ -176,9 +176,9 @@ st.markdown(f'''
 # أزرار التواصل
 c1, c2, c3, c4 = st.columns(4)
 with c1: st.markdown('<a href="tel:0798661900" class="custom-btn"><span>📞</span><b>اتصل بنا</b></a>', unsafe_allow_html=True)
-with c2: st.markdown('<a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="custom-btn"><span>📍</span><b>موقعنا</b></a>', unsafe_allow_html=True)
-with c3: st.markdown('<a href="https://fb.com/..." target="_blank" class="custom-btn"><span>📘</span><b>فيسبوك</b></a>', unsafe_allow_html=True)
-with c4: st.markdown('<a href="https://tiktok.com/..." target="_blank" class="custom-btn"><span>📱</span><b>تيك توك</b></a>', unsafe_allow_html=True)
+with c2: st.markdown('<a href="https://www.google.com/maps/place/36%C2%B010'04.7%22N+1%C2%B020'04.9%22E/@36.1678617,1.334636,20.5z/data=!4m9!1m4!8m3!1e4!3m1!1e1!3m3!8m2!3d36.167975!4d1.334701?entry=ttu&g_ep=EgoyMDI2MDUxMi4wIKXMDSoASAFQAw%3D%3D" target="_blank" class="custom-btn"><span>📍</span><b>موقعنا</b></a>', unsafe_allow_html=True)
+with c3: st.markdown('<a href="https://www.facebook.com/share/18dX9h9otd/" target="_blank" class="custom-btn"><span>📘</span><b>فيسبوك</b></a>', unsafe_allow_html=True)
+with c4: st.markdown('<a href="https://tiktok.com/@infodoc02/" target="_blank" class="custom-btn"><span>📱</span><b>تيك توك</b></a>', unsafe_allow_html=True)
 
 # قسم الشروط (المضيء فقط)
 
@@ -188,6 +188,7 @@ with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط 
             1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<b>رفض الزبون ذلك</b>، يتم دفع <b>1000 دج</b> ثمن الجهد والفحص.<br>
             2️⃣ أسعار العمل على <b>البطاقة الأم (Carte Mère)</b> تبدأ من <b>3000 دج</b>.<br>
             3️⃣ <b>الموافقة التلقائية:</b> نصلح مباشرة إذا كان السعر بين 3000 و 4000 دج. فوق ذلك نطلب موافقتك أولاً.
+            4️⃣ <b>تنبيهات تلقائية:</b> ننصحك بتحميل تطبيق <b>Telegram</b> وفتح حساب فيه، ثم الضغط على الزر الأزرق العائم بالأسفل لربط جهازك لتصلك حالة الصيانة (جاهز، قيد التصليح..) في هاتفك فوراً.            
         </div>
     """, unsafe_allow_html=True)
 
