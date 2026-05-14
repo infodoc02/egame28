@@ -53,6 +53,36 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
     .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
     
+    /* أنيميشن العنوان الخرافي */
+    .main-title {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 3.5rem;
+        font-weight: 900;
+        text-align: center;
+        margin-bottom: 0px;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        text-shadow: 0 0 10px #58a6ff, 0 0 20px #58a6ff, 0 0 40px #58a6ff;
+        animation: glow 2s ease-in-out infinite alternate;
+    }
+    
+    .sub-title {
+        font-family: 'Cairo', sans-serif;
+        font-size: 1.2rem;
+        text-align: center;
+        color: #8b949e;
+        margin-top: -10px;
+        margin-bottom: 20px;
+        letter-spacing: 2px;
+        font-weight: 400;
+    }
+
+    @keyframes glow {
+        from { text-shadow: 0 0 10px #58a6ff, 0 0 20px #58a6ff, 0 0 30px #005cc5; }
+        to { text-shadow: 0 0 20px #58a6ff, 0 0 40px #58a6ff, 0 0 60px #005cc5; transform: scale(1.02); }
+    }
+
     .contact-btn {
         text-decoration: none; color: white !important; background: #21262d; 
         padding: 12px; border-radius: 10px; text-align: center; 
@@ -110,9 +140,12 @@ st.markdown(f"""
         <div style="color: #58a6ff; font-weight: bold;">CHLEF, ALGERIA</div>
     </div>
     <div style="background: #161b22; border: 1px solid #30363d; border-radius: 15px; padding: 25px; margin-bottom: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-            <h1 style="margin:0; font-family:'Orbitron'; color:#58a6ff;">INFODOC TECHNOLOGY</h1>
-            {status_html}
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div class="main-title">INFODOC</div>
+            <div class="sub-title">Vente & Reparation</div>
+            <div style="display: flex; justify-content: center; margin-top: 10px;">
+                {status_html}
+            </div>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 25px;">
             <a href="tel:0798661900" class="contact-btn">📞 اتصل بنا</a>
@@ -123,6 +156,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
+# باقي الكود كما هو تماماً دون أي تغيير في المنطق...
 # --- 5. البحث وتدفق البيانات ---
 phone_raw = st.text_input("🔍 أدخل رقم هاتفك لتتبع أجهزتك:", placeholder="0XXXXXXXXX")
 
@@ -148,9 +182,7 @@ if phone_raw:
                     stat = str(d.get("Statut", "En Cours"))
                     is_delivered = "Livré" in stat
                     bg_color = "#238636" if stat == "Prêt" else "#da3633" if stat == "Annulé" else "#6e7681" if is_delivered else "#30363d"
-                    # --- بداية المربع الموحد بإزاحة 21 مسافة ---
                     with st.container():
-                         # 1. فتح حاوية HTML للمربع
                          st.markdown(f"""
                              <div class="device-card" style="border-top: 5px solid {bg_color}; background: #161b22; border: 1px solid #30363d; border-radius: 15px; padding: 20px; margin-bottom: 5px;">
                                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
@@ -162,7 +194,6 @@ if phone_raw:
                                  </div>
                          """, unsafe_allow_html=True)
 
-                         # 2. شريط الضمان أو التقدم (داخل المربع)
                          if is_delivered:
                              w = get_warranty_stats(d.get("Date_Sortie"))
                              if w and not w["is_expired"]:
@@ -183,7 +214,6 @@ if phone_raw:
                                  </div>
                              """, unsafe_allow_html=True)
 
-                         # 3. تفاصيل المبالغ والتواريخ (داخل المربع)
                          st.markdown(f"""
                              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; background:#0d1117; padding:15px; border-radius:10px; border: 1px solid #30363d; margin-bottom: 15px;">
                                  <div style="color:#8b949e;">📅 <b>استلام:</b><br>{d.get('Date_Entree')}</div>
@@ -194,7 +224,6 @@ if phone_raw:
                              </div>
                          """, unsafe_allow_html=True)
 
-                         # 4. زر التحميل الفردي (داخل المربع)
                          try:
                              s_data = {"ID": [d.get('ID')], "Appareil": [d.get('Appareil')], "Prix": [d.get('Prix')]}
                              df_s = pd.DataFrame(s_data)
@@ -203,11 +232,7 @@ if phone_raw:
                                  df_s.to_excel(wr, index=False)
                              st.download_button(label=f"📥 فاتورة {d.get('Appareil')}", data=buf.getvalue(), file_name=f"InfoDoc_{d.get('ID')}.xlsx", key=f"dl_{d.get('_id')}")
                          except: pass
-
-                         # 5. إغلاق الـ div الأساسي للمربع
                          st.markdown("</div>", unsafe_allow_html=True)
-
-                 
 
 # --- 6. بوت التلغرام ---
 def start_bot():
