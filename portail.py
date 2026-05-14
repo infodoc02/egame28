@@ -111,28 +111,18 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
 
-    /* 2. أنيميشن الإضاءة الصفراء */
-    @keyframes blink-yellow { 
-        0%, 100% { border-color: #d29922; box-shadow: 0 0 10px #d29922; } 
-        50% { border-color: #ffcc00; box-shadow: 0 0 25px #ffcc00; } 
+    /* تنسيق عنوان الأكسباندر ليكون عربياً وبالخط المطلوب */
+    .terms-section div[data-testid="stExpander"] summary {
+        direction: rtl !important;
+        text-align: right !important;
     }
 
-    /* 3. تطبيق الإضاءة فقط على قسم الشروط */
-    .terms-section div[data-testid="stExpander"] {
-        border: 2px solid #d29922 !important;
-        animation: blink-yellow 2s infinite ease-in-out !important;
-    }
-
-    /* تلوين عنوان أكسباندر الشروط */
-    .terms-section summary {
-        color: #ffcc00 !important;
+    .terms-section div[data-testid="stExpander"] summary p {
+        font-family: 'Cairo', sans-serif !important;
         font-weight: 900 !important;
-    }
-    
-    /* تحسين العناوين للأكسباندرز العادية (الأجهزة) */
-    div[data-testid="stExpander"] summary p {
-        font-weight: bold;
-        color: #c9d1d9 !important;
+        font-size: 1.1rem !important;
+        color: #ffcc00 !important; /* اللون الأصفر المضيء */
+        margin-right: 10px !important;
     }
 
     /* توجيه عنوان الأكسباندر لليمين */
