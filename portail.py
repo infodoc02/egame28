@@ -162,13 +162,79 @@ st.markdown(f'<div style="text-align: center; color: #8b949e; font-size: 0.9rem;
 st.markdown('<div class="main-title">INFODOC</div>', unsafe_allow_html=True)
 st.markdown('<div style="text-align: center; color: #8b949e; margin-bottom: 20px;">Vente & Réparation Informatique</div>', unsafe_allow_html=True)
 
-# --- 4. عرض الواجهة ---
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@500;900&display=swap');
+    
+    .stApp {
+        background: #010409;
+        color: #FFFFFF !important;
+    }
 
-# الوقت الحالي
-now = datetime.now().strftime("%H:%M")
-st.markdown(f"<p style='text-align: right; opacity: 0.7;'>الوقت الحالي في الشلف: {now}</p>", unsafe_allow_html=True)
+    /* Animations */
+    @keyframes blink-green { 0%, 100% { opacity: 1; box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.5; } }
+    @keyframes blink-red { 0%, 100% { opacity: 1; box-shadow: 0 0 15px #f85149; } 50% { opacity: 0.5; } }
+    @keyframes blink-yellow-border { 
+        0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; } 
+        50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; } 
+    }
 
-# الهيدر مع زر الخريطة المدمج
+    .hero-container {
+        background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+        border: 1px solid #30363d;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 15px;
+    }
+    
+    .main-title {
+        font-family: 'Orbitron', sans-serif;
+        color: #58a6ff;
+        font-size: 2.2rem;
+        font-weight: 900;
+    }
+
+    /* Status Style */
+    .status-open { color: #3fb950; border: 1px solid #3fb950; padding: 5px 12px; border-radius: 8px; animation: blink-green 2s infinite; font-weight: bold; }
+    .status-closed { color: #f85149; border: 1px solid #f85149; padding: 5px 12px; border-radius: 8px; animation: blink-red 2s infinite; font-weight: bold; }
+
+    /* Contact Cards */
+    .contact-item {
+        background: #21262d;
+        border-left: 4px solid #58a6ff;
+        padding: 10px 15px;
+        border-radius: 8px;
+        color: #FFFFFF !important;
+        font-family: 'Cairo', sans-serif;
+        font-size: 0.9rem;
+    }
+
+    /* ST EXPANDER BLINKING (Targeting Streamlit's class) */
+    div[data-testid="stExpander"] {
+        border: 2px solid #d29922 !important;
+        border-radius: 10px !important;
+        animation: blink-yellow-border 3s infinite ease-in-out;
+        background: rgba(210, 153, 34, 0.05) !important;
+        direction: rtl;
+    }
+    
+    div[data-testid="stExpander"] summary {
+        color: #ffcc00 !important;
+        font-family: 'Cairo', sans-serif;
+        font-weight: 900 !important;
+        font-size: 1.1rem !important;
+    }
+
+    /* Device Card UI */
+    .dev-card { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; margin-bottom: 15px; overflow: hidden; }
+    .dev-header { background: #161b22; padding: 12px 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #30363d; }
+    
+    p, span, div, label, summary { color: #FFFFFF !important; }
+    .stTextInput input { background-color: #0d1117 !important; color: white !important; border: 1px solid #30363d !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- Header Section ---
 shop_open = shop_status
 status_class = "status-open" if shop_open else "status-closed"
 status_text = "ATELIER OUVERT" if shop_open else "ATELIER FERMÉ"
@@ -181,29 +247,21 @@ st.markdown(f"""
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 15px;">
             <div class="contact-item">📞 <b>الهاتف:</b> 0798661900</div>
-            <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" style="text-decoration: none;">
-                <div style="background: #238636; color: white; text-align: center; padding: 10px; 
-                            border-radius: 8px; font-weight: bold; height: 100%; display: flex; 
-                            align-items: center; justify-content: center; transition: 0.3s;"
-                     onmouseover="this.style.background='#2ea043'" onmouseout="this.style.background='#238636'">
-                    📍 اتبع المسار إلى المحل (Google Maps)
-                </div>
-            </a>
+            <div class="contact-item">📍 <b>الموقع:</b> الشلف - المركز التجاري OPGI</div>
             <div class="contact-item">🔵 <b>Facebook:</b> InfoDoc</div>
             <div class="contact-item">⚫ <b>TikTok:</b> @infodoc02</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-
-# الشروط
+# --- Expander (Blinking & Right-Aligned) ---
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
     st.markdown("""
-        <div style="text-align: right; direction: rtl; line-height: 1.8; padding: 10px;">
-            1️⃣ فحص الجهاز المرفوض تصليحه: <b>1000 دج</b> ثمن الجهد.<br>
-            2️⃣ أسعار البطاقة الأم تبدأ من <b>3000 دج</b>.<br>
-            3️⃣ الموافقة التلقائية بين 3000 و 4000 دج.<br>
-            4️⃣ يرجى ربط التلغرام للحصول على إشعارات فورية.
+        <div style="text-align: right; direction: rtl; font-family: 'Cairo'; line-height: 1.8; padding: 10px; color: #f0f6fc;">
+            1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<b>رفض الزبون ذلك</b>، يتم دفع <b>1000 دج</b> ثمن الجهد والفحص.<br>
+            2️⃣ أسعار العمل على <b>البطاقة الأم (Carte Mère)</b> تبدأ من <b>3000 دج</b>.<br>
+            3️⃣ <b>الموافقة التلقائية:</b> نصلح مباشرة إذا كان السعر بين 3000 و 4000 دج. فوق ذلك نطلب موافقتك أولاً.<br>
+            4️⃣ <b>التنبيهات:</b> يرجى ربط حسابك بـ <b>Telegram</b> لتصلك رسالة فور جاهزية جهازك.
         </div>
     """, unsafe_allow_html=True)
 
