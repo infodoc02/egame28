@@ -34,13 +34,13 @@ def normalize_phone(phone: str) -> str:
 
 def get_warranty_info(status, date_sortie_str):
     """الضمان يظهر فقط في حالة LIVRE ET PAYE ولمدة شهر"""
-    if status != "LIVRE ET PAYE" or not date_sortie_str or date_sortie_str == "---":
+    if status != "Livré & Payé" or not date_sortie_str or date_sortie_str == "---":
         return None
     try:
         date_s = datetime.strptime(date_sortie_str, "%Y-%m-%d")
         expiry = date_s + timedelta(days=30)
         expired = datetime.now() > expiry
-        return {"expiry": expiry.strftime("%Y-%m-%d"), "is_expired": expired}
+        return {"expiry": expiry.strftime("%Y-%m-%d"), "éxpiré": expired}
     except: return None
 
 # --- 3. تصميم الـ CSS الاحترافي (الوميض + الأزرار) ---
@@ -105,7 +105,7 @@ st.markdown(f"""
         <div class="contact-grid">
             <a href="tel:0798661900" class="premium-btn">📞 0798661900</a>
             <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="premium-btn">📍 موقع المحل (الشلف)</a>
-            <a href="https://www.facebook.com/InfoDoc" target="_blank" class="premium-btn">📘 Facebook Page</a>
+            <a href="https://www.facebook.com/share/p/19PqmAipdZ/" target="_blank" class="premium-btn">📘 Facebook Page</a>
             <a href="https://www.tiktok.com/@infodoc02" target="_blank" class="premium-btn">📱 TikTok Channel</a>
         </div>
     </div>
@@ -137,7 +137,7 @@ if phone_raw:
                     stat = str(d.get("Statut", "")).upper()
                     
                     # منطق شريط التقدم
-                    p_map = {"EN ATTENTE": 0, "ENCOURS": 33, "REPARABLE": 66, "PRET": 100, "LIVRE ET PAYE": 100}
+                    p_map = {"En Attente": 0, "En Cours": 33, "Réparable": 66, "Prét": 100, "Livré & Payé": 100}
                     prog = p_map.get(stat, 0)
                     prog_color = "#3fb950" if prog == 100 else "#1f6feb" if prog > 0 else "#8b949e"
                     
