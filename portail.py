@@ -31,25 +31,17 @@ def normalize_phone(phone: str) -> str:
     if len(p) == 9 and p[0] in ["5", "6", "7"]: p = "0" + p
     return p
 
-# دالة حساب الضمان (تم التعديل لتقبل عدة صيغ للتاريخ لتفادي الأخطاء)
+# دالة حساب الضمان (تعديل جديد بناءً على طلبك)
 def get_warranty_stats(date_sortie_str):
-    if not date_sortie_str or str(date_sortie_str).strip() == "---":
+    if not date_sortie_str or date_sortie_str == "---":
         return None
-    
-    # قائمة بالصيغ المحتملة للتاريخ
-    date_formats = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d"]
-    
-    for fmt in date_formats:
-        try:
-            date_s = datetime.strptime(str(date_sortie_str).strip(), fmt)
-            diff_days = (datetime.now() - date_s).days
-            percent = min(max((diff_days / 30) * 100, 0), 100)
-            expired = diff_days > 30
-            return {"percent": percent, "is_expired": expired}
-        except ValueError:
-            continue # إذا لم تنجح الصيغة، جرب التي بعدها
-            
-    return None # في حال كان التاريخ مكتوباً بشكل غير مفهوم تماماً
+    try:
+        date_s = datetime.strptime(date_sortie_str, "%d-%m-%Y")
+        diff_days = (datetime.now() - date_s).days
+        percent = min(max((diff_days / 30) * 100, 0), 100)
+        expired = diff_days > 30
+        return {"percent": percent, "is_expired": expired}
+    except: return None
 
 # --- 3. تصميم الـ CSS ---
 st.markdown("""
@@ -64,36 +56,6 @@ st.markdown("""
     @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; opacity: 1; } 50% { box-shadow: none; opacity: 0.7; } }
     @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; opacity: 1; } 50% { box-shadow: none; opacity: 0.7; } }
     
-    /* أنيميشن زر التلغرام المشع */
-    @keyframes glow-telegram {
-        0%, 100% { box-shadow: 0 0 10px #229ED9; }
-        50% { box-shadow: 0 0 25px #229ED9, 0 0 15px #229ED9; }
-    }
-    
-    /* تصميم زر التلغرام العائم */
-    .tg-floating-btn {
-        position: fixed;
-        bottom: 25px;
-        right: 25px;
-        background: linear-gradient(45deg, #229ED9, #2AABEE);
-        color: white !important;
-        text-decoration: none;
-        padding: 12px 25px;
-        border-radius: 30px;
-        font-family: 'Cairo';
-        font-weight: bold;
-        font-size: 1rem;
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        animation: glow-telegram 2s infinite;
-        transition: 0.3s;
-    }
-    .tg-floating-btn:hover {
-        transform: scale(1.05);
-    }
-
     .status-open { color: #3fb950; border: 2px solid #3fb950; padding: 6px 15px; border-radius: 8px; animation: blink-green 2s infinite; font-weight: bold; font-family: 'Orbitron'; }
     .status-closed { color: #f85149; border: 2px solid #f85149; padding: 6px 15px; border-radius: 8px; animation: blink-red 2s infinite; font-weight: bold; font-family: 'Orbitron'; }
 
@@ -158,11 +120,11 @@ st.markdown(f"""
 st.markdown("### 🔍 تتبع حالة جهازك")
 phone_raw = st.text_input("أدخل رقم هاتفك المسجل:", key="search_input")
 
+# الحالات المعدلة: Prêt أصبحت 100%
 status_config = {
     "En Cours": {"color": "#1f6feb", "prog": 33},
     "Réparable": {"color": "#39c5bb", "prog": 66},
     "Prêt": {"color": "#3fb950", "prog": 100},
-    "Livré & Payé": {"color": "#a371f7", "prog": 100}, # تمت إضافتها لضمان تطابق الألوان
     "Non Réparable": {"color": "#f85149", "prog": 100},
     "Annulé": {"color": "#8b949e", "prog": 0}
 }
@@ -177,14 +139,9 @@ if phone_raw:
             if not my_devices:
                 st.warning("⚠️ لا توجد أجهزة مسجلة بهذا الرقم.")
             else:
-                # زر التلغرام العائم (يظهر فقط إذا لم يكن الحساب مربوطاً)
                 if not any(str(d.get("Telegram_ID", "")).strip() != "" for d in my_devices):
                     tg_url = f"https://t.me/{st.secrets.get('BOT_USERNAME')}?start={phone_n}"
-                    st.markdown(f'''
-                        <a href="{tg_url}" target="_blank" class="tg-floating-btn">
-                            🚀 تفعيل إشعارات التلغرام
-                        </a>
-                    ''', unsafe_allow_html=True)
+                    st.link_button("🚀 ربط الحساب بالتليغرام لتلقي الإشعارات", tg_url, type="primary", use_container_width=True)
                 
                 for d in sorted(my_devices, key=lambda x: int(x.get("ID", 0)), reverse=True):
                     stat = d.get("Statut", "En Cours")
@@ -207,7 +164,7 @@ if phone_raw:
                             </div>
                     """, unsafe_allow_html=True)
 
-                    # --- منطق الضمان الجديد ---
+                    # --- منطق الضمان الجديد (يظهر فقط في حالة Livré & Payé) ---
                     if stat == "Livré & Payé":
                         w = get_warranty_stats(d.get("Date_Sortie"))
                         if w:
