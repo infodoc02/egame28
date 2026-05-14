@@ -10,7 +10,7 @@ import qrcode
 from io import BytesIO
 from firebase_admin import credentials, db, initialize_app
 
-# --- الإعدادات الأساسية ---
+# --- Core Configuration ---
 TELEGRAM_TOKEN = st.secrets.get("TELEGRAM_TOKEN", "fallback_token_here")
 BOT_USERNAME = st.secrets.get("BOT_USERNAME", "default_bot")
 DB_URL = st.secrets.get("DB_URL", "https://your-default-db.firebaseio.com/")
@@ -24,11 +24,11 @@ def ensure_firebase():
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred, {'databaseURL': st.secrets["DB_URL"]})
         except Exception as e:
-            st.error(f"فشل الاتصال بـ Firebase: {e}")
+            st.error(f"Firebase Error: {e}")
 
 ensure_firebase()
 
-# --- منطق قاعدة البيانات والبوت ---
+# --- Logic Functions ---
 def normalize_phone(phone: str) -> str:
     p = str(phone or "").replace(".0", "").strip()
     p = re.sub(r"\D", "", p)
@@ -40,8 +40,7 @@ def get_shop_status():
     try:
         status = db.reference("shop_settings/is_open").get()
         return True if status is None else status
-    except:
-        return True
+    except: return True
 
 def fetch_customer_devices(phone: str) -> pd.DataFrame:
     phone = normalize_phone(phone)
@@ -62,210 +61,169 @@ def fetch_customer_devices(phone: str) -> pd.DataFrame:
         df = df.sort_values("ID", ascending=False)
     return df
 
-def run_bot():
-    bot = telebot.TeleBot(TELEGRAM_TOKEN)
-    @bot.message_handler(commands=["start"])
-    def handle_start(message):
-        args = message.text.split()
-        chat_id = str(message.chat.id)
-        if len(args) > 1:
-            phone = normalize_phone(args[1])
-            last9 = phone[-9:]
-            ref = db.reference("atelier")
-            raw = ref.get()
-            if raw and isinstance(raw, dict):
-                updated = 0
-                for key, val in raw.items():
-                    tel = normalize_phone(val.get("Telephone", ""))
-                    if tel.endswith(last9):
-                        ref.child(key).update({"Telegram_ID": chat_id})
-                        updated += 1
-                msg = "✅ تم تفعيل الإشعارات بنجاح!" if updated > 0 else "⚠️ يرجى تسجيل جهازك في المحل أولاً."
-                bot.send_message(chat_id, msg)
-    bot.remove_webhook()
-    bot.polling(none_stop=True)
-
-# --- واجهة المستخدم (CSS المحسن للقراءة) ---
-st.set_page_config(page_title="InfoDoc - بوابة الزبائن", page_icon="📱", layout="wide")
+# --- UI & Professional CSS ---
+st.set_page_config(page_title="InfoDoc Portal", page_icon="⚡", layout="wide")
 
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Cairo:wght@400;700&display=swap');
     
-    html, body, [class*="css"] {
-        font-family: 'Cairo', sans-serif;
-        direction: rtl;
-        text-align: right;
-    }
-
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
-        color: #f1f5f9; /* نص فاتح جداً للوضوح */
+        background: #020617;
+        color: #e2e8f0; /* Silver text for high contrast */
     }
 
-    /* كرت الرأس الرئيسي */
-    .hero-container {
-        background: rgba(30, 41, 59, 0.7);
-        border: 1px solid rgba(56, 189, 248, 0.3);
+    /* Hero Section */
+    .hero-box {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+        border: 1px solid #38bdf8;
         border-radius: 20px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        padding: 30px;
+        margin-bottom: 25px;
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
     }
 
     .main-title {
+        font-family: 'Orbitron', sans-serif;
         color: #38bdf8;
-        font-size: 2.5rem;
+        font-size: 2.2rem;
         font-weight: 900;
-        margin-bottom: 0.5rem;
+        letter-spacing: 2px;
     }
 
-    .info-text { color: #cbd5e1; font-size: 1.1rem; }
-
-    /* أيقونات ومعلومات الاتصال */
-    .contact-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-top: 1.5rem;
-    }
-
-    .contact-item {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 15px;
-        border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.1);
-        color: #f8fafc;
-        text-align: center;
-    }
-
-    /* حالة المحل */
+    /* Status Badge */
     .status-badge {
-        padding: 6px 16px;
+        padding: 5px 15px;
         border-radius: 50px;
+        font-family: 'Cairo', sans-serif;
         font-weight: bold;
-        font-size: 0.9rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+        font-size: 0.85rem;
     }
-    .open { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
-    .closed { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+    .status-open { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
+    .status-closed { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
 
-    /* صندوق الملاحظات الذهبي */
-    .policy-box {
-        background: rgba(251, 191, 36, 0.1);
+    /* Arabic Instructions Box (The Professional Touch) */
+    .instruction-box {
+        background: rgba(251, 191, 36, 0.05);
         border-right: 5px solid #fbbf24;
-        border-radius: 12px;
         padding: 20px;
+        border-radius: 10px;
         margin: 20px 0;
-        color: #fef3c7; /* نص ذهبي فاتح */
-        line-height: 1.8;
+        font-family: 'Cairo', sans-serif;
+        direction: rtl;
+        line-height: 1.7;
     }
 
-    /* كروت الأجهزة */
-    .device-card {
-        background: #1e293b;
-        border: 1px solid #334155;
-        border-radius: 15px;
+    /* Device Cards */
+    .dev-card {
+        background: #0f172a;
+        border: 1px solid #1e293b;
         padding: 20px;
+        border-radius: 15px;
         margin-bottom: 15px;
     }
-    .device-card b { color: #38bdf8; }
+    .dev-card:hover { border-color: #38bdf8; }
     
-    /* تعديل مدخلات النصوص لتكون واضحة */
-    input { color: white !important; }
+    .label-tag { color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; }
+    .value-tag { color: #f1f5f9; font-weight: bold; font-size: 1rem; }
+
+    /* Fix Input Contrast */
+    div[data-baseweb="input"] { background-color: #1e293b !important; border-radius: 10px !important; }
+    input { color: #ffffff !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- جلب حالة المحل ---
+# --- Header Section ---
 shop_open = get_shop_status()
-status_class = "open" if shop_open else "closed"
-status_text = "● مفتوح الآن" if shop_open else "○ مغلق حالياً"
+st_class = "status-open" if shop_open else "status-closed"
+st_text = "SHOP OPEN - مفتوح" if shop_open else "SHOP CLOSED - مغلق"
 
-# --- واجهة العرض ---
-
-# 1. الرأس
 st.markdown(f"""
-    <div class="hero-container">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-            <div class="main-title">إنفو دوك للتكنولوجيا (InfoDoc)</div>
-            <div class="status-badge {status_class}">{status_text}</div>
+    <div class="hero-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div class="main-title">INFODOC TECHNOLOGY</div>
+            <div class="status-badge {st_class}">{st_text}</div>
         </div>
-        <p class="info-text">المركز التجاري OPGI، الطابق السفلي - الشلف وسط المدينة</p>
-        
-        <div class="contact-grid">
-            <div class="contact-item">📞 0798661900</div>
-            <div class="contact-item">🔵 فيسبوك: InfoDoc</div>
-            <div class="contact-item">⚫ تيك توك: @infodoc02</div>
-            <div class="contact-item">📍 الموقع: الشلف وسط المدينة</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-top: 20px; border-top: 1px solid #1e293b; padding-top: 20px;">
+            <div><small class="label-tag">Phone</small><br><b>0798661900</b></div>
+            <div><small class="label-tag">Location</small><br><b>الشلف - وسط المدينة</b></div>
+            <div><small class="label-tag">Social</small><br><b>InfoDoc / @infodoc02</b></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-# 2. الملاحظات الهامة (بالعربية الفصحى)
+# --- Arabic Instructions (Only instructions in Arabic as requested) ---
 st.markdown("""
-    <div class="policy-box">
-        <h3 style="margin-top:0; color:#fbbf24;">⚠️ شروط وملاحظات الصيانة:</h3>
-        • في حالة كان الجهاز قابلاً للتصليح وتم رفض العملية من قبل الزبون، يتوجب دفع مبلغ <b>1000 دج</b> ثمن الفحص والتشخيص.<br>
-        • أسعار التصليح (عند العمل على اللوحة الأم) تبدأ من <b>3000 دج</b> فما فوق.<br>
-        • إذا كانت تكلفة التصليح تتراوح بين <b>3000 و 4000 دج</b>، يتم البدء في العمل مباشرة.<br>
-        • في حال تجاوزت التكلفة <b>4000 دج</b>، ستصلك رسالة لطلب الموافقة أو الرفض قبل البدء.<br>
-        • لضمان تواصل أفضل، يرجى تحميل تطبيق <b>تلغرام</b> وربطه عبر الزر الموجود في الأسفل.
+    <div class="instruction-box">
+        <h4 style="color:#fbbf24; margin-top:0;">⚠️ ملاحظات هامة للزبائن:</h4>
+        • في حالة كان جهازك قابلاً للتصليح ورفضت ذلك، يترتب عليك دفع مبلغ <b>1000 دج</b> (ثمن الفحص والفتح والغلق).<br>
+        • أسعار التصليح (عند العمل على البطاقة الأم) تبدأ من <b>3000 دج</b>.<br>
+        • <b>نظام الموافقة:</b> من 3000 إلى 4000 دج نصلح مباشرة، وفوق 4000 دج ننتظر موافقتك عبر رسالة.<br>
+        • <b>للتواصل الجيد:</b> يرجى تحميل تطبيق <b>Telegram</b> وربطه عبر الزر أدناه لتلقي الإشعارات فوراً.
     </div>
     """, unsafe_allow_html=True)
 
-# 3. نظام الاستعلام
-col_search, col_space = st.columns([2, 1])
+# --- Main App ---
+col1, col2 = st.columns([2, 1])
 
-with col_search:
-    st.markdown("### 🔍 تتبع حالة جهازك")
-    phone_input = st.text_input("أدخل رقم الهاتف المسجل لدينا:", placeholder="مثال: 0798661900")
-    phone_n = normalize_phone(phone_input)
+with col1:
+    st.write("### 🔍 Track Device")
+    phone = st.text_input("Enter Phone Number", placeholder="07XXXXXXXX")
+    phone_n = normalize_phone(phone)
 
     if phone_n and len(phone_n) >= 9:
         df = fetch_customer_devices(phone_n)
         if df.empty:
-            st.warning("لم يتم العثور على أي أجهزة مسجلة بهذا الرقم.")
+            st.info("No devices found for this number.")
         else:
-            st.success(f"تم العثور على {len(df)} جهاز.")
             for _, r in df.iterrows():
-                # تحويل الحالات للعربية
-                raw_status = str(r.get("Statut", ""))
-                status_map = {"Prêt": "جاهز للتسليم ✅", "En Cours": "قيد التصليح 🛠️", "En attente": "في الانتظار ⏳"}
-                arabic_status = status_map.get(raw_status, raw_status)
-                
+                stt = str(r.get("Statut", "N/A"))
+                st_color = "#4ade80" if stt == "Prêt" else "#38bdf8"
                 st.markdown(f"""
-                    <div class="device-card">
-                        <div style="font-size: 1.2rem; font-weight: bold; color: #38bdf8; margin-bottom: 10px;">
-                            رقم الجهاز: #{int(r.get("ID", 0))} | {r.get("Appareil", "---")}
+                    <div class="dev-card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                            <b style="font-size:1.2rem; color:#38bdf8;">#{int(r.get('ID', 0))} | {r.get('Appareil', 'Device')}</b>
+                            <span style="color:{st_color}; font-weight:bold;">{stt}</span>
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div><b>الحالة:</b> {arabic_status}</div>
-                            <div><b>العطل:</b> {r.get("Panne", "---")}</div>
-                            <div><b>السعر التقديري:</b> {float(r.get("Prix", 0)):,.0f} دج</div>
-                            <div><b>تاريخ الدخول:</b> {r.get("Date_Entree", "---")}</div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div><span class="label-tag">Problem:</span><br><span class="value-tag">{r.get('Panne', '---')}</span></div>
+                            <div><span class="label-tag">Price:</span><br><span class="value-tag">{float(r.get('Prix', 0)):,.0f} DZD</span></div>
+                            <div><span class="label-tag">Entry Date:</span><br><span class="value-tag">{r.get('Date_Entree', '---')}</span></div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
 
-# 4. قسم التلغرام
-st.divider()
-st.markdown("### 🔔 تفعيل التنبيهات الفورية")
-if phone_n and len(phone_n) >= 9:
-    t_col1, t_col2 = st.columns([1, 2])
-    with t_col1:
-        qr_img = qrcode.make(f"https://t.me/{BOT_USERNAME}?start={phone_n}")
+with col2:
+    st.write("### 🤖 Telegram Alert")
+    if phone_n and len(phone_n) >= 9:
+        qr = qrcode.make(f"https://t.me/{BOT_USERNAME}?start={phone_n}")
         buf = BytesIO()
-        qr_img.save(buf, format="PNG")
-        st.image(buf.getvalue(), caption="امسح الرمز للربط السريع", width=150)
-    with t_col2:
-        st.write("للحصول على إشعارات فورية عند جاهزية جهازك، يرجى الضغط على الزر أدناه وتفعيل البوت:")
-        st.link_button("🚀 ربط حساب تلغرام (Telegram)", f"https://t.me/{BOT_USERNAME}?start={phone_n}")
-else:
-    st.info("يرجى إدخال رقم الهاتف أولاً لتفعيل ميزة التنبيهات.")
+        qr.save(buf, format="PNG")
+        st.image(buf.getvalue(), caption="Scan to Link Telegram", width=160)
+        st.link_button("🚀 Activate Telegram Bot", f"https://t.me/{BOT_USERNAME}?start={phone_n}", use_container_width=True)
+    else:
+        st.caption("Enter phone number to generate sync link.")
 
-# تشغيل البوت
-if "bot_thread" not in st.session_state:
+# Telegram Bot Threading (Remains as is)
+def run_bot():
+    bot = telebot.TeleBot(TELEGRAM_TOKEN)
+    @bot.message_handler(commands=["start"])
+    def h(m):
+        args = m.text.split()
+        if len(args) > 1:
+            p = normalize_phone(args[1])
+            ref = db.reference("atelier")
+            raw = ref.get()
+            if raw:
+                updated = 0
+                for k, v in raw.items():
+                    if normalize_phone(v.get("Telephone", "")).endswith(p[-9:]):
+                        ref.child(k).update({"Telegram_ID": str(m.chat.id)})
+                        updated += 1
+                bot.send_message(m.chat.id, "✅ InfoDoc Sync Complete!" if updated > 0 else "⚠️ No device found.")
+    bot.remove_webhook()
+    bot.polling(none_stop=True)
+
+if "bot_active" not in st.session_state:
     threading.Thread(target=run_bot, daemon=True).start()
-    st.session_state["bot_thread"] = True
+    st.session_state["bot_active"] = True
