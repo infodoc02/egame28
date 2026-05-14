@@ -126,7 +126,6 @@ status_config = {
     "Réparable": {"color": "#39c5bb", "prog": 66},
     "Prêt": {"color": "#3fb950", "prog": 100},
     "Non Réparable": {"color": "#f85149", "prog": 100},
-    "Livré & Payé": {"color": "#3fb950", "prog": 100},
     "Annulé": {"color": "#8b949e", "prog": 0}
 }
 
