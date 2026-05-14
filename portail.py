@@ -176,7 +176,8 @@ st.markdown(f'''
 # أزرار التواصل
 c1, c2, c3, c4 = st.columns(4)
 with c1: st.markdown('<a href="tel:0798661900" class="custom-btn"><span>📞</span><b>اتصل بنا</b></a>', unsafe_allow_html=True)
-with c2: st.markdown('<a href="https://www.google.com/maps/place/36%C2%B010'04.7%22N+1%C2%B020'04.9%22E/@36.1678617,1.334636,20.5z/data=!4m9!1m4!8m3!1e4!3m1!1e1!3m3!8m2!3d36.167975!4d1.334701?entry=ttu&g_ep=EgoyMDI2MDUxMi4wIKXMDSoASAFQAw%3D%3D" target="_blank" class="custom-btn"><span>📍</span><b>موقعنا</b></a>', unsafe_allow_html=True)
+with c2: 
+    st.markdown("""<a href="https://www.google.com/maps/place/36%C2%B010'04.7%22N+1%C2%B020'04.9%22E/@36.1678617,1.334636,20.5z/data=!4m9!1m4!8m3!1e4!3m1!1e1!3m3!8m2!3d36.167975!4d1.334701?entry=ttu&g_ep=EgoyMDI2MDUxMi4wIKXMDSoASAFQAw%3D%3D" target="_blank" class="custom-btn"><span>📍</span><b>موقعنا</b></a>""", unsafe_allow_html=True)
 with c3: st.markdown('<a href="https://www.facebook.com/share/18dX9h9otd/" target="_blank" class="custom-btn"><span>📘</span><b>فيسبوك</b></a>', unsafe_allow_html=True)
 with c4: st.markdown('<a href="https://tiktok.com/@infodoc02/" target="_blank" class="custom-btn"><span>📱</span><b>تيك توك</b></a>', unsafe_allow_html=True)
 
