@@ -64,80 +64,92 @@ def get_status_priority(status):
     else: return 99  # أي حالة غير معروفة تجي مع اللخر
 
 # ==============================================================================
-# 3. التنسيقات البصرية (CSS) - النسخة الاحترافية المصلحة
+# 3. التنسيقات البصرية (CSS) - النسخة النهائية المنظمة
 # ==============================================================================
 st.markdown("""
-<style>
+    <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
     
     .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
+    
+    /* الحاوية الرئيسية */
+    .hero-container {
+        background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+        border: 1px solid #30363d; border-radius: 15px; padding: 25px;
+        margin-bottom: 20px; text-align: center;
+    }
 
-    /* --- [1] ستايل الشروط (الأكسباندر الأول المضيء) --- */
-    div:has(span#terms-anchor) + div div[data-testid="stExpander"] {
+    .main-title {
+        font-family: 'Orbitron', sans-serif; color: #58a6ff;
+        font-size: clamp(2rem, 8vw, 3.5rem); font-weight: 900;
+        text-shadow: 0 0 15px rgba(88, 166, 255, 0.5); margin-bottom: 5px;
+    }
+
+    /* أزرار التواصل */
+    .custom-btn {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px; padding: 15px; text-decoration: none !important; color: white !important;
+        transition: 0.3s; min-height: 100px; margin-bottom: 10px;
+    }
+    .custom-btn:hover { border-color: #58a6ff; background: rgba(88, 166, 255, 0.15); transform: translateY(-3px); }
+
+    /* أنيميشن الحالة */
+    @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.7; } }
+    @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; } 50% { opacity: 0.7; } }
+    
+    .status-badge { padding: 8px 20px; border-radius: 10px; font-weight: bold; display: inline-block; font-family: 'Cairo'; }
+    .status-open { color: #3fb950; border: 2px solid #3fb950; animation: blink-green 2s infinite; }
+    .status-closed { color: #f85149; border: 2px solid #f85149; animation: blink-red 2s infinite; }
+
+
+    /* 1. الستايل العام لكل الأكسباندرز (باش ما يبقاوش كحولة بزاف) */
+    div[data-testid="stExpander"] {
+        border: 1px solid #30363d !important;
+        background: rgba(22, 27, 34, 0.5) !important;
+        border-radius: 12px !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* أنيميشن الإضاءة */
+    @keyframes yellow-glow {
+        0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; }
+        50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
+    }
+
+    /* استهداف الأكسباندر الأول فقط في الصفحة (اللي هو تاع الشروط) */
+    /* أو استهداف الأكسباندر اللي يحتوي على نص معين */
+    div[data-testid="stExpander"]:first-of-type {
         border: 2px solid #d29922 !important;
         animation: yellow-glow 3s infinite ease-in-out !important;
         background: rgba(210, 153, 34, 0.05) !important;
-        border-radius: 12px !important;
+        direction: rtl !important; /* لضمان الاتجاه من اليمين */
     }
 
-    div:has(span#terms-anchor) + div div[data-testid="stExpander"] summary {
+    /* تنسيق العنوان (اضغط هنا...) */
+    div[data-testid="stExpander"]:first-of-type summary {
         direction: rtl !important;
         text-align: right !important;
         display: flex !important;
-        flex-direction: row-reverse !important; /* قلب السهم مع النص */
-        justify-content: flex-end !important;
+        flex-direction: row !important; /* ترتيب العناصر داخله */
+        justify-content: flex-start !important;
+        gap: 15px !important;
     }
 
-    div:has(span#terms-anchor) + div div[data-testid="stExpander"] summary p {
+    div[data-testid="stExpander"]:first-of-type summary p {
         font-family: 'Cairo', sans-serif !important;
         font-weight: 900 !important;
         color: #ffcc00 !important;
         font-size: 1.1rem !important;
         margin: 0 !important;
-        flex-grow: 1;
-    }
-
-    div:has(span#terms-anchor) + div div[data-testid="stExpander"] summary svg {
-        order: 2 !important;
-        margin-left: 10px !important;
-        fill: #ffcc00 !important;
-    }
-
-    /* --- [2] ستايل بطاقات الأجهزة (البحث) --- */
-    /* الرأس */
-    .device-header {
-        background: #161b22;
-        border: 1px solid #30363d; border-bottom: none;
-        border-radius: 12px 12px 0 0; padding: 20px;
-        margin-top: 25px; display: flex; justify-content: space-between; align-items: center;
     }
     
-    /* الأكسباندر التابع للبطاقة */
-    div[data-testid="stExpander"]:not(:first-of-type) {
-        background: #0d1117 !important;
-        border: 1px solid #30363d !important;
-        border-top: 1px dashed #30363d !important;
-        border-radius: 0 0 12px 12px !important;
-        margin-bottom: 5px !important;
+    /* إذا حبيت تنحي السهم كامل وتقلبو جهة اليسار */
+    div[data-testid="stExpander"] summary {
+        flex-direction: row-reverse;
+        justify-content: space-between;
     }
-
-    /* زر التلغرام العائم */
-    .floating-tg-btn {
-        position: fixed; bottom: 30px; left: 30px;
-        background: linear-gradient(135deg, #229ED9, #1c7cb3);
-        color: white !important; padding: 15px 25px; border-radius: 50px;
-        z-index: 9999; font-weight: 900; text-decoration: none;
-        display: flex; align-items: center; gap: 10px;
-        box-shadow: 0 10px 20px rgba(34, 158, 217, 0.4);
-        animation: float-pulse 2s infinite ease-in-out;
-    }
-
-    @keyframes yellow-glow { 
-        0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; }
-        50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
-    }
-    @keyframes float-pulse { 0% { transform: translateY(0); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0); } }
-</style>
+    </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
@@ -169,7 +181,7 @@ with c3: st.markdown('<a href="https://fb.com/..." target="_blank" class="custom
 with c4: st.markdown('<a href="https://tiktok.com/..." target="_blank" class="custom-btn"><span>📱</span><b>تيك توك</b></a>', unsafe_allow_html=True)
 
 # قسم الشروط (المضيء فقط)
-st.markdown('<span id="terms-anchor"></span>', unsafe_allow_html=True)
+
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
     st.markdown("""
         <div style="text-align: right; direction: rtl; font-family: 'Cairo'; line-height: 1.8; color: #f0f6fc;">
@@ -276,7 +288,7 @@ if user_phone:
         if raw_data:
             # فلترة الأجهزة
             my_devices = [dict(v, _id=k) for k, v in raw_data.items() if normalize_phone(v.get("Telephone", "")).endswith(norm_phone[-9:])]
-            
+            prix_display = f"{my_devices.get('Prix')} دج" if dev.get('Prix') else "قيد التقييم"
             if not my_devices:
                 st.error("⚠️ عذراً، لم نجد أي جهاز مرتبط بهذا الرقم في نظامنا.")
             else:
