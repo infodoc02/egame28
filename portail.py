@@ -75,6 +75,37 @@ def get_warranty_stats(date_sortie_str):
             continue
     return None
 
+
+# 1. تعريف الـ CSS مع الأنيميشن================================================
+button_style = """
+<style>
+    .tg-btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #229ED9;
+        color: white;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: bold;
+        text-align: center;
+        /* ربط الأنيميشن هنا */
+        animation: pulse-blue 2s infinite;
+    }
+
+    @keyframes pulse-blue {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 158, 217, 0.7); }
+        70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(34, 158, 217, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 158, 217, 0); }
+    }
+    
+    /* تغيير اللون كي تحط عليه الماوس */
+    .tg-btn:hover {
+        color: white;
+        transform: scale(1.05);
+    }
+</style>
+"""
+
 # ==============================================================================
 # 4. التنسيقات البصرية المتقدمة (CSS Styling)
 # ==============================================================================
@@ -157,7 +188,7 @@ try:
     shop_status = db.reference("shop_settings/is_open").get()
 except:
     shop_status = True
-
+st.markdown(button_style, unsafe_allow_html=True)
 st.markdown(f'<div style="text-align: center; color: #8b949e; font-size: 0.9rem;">{greeting} | {now.strftime("%Y-%m-%d %H:%M")}</div>', unsafe_allow_html=True)
 st.markdown('<div class="main-title">INFODOC</div>', unsafe_allow_html=True)
 st.markdown('<div style="text-align: center; color: #8b949e; margin-bottom: 20px;">Vente & Réparation Informatique</div>', unsafe_allow_html=True)
@@ -249,6 +280,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 
+
 # --- Header Section ---
 shop_open = shop_status
 status_class = "status-open" if shop_open else "status-closed"
@@ -317,8 +349,7 @@ if user_phone:
                 # عرض زر التلغرام إذا لم يتم الربط بعد
                 if any(not d.get("Telegram_ID") for d in my_devices):
                     bot_user = st.secrets.get("BOT_USERNAME", "InfoDocBot")
-                    st.markdown(f'<a href="https://t.me/{bot_user}?start={norm_phone}" target="_blank" class="tg-btn">🚀 ربط الإشعارات الفورية على تليغرام</a>', unsafe_allow_html=True)
-                
+                    st.markdown(f'<a href="https://t.me/{bot_user}?start={norm_phone}" target="_blank" class="tg-btn">🚀 ربط الإشعارات الفورية على تليغرام</a>', unsafe_allow_html=True)                
                 # ترتيب الأجهزة (الجديد أولاً)
                 my_devices.sort(key=lambda x: (str(x.get("Date_Sortie", "")) != "", x.get("ID", 0)), reverse=True)
                 
