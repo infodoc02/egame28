@@ -90,23 +90,39 @@ st.markdown("""
     .status-open { color: #3fb950; border: 2px solid #3fb950; animation: blink-green 2s infinite; }
     .status-closed { color: #f85149; border: 2px solid #f85149; animation: blink-red 2s infinite; }
 
-    /* --- اختصاصي: أكسباندر الشروط فقط (المضيء) --- */
-    @keyframes blink-yellow-border { 
-        0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; } 
-        50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; } 
+
+    /* 1. الستايل العام لكل الأكسباندرز (باش ما يبقاوش كحولة بزاف) */
+    div[data-testid="stExpander"] {
+        border: 1px solid #30363d !important;
+        background: rgba(22, 27, 34, 0.5) !important;
+        border-radius: 12px !important;
+        margin-bottom: 15px !important;
     }
+
+    /* 2. أنيميشن الإضاءة الصفراء */
+    @keyframes blink-yellow { 
+        0%, 100% { border-color: #d29922; box-shadow: 0 0 10px #d29922; } 
+        50% { border-color: #ffcc00; box-shadow: 0 0 25px #ffcc00; } 
+    }
+
+    /* 3. تطبيق الإضاءة فقط على قسم الشروط */
     .terms-section div[data-testid="stExpander"] {
         border: 2px solid #d29922 !important;
-        animation: blink-yellow-border 3s infinite ease-in-out !important;
-        background: rgba(210, 153, 34, 0.05) !important;
+        animation: blink-yellow 2s infinite ease-in-out !important;
     }
-    .terms-section summary { color: #ffcc00 !important; font-weight: 900 !important; }
 
-    /* --- الأكسباندر العادي (للأجهزة) --- */
-    div[data-testid="stExpander"] {
-        background: #161b22 !important; border: 1px solid #30363d !important;
-        border-radius: 12px !important; margin-bottom: 10px;
+    /* تلوين عنوان أكسباندر الشروط */
+    .terms-section summary {
+        color: #ffcc00 !important;
+        font-weight: 900 !important;
     }
+    
+    /* تحسين العناوين للأكسباندرز العادية (الأجهزة) */
+    div[data-testid="stExpander"] summary p {
+        font-weight: bold;
+        color: #c9d1d9 !important;
+    }
+    </style>
 
     .device-box {
         background: #161b22; border: 1px solid #30363d; border-radius: 15px; 
