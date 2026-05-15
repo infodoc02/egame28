@@ -196,7 +196,34 @@ st.markdown("""
         direction: rtl !important; /* لضمان الاتجاه من اليمين */
     }
     
+    /* تحسين شكل حقل الإدخال ليكون النص واضحاً */
+    input[aria-label=""] {
+        color: white !important;
+        background-color: #1c2128 !important;
+        border: 1px solid #444c56 !important;
+    }
     
+    /* إصلاح زر البحث (Submit Button) */
+    button[kind="primaryFormSubmit"] {
+        background-color: #58a6ff !important; /* لون أزرق جذاب */
+        color: white !important;
+        border-radius: 8px !important;
+        border: none !important;
+        font-weight: bold !important;
+        height: 3rem !important;
+        transition: 0.3s background-color !important;
+    }
+
+    button[kind="primaryFormSubmit"]:hover {
+        background-color: #1f6feb !important; /* لون أغمق عند التمرير */
+        box-shadow: 0 0 10px rgba(88, 166, 255, 0.5) !important;
+    }
+
+    /* إخفاء حدود النموذج الافتراضية المزعجة */
+    div[data-testid="stForm"] {
+        border: none !important;
+        padding: 0 !important;
+    }
 
     /* تنسيق العنوان (اضغط هنا...) */
     div[data-testid="stExpander"]:first-of-type summary {
@@ -321,13 +348,7 @@ with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط 
 # --- 1. CSS خاص بهذا القسم (لزر التلغرام العائم والبطاقات المدمجة) ---
 st.markdown("""
     <style>
-    /* 1. استدعاء الخطوط وتطبيقها بشكل إجباري */
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Changa:wght@400;700&family=Orbitron:wght@400;700&display=swap');
-
-    /* تطبيق الخط على التطبيق بالكامل */
-    * {
-        font-family: 'Cairo', sans-serif !important;
-    }
+    
 
     /* 2. زر التلغرام - تغيير شامل في التصميم */
     .floating-tg-btn {
