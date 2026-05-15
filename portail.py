@@ -319,81 +319,134 @@ with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط 
 # --- 1. CSS خاص بهذا القسم (لزر التلغرام العائم والبطاقات المدمجة) ---
 st.markdown("""
     <style>
-    /* زر التلغرام العائم */
+    /* استدعاء الخطوط الاحترافية من جوجل */
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Orbitron:wght@400;700;900&display=swap');
+
+    /* الإعدادات العامة للنصوص */
+    html, body, [class*="css"] {
+        font-family: 'Cairo', sans-serif;
+    }
+
+    /* زر التلغرام العائم - تصميم عصري */
     .floating-tg-btn {
         position: fixed;
         bottom: 30px;
-        left: 30px; /* تقدر تبدلها right: 30px إذا حبيت */
-        background: linear-gradient(135deg, #229ED9, #1c7cb3);
+        left: 30px;
+        background: linear-gradient(135deg, #0088cc, #00a2ed);
         color: white !important;
-        padding: 15px 25px;
+        padding: 12px 22px;
         border-radius: 50px;
-        box-shadow: 0 10px 20px rgba(34, 158, 217, 0.4);
+        box-shadow: 0 8px 15px rgba(0, 136, 204, 0.3);
         z-index: 9999;
         font-family: 'Cairo', sans-serif;
-        font-weight: 900;
-        font-size: 1.1rem;
+        font-weight: 700;
+        font-size: 1rem;
         text-decoration: none;
         display: flex;
         align-items: center;
-        gap: 10px;
-        animation: float-pulse 2s infinite ease-in-out;
-        border: 1px solid rgba(255,255,255,0.2);
+        gap: 12px;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.1);
     }
     
     .floating-tg-btn:hover {
-        transform: translateY(-5px) scale(1.05);
-        box-shadow: 0 15px 30px rgba(34, 158, 217, 0.6);
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 12px 20px rgba(0, 136, 204, 0.5);
+        color: #fff !important;
     }
 
-    @keyframes float-pulse {
-        0% { transform: translateY(0); }
-        50% { transform: translateY(-8px); box-shadow: 0 15px 25px rgba(34, 158, 217, 0.5); }
-        100% { transform: translateY(0); }
-    }
-
-    /* رأس البطاقة (المربع الخاص بالجهاز) */
+    /* رأس البطاقة (الجهاز) */
     .device-header {
         background: #161b22;
         border: 1px solid #30363d;
-        border-bottom: none; /* نحيو الخط التحتاني باش يلصق مع الأكسباندر */
-        border-radius: 12px 12px 0 0; /* تقويس من الفوق فقط */
-        padding: 20px;
-        margin-top: 30px; /* مسافة بين كل جهاز والآخر */
+        border-bottom: none;
+        border-radius: 15px 15px 0 0;
+        padding: 18px 25px;
+        margin-top: 25px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
 
-    .device-title { margin: 0; color: #ffffff; font-family: 'Orbitron', 'Cairo'; font-size: 1.4rem; font-weight: bold; }
-    .device-id { color: #8b949e; font-size: 0.9rem; font-family: 'Courier New', monospace; }
+    /* تحسين خطوط العناوين */
+    .device-title { 
+        margin: 0; 
+        color: #f0f6fc; 
+        font-family: 'Cairo', sans-serif; 
+        font-size: 1.25rem; 
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
     
+    .device-id { 
+        color: #8b949e; 
+        font-size: 0.85rem; 
+        font-family: 'Orbitron', sans-serif; 
+        letter-spacing: 1px;
+    }
+    
+    /* شارة الحالة - تصميم زجاجي */
     .status-badge-mini {
-        padding: 6px 15px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 900;
-        font-family: 'Orbitron', 'Cairo';
+        padding: 5px 14px;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        font-family: 'Orbitron', sans-serif;
         color: white;
         text-transform: uppercase;
-        box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
+        letter-spacing: 1px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* تعديل الأكسباندر ليلتصق بالبطاقة */
+    /* تعديل الأكسباندر (الجسم) */
     div[data-testid="stExpander"] {
         background: #0d1117 !important;
         border: 1px solid #30363d !important;
-        border-top: 1px dashed #30363d !important; /* خط متقطع يفصل بين العنوان والتفاصيل */
-        border-radius: 0 0 12px 12px !important; /* تقويس من التحت فقط */
-        box-shadow: 0 10px 15px rgba(0,0,0,0.3) !important;
-        margin-bottom: 0px !important;
+        border-top: 1px dashed rgba(139, 148, 158, 0.3) !important;
+        border-radius: 0 0 15px 15px !important;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.4) !important;
+    }
+
+    /* تحسين خطوط الأكسباندر الداخلي */
+    div[data-testid="stExpander"] p {
+        font-family: 'Cairo', sans-serif;
+        font-size: 0.95rem;
+        line-height: 1.6;
     }
     
-    /* جدول التفاصيل الداخلية */
-    .details-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #161b22; border-radius: 8px; overflow: hidden; }
-    .details-table td { padding: 12px; border-bottom: 1px solid #30363d; text-align: center; color: #c9d1d9; }
-    .details-table td:first-child { border-left: 1px solid #30363d; font-weight: bold; color: #8b949e; text-align: right; width: 40%; }
+    /* جدول التفاصيل الاحترافي */
+    .details-table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin: 10px 0; 
+        background: #161b22; 
+        border-radius: 10px; 
+        overflow: hidden;
+    }
+    
+    .details-table td { 
+        padding: 14px; 
+        border-bottom: 1px solid #21262d; 
+        text-align: center; 
+        color: #c9d1d9; 
+        font-size: 0.9rem;
+    }
+    
+    .details-table td:first-child { 
+        font-weight: 600; 
+        color: #8b949e; 
+        text-align: right; 
+        width: 35%;
+        background: rgba(255,255,255,0.02);
+    }
+
+    /* لمسة جمالية عند المرور على البطاقة */
+    .device-header:hover {
+        background: #1c2128;
+        border-color: #444c56;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -489,20 +542,20 @@ if submit_search and user_phone:
                                     warranty_shown = True
                                     
                                     st.markdown(f"""
-                                        <div style="margin-bottom: 15px; border: 1px solid #444c56; padding: 12px; border-radius: 10px; background: rgba(255, 215, 0, 0.05); direction: rtl; font-family: {font_main};">
+                                        <div style="margin-bottom: 15px; border: 1px solid #444c56; padding: 12px; border-radius: 10px; background: rgba(255, 215, 0, 0.05); direction: rtl;">
                                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
-                                                <div style="color: {b_color}; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
-                                                    <span style="font-size: 1.1rem;">🛡️</span>
+                                                <div style="color: {b_color}; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                                                    <span>🛡️</span>
                                                     <span>{'ضمان سارٍ' if not is_expired else 'ضمان منتهي'} ({w.get('days_left')} يوم)</span>
                                                 </div>
-                                                <span style="color: {b_color}; font-weight: 800; font-family: 'Courier New', monospace; font-size: 1rem;">{int(val)}%</span>
+                                                <span style="color: {b_color}; font-weight: 800; font-family: 'Courier New', monospace;">{int(val)}%</span>
                                             </div>
                                             <div style="width: 100%; background: #30363d; border-radius: 20px; height: 12px; overflow: hidden; border: 1px solid #444c56; display: flex;">
-                                                <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 0.6s ease-in-out;"></div>
+                                                <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px {b_color if not is_expired else 'transparent'};"></div>
                                             </div>
                                             <div style="display: flex; justify-content: space-between; margin-top: 8px;">
-                                                <span style="color: #8b949e; font-size: 0.8rem; font-weight: 400;">📅 تاريخ الخروج: {w.get('actual_date')}</span>
-                                                <span style="color: #8b949e; font-size: 0.75rem; letter-spacing: 0.5px;">POLICE 30 DAYS</span>
+                                                <span style="color: #8b949e; font-size: 0.75rem;">تاريخ الخروج: {w.get('actual_date')}</span>
+                                                <span style="color: #8b949e; font-size: 0.75rem;">نظام 30 يوم</span>
                                             </div>
                                         </div>
                                     """, unsafe_allow_html=True)
