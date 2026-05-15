@@ -429,10 +429,6 @@ if submit_search and user_phone:
                         </a>
                     ''', unsafe_allow_html=True)
                 
-                
-                
-                
-                    
                 # 3. ترتيب الأجهزة
                 my_devices.sort(
                     key=lambda x: (
@@ -440,20 +436,51 @@ if submit_search and user_phone:
                         -int(x.get("ID", 0)) if str(x.get("ID", 0)).isdigit() else 0
                     )
                 )
-                    # 4. حلقة عرض الأجهزة
+
+                # 4. حلقة عرض الأجهزة
                 for dev in my_devices:
                     status = str(dev.get("Statut", "En Cours"))
                     d_sortie = dev.get("Date_Sortie")
+                    
+                    # --- إصلاح الخطأ: تعريف المتغيرات في بداية الحلقة لضمان وجودها دائماً ---
+                    raw_prix = dev.get('Prix', 0)
+                    if raw_prix and str(raw_prix).replace('.', '').isdigit() and float(raw_prix) > 0:
+                        prix_display = f"{raw_prix} د.ج"
+                    else:
+                        prix_display = "قيد التقييم"
+
+                    # منطق الألوان
+                    is_delivered = any(word in status for word in ["Livré", "Livre", "payé"])
+                    if status == "Prêt": status_color = "#238636"
+                    elif status == "Annulé": status_color = "#da3633"
+                    elif status == "Non Réparable": status_color = "#6e7681"
+                    elif is_delivered: status_color = "#8b949e"
+                    else: status_color = "#58a6ff"
+
+                    # رأس البطاقة
+                    st.markdown(f"""
+                        <div style="border-right: 6px solid {status_color}; padding: 12px; background: #161b22; border-radius: 10px; margin-bottom: 8px; border: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="text-align: right;">
+                                <h3 style="margin: 0; color: #f0f6fc; font-size: 1.1rem;">{dev.get('Appareil', 'جهاز')}</h3>
+                                <div style="color: #8b949e; font-size: 0.8rem;">Ticket #{dev.get('ID', '0000')}</div>
+                            </div>
+                            <div style="background-color: {status_color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">
+                                {status}
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
                     with st.expander("📄 عرض التفاصيل والمستحقات"):
                         
-                        # --- 🟡 نظام الضمان (الشريط الأصفر) ---
-                        # الشرط: إذا وجد تاريخ خروج، نعرض الضمان فوراً بغض النظر عن الحالة النصية
+                        # --- 🟡 شريط الضمان الذهبي (يظهر إذا وجد تاريخ خروج) ---
+                        warranty_shown = False
                         if d_sortie and d_sortie != "---" and str(d_sortie).strip() != "":
                             w = get_warranty_stats(d_sortie)
                             if w:
                                 val = float(w.get('percent_left', 0))
                                 is_expired = w.get('is_expired', False)
                                 b_color = "#FFD700" if not is_expired else "#4b4b4b"
+                                warranty_shown = True
                                 
                                 st.markdown(f"""
                                     <div style="margin-bottom: 15px; border: 1px solid #444c56; padding: 10px; border-radius: 8px; background: rgba(255, 215, 0, 0.05);">
@@ -464,11 +491,9 @@ if submit_search and user_phone:
                                         <div style="width: 100%; background: #30363d; border-radius: 10px; height: 14px; overflow: hidden; border: 1px solid #444c56;">
                                             <div style="width: {val}%; background: {b_color}; height: 100%; box-shadow: 0 0 10px {b_color if not is_expired else 'transparent'};"></div>
                                         </div>
-                                        <div style="margin-top: 5px; color: #8b949e; font-size: 0.75rem; text-align: left;">تاريخ الخروج الإجمالي: {d_sortie}</div>
+                                        <div style="margin-top: 5px; color: #8b949e; font-size: 0.75rem; text-align: left;">تاريخ الخروج: {d_sortie}</div>
                                     </div>
                                 """, unsafe_allow_html=True)
-                            else:
-                                st.info(f"⏳ الضمان سيبدأ فور تسجيل تاريخ الخروج (المسجل: {d_sortie})")
 
                         elif status == "Non Réparable":
                             st.markdown(f"""
