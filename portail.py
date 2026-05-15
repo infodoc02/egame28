@@ -408,25 +408,46 @@ if user_phone:
                     
                     # 2. تفاصيل الجهاز
                     with st.expander("📄 عرض التفاصيل والمستحقات"):
-                        if status == "Livre et payé":
-                            # (نفس كود الضمان السابق اللي درناه...)
+                        # التحقق من حالات التسليم لبدء الضمان من تاريخ الخروج
+                        if status in ["Livre et payé", "Livré (Dette)"]:
                             w = get_warranty_stats(dev.get("Date_Sortie"))
+                            
                             if w:
                                 val, is_expired = w['percent_left'], w['is_expired']
                                 b_color = "#FFD700" if not is_expired else "#4b4b4b"
-                                status_text = "🛡️ الضمان سارٍ" if not is_expired else "<del style='color: #f85149;'>❌ فترة الضمان منتهية</del>"
-                                st.markdown(f'<div style="width: 100%; background: #30363d; border-radius: 10px; height: 8px;"><div style="width: {val}%; background: {b_color}; height: 100%; border-radius: 10px;"></div></div>', unsafe_allow_html=True)
+                                
+                                if is_expired:
+                                    status_text = "<del style='color: #f85149;'>❌ فترة الضمان منتهية</del>"
+                                    days_text = "انتهت الصلاحية"
+                                else:
+                                    status_text = "<span style='color: #3fb950;'>🛡️ الضمان سارٍ (من تاريخ الخروج)</span>"
+                                    days_text = f"المتبقي: {w.get('days_left', 0)} يوم"
+
+                                st.markdown(f"""
+                                    <div style="margin-bottom: 5px;">
+                                        <span style="font-size: 0.9rem; font-weight: bold;">{status_text}</span>
+                                    </div>
+                                    <div style="width: 100%; background: #30363d; border-radius: 10px; height: 8px;">
+                                        <div style="width: {val}%; background: {b_color}; height: 100%; border-radius: 10px;"></div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-top: 3px;">
+                                        <span style="font-size: 10px; color: #8b949e;">{days_text}</span>
+                                        <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                            else:
+                                st.warning("⚠️ تاريخ الخروج غير مسجل.")
 
                         elif status == "Non Réparable":
-                            # حالة الحزن: الجهاز غير قابل للتصليح
+                            # حالة الجهاز غير قابل للتصليح (بصيغة حزينة)
                             st.markdown(f"""
-                                <div style="text-align: center; padding: 15px; background: rgba(248, 81, 73, 0.05); border: 1px dashed #f85149; border-radius: 12px; margin-bottom: 10px;">
+                                <div style="text-align: center; padding: 15px; background: rgba(248, 81, 73, 0.05); border: 1px dashed #f85149; border-radius: 12px;">
                                     <div style="font-size: 2rem;">🥀</div>
-                                    <b style="color: #f85149; font-family: 'Cairo';">للأسف، الجهاز غير قابل للتصليح</b><br>
+                                    <b style="color: #f85149;">للأسف، الجهاز غير قابل للتصليح</b><br>
+                                    <small style="color: #8b949e;">تم إنهاء الفحص بنسبة 100%</small>
                                     <div style="width: 100%; background: #30363d; border-radius: 10px; height: 8px; margin-top: 10px;">
                                         <div style="width: 100%; background: #4b4b4b; height: 100%; border-radius: 10px;"></div>
                                     </div>
-                                    <span style="font-size: 10px; color: #8b949e;">تم إنهاء الفحص بنسبة 100%</span>
                                 </div>
                             """, unsafe_allow_html=True)
 
@@ -448,16 +469,22 @@ if user_phone:
                             """, unsafe_allow_html=True)
                             st.progress(p_data['val'])
 
-                        # الجدول السفلي (المبلغ والتواريخ)
+                        # جدول البيانات
                         st.markdown(f"""
-                            <table style="width:100%; margin-top: 15px; border-collapse: collapse; font-family: 'Cairo';">
+                            <table style="width:100%; margin-top: 15px; border-collapse: collapse;">
                                 <tr style="border-bottom: 1px solid #30363d;">
                                     <td style="padding: 8px; color: #8b949e;">📅 تاريخ الدخول</td>
                                     <td style="text-align: left;">{dev.get('Date_Entree', '---')}</td>
                                 </tr>
+                                <tr style="border-bottom: 1px solid #30363d;">
+                                    <td style="padding: 8px; color: #8b949e;">📅 تاريخ الخروج</td>
+                                    <td style="text-align: left;">{dev.get('Date_Sortie', '---')}</td>
+                                </tr>
                                 <tr>
-                                    <td style="padding: 8px; color: #8b949e;">💰 تكلفة الفحص</td>
-                                    <td style="text-align: left; color: #f85149; font-weight: 900;">{dev.get('Prix', '0')} DZD</td>
+                                    <td style="padding: 8px; color: #8b949e;">💰 المبلغ المستحق</td>
+                                    <td style="text-align: left; color: #58a6ff; font-weight: 900;">{dev.get('Prix', '0')} DZD</td>
                                 </tr>
                             </table>
                         """, unsafe_allow_html=True)
+
+                        
