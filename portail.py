@@ -122,23 +122,28 @@ def get_warranty_stats(date_sortie_str):
 # 4. التنسيقات البصرية المتقدمة (CSS Styling)
 # ==============================================================================
 st.markdown("""
-    <!-- استيراد الخطوط والأيقونات -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
     
-    /* تنسيق التطبيق العام */
     .stApp { 
         background: #0d1117; 
         color: white; 
         font-family: 'Cairo', sans-serif;
-        direction: rtl; /* دعم اللغة العربية */
+        direction: rtl;
     }
     
-    /* تصميم العنوان النيوني */
+    .hero-container {
+        text-align: center;
+        padding: 30px 10px;
+        background: linear-gradient(180deg, rgba(88,166,255,0.05) 0%, rgba(13,17,23,0) 100%);
+        border-radius: 20px;
+        margin-bottom: 10px;
+    }
+
     .main-title {
         font-family: 'Orbitron', sans-serif; 
-        font-size: clamp(2rem, 8vw, 4rem); /* تحسين التجاوب */
+        font-size: clamp(2rem, 8vw, 4rem); 
         font-weight: 900;
         text-align: center; 
         margin-bottom: 10px; 
@@ -147,15 +152,6 @@ st.markdown("""
         letter-spacing: 2px; 
         text-shadow: 0 0 15px #58a6ff, 0 0 30px #58a6ff;
         animation: glow 2s ease-in-out infinite alternate;
-    }
-    
-    /* À insérer vers la ligne 162 */
-    .hero-container {
-        text-align: center;
-        padding: 30px 10px;
-        background: linear-gradient(180deg, rgba(88,166,255,0.05) 0%, rgba(13,17,23,0) 100%);
-        border-radius: 20px;
-        margin-bottom: 10px;
     }
 
     .sub-title {
@@ -166,13 +162,12 @@ st.markdown("""
         letter-spacing: 1px;
         text-transform: uppercase;
     }
-
+    
     @keyframes glow {
         from { text-shadow: 0 0 10px #58a6ff, 0 0 20px #58a6ff; }
         to { text-shadow: 0 0 20px #58a6ff, 0 0 50px #58a6ff; transform: scale(1.01); }
     }
 
-    /* حالة المحل المضيئة */
     .status-container { text-align: center; margin-bottom: 20px; }
     .status-badge { 
         font-family: 'Orbitron'; 
@@ -188,7 +183,6 @@ st.markdown("""
     @keyframes blink-g { 50% { opacity: 0.6; box-shadow: 0 0 20px #00ff41; } }
     @keyframes blink-r { 50% { opacity: 0.6; box-shadow: 0 0 20px #ff3131; } }
 
-    /* أزرار التواصل */
     .custom-btn {
         display: flex; 
         flex-direction: column; 
@@ -212,7 +206,6 @@ st.markdown("""
     }
     .custom-btn i { font-size: 2.2rem; margin-bottom: 12px; color: #58a6ff; }
 
-    /* حقل الهاتف والاكسباندر */
     [data-testid="stTextInput"] label { color: #58a6ff !important; font-weight: bold; }
     div[data-baseweb="input"] { 
         border-radius: 12px !important; 
@@ -220,7 +213,6 @@ st.markdown("""
         background: #161b22 !important; 
     }
     
-    /* تخصيص الـ Card الخاص بالجهاز */
     .device-box {
         background: #1c2128; 
         border: 1px solid #30363d; 
@@ -237,7 +229,6 @@ st.markdown("""
         margin-bottom: 15px;
     }
     
-    /* زر التلغرام */
     .tg-btn { 
         display: flex;
         align-items: center;
