@@ -196,26 +196,33 @@ st.markdown("""
         direction: rtl !important; /* لضمان الاتجاه من اليمين */
     }
     
-    /* تنسيق زر البحث ليصبح واضحاً */
-    button[kind="primaryFormSubmit"] {
-        background-color: #58a6ff !important;
+    /* تحسين شكل حقل الإدخال ليكون النص واضحاً */
+    input[aria-label=""] {
         color: white !important;
-        border: none !important;
-        font-weight: bold !important;
-        margin-top: 10px !important;
-    }
-    button[kind="primaryFormSubmit"]:hover {
-        background-color: #1f6feb !important;
-        box-shadow: 0 0 15px rgba(88, 166, 255, 0.4) !important;
+        background-color: #1c2128 !important;
+        border: 1px solid #444c56 !important;
     }
     
-    /* تنسيق حقل الإدخال */
-    div[data-baseweb="input"] {
-        background-color: #0d1117 !important;
-        border: 1px solid #30363d !important;
-    }
-    input[data-testid="stTextInputEnterChat"] {
+    /* إصلاح زر البحث (Submit Button) */
+    button[kind="primaryFormSubmit"] {
+        background-color: #58a6ff !important; /* لون أزرق جذاب */
         color: white !important;
+        border-radius: 8px !important;
+        border: none !important;
+        font-weight: bold !important;
+        height: 3rem !important;
+        transition: 0.3s background-color !important;
+    }
+
+    button[kind="primaryFormSubmit"]:hover {
+        background-color: #1f6feb !important; /* لون أغمق عند التمرير */
+        box-shadow: 0 0 10px rgba(88, 166, 255, 0.5) !important;
+    }
+
+    /* إخفاء حدود النموذج الافتراضية المزعجة */
+    div[data-testid="stForm"] {
+        border: none !important;
+        padding: 0 !important;
     }
 
     /* تنسيق العنوان (اضغط هنا...) */
