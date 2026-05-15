@@ -119,7 +119,7 @@ def get_warranty_stats(date_sortie_str):
     return None
 
 # ==============================================================================
-# 3. التنسيقات البصرية (CSS) - النسخة النهائية المنظمة
+# 3. التنسيقات البصرية (CSS) - النسخة الاحترافية المنظمة
 # ==============================================================================
 st.markdown("""
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -128,7 +128,6 @@ st.markdown("""
     
     .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
     
-    /* الحاوية الرئيسية */
     .hero-container {
         background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
         border: 1px solid #30363d; border-radius: 15px; padding: 25px;
@@ -141,21 +140,20 @@ st.markdown("""
         text-shadow: 0 0 15px rgba(88, 166, 255, 0.5); margin-bottom: 5px;
     }
 
-    /* أزرار التواصل - النسخة المعدلة والمضمونة */
     .custom-btn {
-        display: flex !important;
-        flex-direction: column !important; /* تجعل الأيقونة فوق النص */
-        align-items: center !important;
+        display: flex !important; 
+        flex-direction: column !important; 
+        align-items: center !important; 
         justify-content: center !important;
-        background: rgba(255, 255, 255, 0.05) !important;
+        background: rgba(255, 255, 255, 0.05) !important; 
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 15px !important;
-        padding: 15px !important;
-        text-decoration: none !important;
+        border-radius: 15px !important; 
+        padding: 15px !important; 
+        text-decoration: none !important; 
         color: white !important;
-        transition: 0.3s !important;
-        min-height: 110px !important;
-        width: 100% !important;
+        transition: 0.3s !important; 
+        min-height: 110px !important; 
+        width: 100% !important; 
         margin-bottom: 10px !important;
     }
 
@@ -165,10 +163,9 @@ st.markdown("""
         transform: translateY(-5px) !important;
     }
 
-    /* تنسيق الأيقونات داخل الأزرار رغما عن المتصفح */
     .custom-btn i {
-        font-size: 2.2rem !important; /* تكبير الأيقونة */
-        margin-bottom: 10px !important; /* مسافة واضحة تحت الأيقونة */
+        font-size: 2.2rem !important; 
+        margin-bottom: 10px !important; 
         display: block !important;
     }
 
@@ -178,7 +175,6 @@ st.markdown("""
         display: block !important;
     }
 
-    /* أنيميشن الحالة */
     @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.7; } }
     @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; } 50% { opacity: 0.7; } }
     
@@ -186,8 +182,6 @@ st.markdown("""
     .status-open { color: #3fb950; border: 2px solid #3fb950; animation: blink-green 2s infinite; }
     .status-closed { color: #f85149; border: 2px solid #f85149; animation: blink-red 2s infinite; }
 
-
-    /* 1. الستايل العام لكل الأكسباندرز (باش ما يبقاوش كحولة بزاف) */
     div[data-testid="stExpander"] {
         border: 1px solid #30363d !important;
         background: rgba(22, 27, 34, 0.5) !important;
@@ -195,27 +189,23 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
 
-    /* أنيميشن الإضاءة */
     @keyframes yellow-glow {
         0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; }
         50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
     }
 
-    /* استهداف الأكسباندر الأول فقط في الصفحة (اللي هو تاع الشروط) */
-    /* أو استهداف الأكسباندر اللي يحتوي على نص معين */
     div[data-testid="stExpander"]:first-of-type {
         border: 2px solid #d29922 !important;
         animation: yellow-glow 3s infinite ease-in-out !important;
         background: rgba(210, 153, 34, 0.05) !important;
-        direction: rtl !important; /* لضمان الاتجاه من اليمين */
+        direction: rtl !important;
     }
 
-    /* تنسيق العنوان (اضغط هنا...) */
     div[data-testid="stExpander"]:first-of-type summary {
         direction: rtl !important;
         text-align: right !important;
         display: flex !important;
-        flex-direction: row !important; /* ترتيب العناصر داخله */
+        flex-direction: row !important;
         justify-content: flex-start !important;
         gap: 15px !important;
     }
@@ -228,7 +218,6 @@ st.markdown("""
         margin: 0 !important;
     }
     
-    /* إذا حبيت تنحي السهم كامل وتقلبو جهة اليسار */
     div[data-testid="stExpander"] summary {
         flex-direction: row-reverse;
         justify-content: space-between;
