@@ -443,18 +443,6 @@ if submit_search and user_phone:
                     is_done = "Livré" in status
                     status_color = "#238636" if status == "Prêt" else "#da3633" if status == "Annulé" else "#6e7681" if is_done else "#58a6ff"
                     
-                    # المربع الرئيسي (Header)
-                    st.markdown(f"""
-                        <div class="device-box" style="border-right: 6px solid {status_color};">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <h3 style="margin:0; color:white;">{dev.get('Appareil')}</h3>
-                                    <small style="color:#8b949e;">رقم الوصل: #{dev.get('ID')}</small>
-                                </div>
-                                <span class="badge-label" style="background:{status_color}; color:white;">{status.upper()}</span>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
                     
                     # --- إضافة الأيقونات بناءً على الحالة ---
                     status_icon = "⏳" # الافتراضي
@@ -562,6 +550,52 @@ if submit_search and user_phone:
                                     <td style="text-align: left; color: #58a6ff; font-weight: 900;">{dev.get('Prix', '0')} DZD</td>
                                 </tr>
                             </table>
-                        """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)  
 
+# ==============================================================================
+# 7. تشغيل بوت التلغرام (المصحح)
+# ==============================================================================
+@st.cache_resource
+def start_telegram_bot():
+    token = st.secrets.get("TELEGRAM_TOKEN")
+    if not token: return "Missing Token"
+
+    try:
+        bot = telebot.TeleBot(token)
+
+        @bot.message_handler(commands=['start'])
+        def handle_start(m):
+            try:
+                command_parts = m.text.split()
+                if len(command_parts) > 1:
+                    client_phone = normalize_phone(command_parts[1])
+                    ref = db.reference("atelier")
+                    data = ref.get()
+                    if data:
+                        linked = False
+                        for k, v in data.items():
+                            # تصفية ذكية: التأكد من مطابقة آخر 9 أرقام
+                            db_phone = normalize_phone(v.get("Telephone", ""))
+                            if db_phone.endswith(client_phone[-9:]):
+                                ref.child(k).update({"Telegram_ID": str(m.chat.id)})
+                                linked = True
                         
+                        if linked:
+                            bot.reply_to(m, "✅ تم ربط حسابك بنجاح! ستصلك إشعارات فورية هنا عند جاهزية أجهزتك.")
+                        else:
+                            bot.reply_to(m, "❌ عذراً، لم نجد أي جهاز مسجل بهذا الرقم في نظامنا.")
+                else:
+                    bot.reply_to(m, "مرحباً بك في InfoDoc! يرجى الدخول عبر الرابط المرسل لك لتفعيل الإشعارات.")
+            except Exception as e:
+                print(f"Error logic: {e}")
+
+        # تشغيل البوت في خيط منفصل
+        thread = threading.Thread(target=bot.infinity_polling, daemon=True)
+        thread.start()
+        return "Bot Started"
+    except Exception as e:
+        return f"Error: {e}"
+
+# تشغيل البوت
+if "TELEGRAM_TOKEN" in st.secrets:
+    start_telegram_bot()
