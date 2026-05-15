@@ -319,133 +319,99 @@ with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط 
 # --- 1. CSS خاص بهذا القسم (لزر التلغرام العائم والبطاقات المدمجة) ---
 st.markdown("""
     <style>
-    /* استدعاء الخطوط الاحترافية من جوجل */
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Orbitron:wght@400;700;900&display=swap');
+    /* 1. استدعاء الخطوط وتطبيقها بشكل إجباري */
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Changa:wght@400;700&family=Orbitron:wght@400;700&display=swap');
 
-    /* الإعدادات العامة للنصوص */
-    html, body, [class*="css"] {
-        font-family: 'Cairo', sans-serif;
+    /* تطبيق الخط على التطبيق بالكامل */
+    * {
+        font-family: 'Cairo', sans-serif !important;
     }
 
-    /* زر التلغرام العائم - تصميم عصري */
+    /* 2. زر التلغرام - تغيير شامل في التصميم */
     .floating-tg-btn {
         position: fixed;
         bottom: 30px;
         left: 30px;
-        background: linear-gradient(135deg, #0088cc, #00a2ed);
+        background: #0088cc;
         color: white !important;
-        padding: 12px 22px;
+        padding: 14px 28px;
         border-radius: 50px;
-        box-shadow: 0 8px 15px rgba(0, 136, 204, 0.3);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.4);
         z-index: 9999;
-        font-family: 'Cairo', sans-serif;
-        font-weight: 700;
-        font-size: 1rem;
+        font-family: 'Cairo', sans-serif !important;
+        font-weight: 900 !important;
+        font-size: 1.1rem;
         text-decoration: none;
         display: flex;
         align-items: center;
         gap: 12px;
-        transition: all 0.3s ease;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    .floating-tg-btn:hover {
-        transform: translateY(-5px) scale(1.02);
-        box-shadow: 0 12px 20px rgba(0, 136, 204, 0.5);
-        color: #fff !important;
+        border: 2px solid rgba(255,255,255,0.1);
     }
 
-    /* رأس البطاقة (الجهاز) */
+    /* 3. رأس بطاقة الجهاز - جعل الخط عريض وواضح */
     .device-header {
-        background: #161b22;
-        border: 1px solid #30363d;
-        border-bottom: none;
-        border-radius: 15px 15px 0 0;
-        padding: 18px 25px;
+        background: #1c2128 !important;
+        border: 1px solid #444c56 !important;
+        border-bottom: none !important;
+        border-radius: 15px 15px 0 0 !important;
+        padding: 20px 25px !important;
         margin-top: 25px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
 
-    /* تحسين خطوط العناوين */
     .device-title { 
-        margin: 0; 
-        color: #f0f6fc; 
-        font-family: 'Cairo', sans-serif; 
-        font-size: 1.25rem; 
-        font-weight: 700;
-        letter-spacing: 0.5px;
+        margin: 0 !important; 
+        color: #ffffff !important; 
+        font-family: 'Cairo', sans-serif !important; 
+        font-size: 1.3rem !important; 
+        font-weight: 900 !important; /* أقصى سمك للخط */
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     }
     
     .device-id { 
-        color: #8b949e; 
-        font-size: 0.85rem; 
-        font-family: 'Orbitron', sans-serif; 
-        letter-spacing: 1px;
+        color: #58a6ff !important; 
+        font-size: 0.9rem !important; 
+        font-family: 'Orbitron', sans-serif !important; 
+        font-weight: 700 !important;
     }
     
-    /* شارة الحالة - تصميم زجاجي */
     .status-badge-mini {
-        padding: 5px 14px;
-        border-radius: 10px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        font-family: 'Orbitron', sans-serif;
-        color: white;
+        padding: 6px 16px !important;
+        border-radius: 12px !important;
+        font-size: 0.8rem !important;
+        font-weight: 900 !important;
+        font-family: 'Changa', sans-serif !important;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
-    /* تعديل الأكسباندر (الجسم) */
+    /* 4. تعديل الأكسباندر ليكون الخط داخله واضحاً */
     div[data-testid="stExpander"] {
         background: #0d1117 !important;
-        border: 1px solid #30363d !important;
-        border-top: 1px dashed rgba(139, 148, 158, 0.3) !important;
+        border: 1px solid #444c56 !important;
         border-radius: 0 0 15px 15px !important;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.4) !important;
     }
 
-    /* تحسين خطوط الأكسباندر الداخلي */
-    div[data-testid="stExpander"] p {
-        font-family: 'Cairo', sans-serif;
-        font-size: 0.95rem;
-        line-height: 1.6;
-    }
-    
-    /* جدول التفاصيل الاحترافي */
-    .details-table { 
-        width: 100%; 
-        border-collapse: collapse; 
-        margin: 10px 0; 
-        background: #161b22; 
-        border-radius: 10px; 
-        overflow: hidden;
-    }
-    
+    /* تحسين خطوط الجداول */
     .details-table td { 
-        padding: 14px; 
-        border-bottom: 1px solid #21262d; 
-        text-align: center; 
-        color: #c9d1d9; 
-        font-size: 0.9rem;
+        padding: 15px !important; 
+        color: #f0f6fc !important; 
+        font-size: 1rem !important;
+        font-family: 'Cairo', sans-serif !important;
     }
     
     .details-table td:first-child { 
-        font-weight: 600; 
-        color: #8b949e; 
-        text-align: right; 
-        width: 35%;
-        background: rgba(255,255,255,0.02);
+        font-weight: 700 !important; 
+        color: #8b949e !important; 
+        background: rgba(255,255,255,0.03);
     }
 
-    /* لمسة جمالية عند المرور على البطاقة */
-    .device-header:hover {
-        background: #1c2128;
-        border-color: #444c56;
+    /* تحسين شكل النصوص العادية داخل التطبيق */
+    p, span, label {
+        font-family: 'Cairo', sans-serif !important;
+        font-weight: 600;
     }
     </style>
 """, unsafe_allow_html=True)
