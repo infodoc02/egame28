@@ -240,17 +240,40 @@ st.markdown(f'''
 ''', unsafe_allow_html=True)
 
 # 2. أزرار التواصل السريع (Quick Actions)
-# استخدمت الأيقونات التي استوردناها في الجزء الثاني
+# أزرار التواصل السريع (Quick Actions)
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.markdown('<a href="tel:0798661900" class="custom-btn"><i class="fas fa-phone-alt"></i><b>اتصل بنا</b></a>', unsafe_allow_html=True)
+    st.markdown('''
+        <a href="tel:0798661900" class="custom-btn">
+            <i class="fas fa-phone-alt" style="color: #3fb950;"></i>
+            <span style="font-size: 0.9rem;">اتصل بنا</span>
+        </a>
+    ''', unsafe_allow_html=True)
+
 with col2:
-    st.markdown('<a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="custom-btn"><i class="fas fa-map-marker-alt"></i><b>موقعنا</b></a>', unsafe_allow_html=True)
+    st.markdown('''
+        <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="custom-btn">
+            <i class="fas fa-map-marker-alt" style="color: #f85149;"></i>
+            <span style="font-size: 0.9rem;">موقعنا</span>
+        </a>
+    ''', unsafe_allow_html=True)
+
 with col3:
-    st.markdown('<a href="https://www.facebook.com/100095433977319/" target="_blank" class="custom-btn"><i class="fab fa-facebook-f"></i><b>فيسبوك</b></a>', unsafe_allow_html=True)
+    st.markdown('''
+        <a href="https://www.facebook.com/100095433977319/" target="_blank" class="custom-btn">
+            <i class="fab fa-facebook-f" style="color: #1877f2;"></i>
+            <span style="font-size: 0.9rem;">فيسبوك</span>
+        </a>
+    ''', unsafe_allow_html=True)
+
 with col4:
-    st.markdown('<a href="https://www.tiktok.com/@infodoc02" target="_blank" class="custom-btn"><i class="fab fa-tiktok"></i><b>تيك توك</b></a>', unsafe_allow_html=True)
+    st.markdown('''
+        <a href="https://www.tiktok.com/@infodoc02" target="_blank" class="custom-btn">
+            <i class="fab fa-tiktok" style="color: #ffffff;"></i>
+            <span style="font-size: 0.9rem;">تيك توك</span>
+        </a>
+    ''', unsafe_allow_html=True)
 
 st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
