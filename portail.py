@@ -408,24 +408,26 @@ if user_phone:
                     
                     # 2. تفاصيل الجهاز
                     with st.expander("📄 عرض التفاصيل والمستحقات"):
-                        # التأكد من ظهور شريط الضمان في حالات التسليم (مدفوع أو دين)
+                        # جلب حالة الجهاز وتاريخ الخروج
+                        d_sortie = dev.get("Date_Sortie")
+                        
+                        # التأكد من ظهور شريط الضمان في حالات التسليم
                         if status in ["Livre et payé", "Livré (Dette)"]:
-                            w = get_warranty_stats(dev.get("Date_Sortie"))
+                            # محاولة جلب إحصائيات الضمان
+                            w = get_warranty_stats(d_sortie)
                             
                             if w:
-                                # نستعمل percent_left باش يبان شحال بقا في الضمان
                                 val = w.get('percent_left', 0)
                                 is_expired = w.get('is_expired', False)
-                                
-                                # اللون أصفر للضمان النشط، ورمادي داكن للمنتهي
                                 b_color = "#FFD700" if not is_expired else "#4b4b4b"
                                 
+                                # إعداد نصوص الحالة
                                 if is_expired:
                                     status_text = "<del style='color: #f85149;'>❌ فترة الضمان منتهية</del>"
-                                    days_text = "30 يوم انتهت"
+                                    days_text = "انتهت مدة 30 يوم"
                                 else:
-                                    status_text = "<span style='color: #3fb950;'>🛡️ الضمان سارٍ (باقي {0} يوم)</span>".format(w.get('days_left'))
-                                    days_text = f"المتبقي: {w.get('days_left')} يوم"
+                                    status_text = f"<span style='color: #3fb950;'>🛡️ الضمان سارٍ (باقي {w.get('days_left')} يوم)</span>"
+                                    days_text = f"تاريخ الخروج: {d_sortie}"
 
                                 st.markdown(f"""
                                     <div style="margin-bottom: 5px;">
@@ -435,16 +437,15 @@ if user_phone:
                                         <div style="width: {val}%; background: {b_color}; height: 100%; border-radius: 10px; transition: width 1s ease-in-out;"></div>
                                     </div>
                                     <div style="display: flex; justify-content: space-between; margin-top: 3px;">
-                                        <span style="font-size: 10px; color: #8b949e;">المدة الإجمالية: 30 يوم</span>
+                                        <span style="font-size: 10px; color: #8b949e;">{days_text}</span>
                                         <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
                                     </div>
                                 """, unsafe_allow_html=True)
                             else:
-                                # إذا لم يتم العثور على تاريخ أو الدالة رجعت None
-                                st.info("ℹ️ الضمان يبدأ فور تسجيل تاريخ خروج الجهاز.")
+                                # هذا التنبيه يظهر إذا الدالة رجعت None (مشكل في صيغة التاريخ)
+                                st.info(f"⏳ في انتظار تفعيل الضمان (التاريخ المسجل: {d_sortie})")
 
                         elif status == "Non Réparable":
-                            # حالة الجهاز غير قابل للتصليح
                             st.markdown(f"""
                                 <div style="text-align: center; padding: 15px; background: rgba(248, 81, 73, 0.05); border: 1px dashed #f85149; border-radius: 12px;">
                                     <div style="font-size: 2rem;">🥀</div>
@@ -456,7 +457,7 @@ if user_phone:
                             """, unsafe_allow_html=True)
 
                         else:
-                            # شريط تقدم الصيانة العادي (En cours, Réparable...)
+                            # شريط التقدم العادي
                             prog_map = {
                                 "En attente": {"val": 0.0, "pct": "0%"},
                                 "En Cours":   {"val": 0.33, "pct": "33%"},
@@ -464,13 +465,7 @@ if user_phone:
                                 "Prêt":       {"val": 1.0, "pct": "100%"}
                             }
                             p_data = prog_map.get(status, {"val": 0.1, "pct": "..."})
-
-                            st.markdown(f"""
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                    <span style="color: #8b949e; font-size: 0.9rem; font-weight: bold;">🛠️ تقدم الصيانة</span>
-                                    <span style="color: #00d4ff; font-family: 'Orbitron'; font-weight: 900;">{p_data['pct']}</span>
-                                </div>
-                            """, unsafe_allow_html=True)
+                            st.markdown(f"<div style='margin-bottom:5px; color:#8b949e;'>🛠️ تقدم الصيانة: <b>{p_data['pct']}</b></div>", unsafe_allow_html=True)
                             st.progress(p_data['val'])
 
                         # جدول البيانات
