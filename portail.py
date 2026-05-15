@@ -437,34 +437,34 @@ if submit_search and user_phone:
                     )
                 )
                 
-                # 4. حلقة عرض الأجهزة
+                # 4. حلقة عرض الأجهزة المصححة
                 for dev in my_devices:
                     status = str(dev.get("Statut", "En Cours"))
-                    is_done = "Livré" in status
-                    status_color = "#238636" if status == "Prêt" else "#da3633" if status == "Annulé" else "#6e7681" if is_done else "#58a6ff"
+                    # تحديد إذا كان الجهاز قد خرج من المحل
+                    is_delivered = "Livré" in status or "Livre" in status
                     
-                    
-                    # --- إضافة الأيقونات بناءً على الحالة ---
-                    status_icon = "⏳" # الافتراضي
-                    if status == "Prêt": status_icon = "✅"
-                    elif status == "Annulé": status_icon = "❌"
-                    elif status == "Non Réparable": status_icon = "⚠️"
-                    elif status == "Réparable": status_icon = "🛠️"
-                    elif is_done: status_icon = "📦"
+                    # 🎨 تحديد الألوان والأيقونات بدقة
+                    if status == "Prêt":
+                        status_color, status_icon = "#238636", "✅"
+                    elif status == "Annulé":
+                        status_color, status_icon = "#da3633", "❌"
+                    elif status == "Non Réparable":
+                        status_color, status_icon = "#6e7681", "⚠️"
+                    elif is_delivered:
+                        status_color, status_icon = "#8b949e", "📦"
+                    else:
+                        status_color, status_icon = "#58a6ff", "⏳"
 
-                    # تحديد الألوان
-                    status_color = "#238636" if status == "Prêt" else "#da3633" if status == "Annulé" else "#6e7681" if is_done else "#58a6ff"
-                    
-                    # تحسين عرض السعر داخل الحلقة (Loop)
-                    raw_prix = dev.get('Prix')
+                    # تحسين عرض السعر
+                    raw_prix = dev.get('Prix', 0)
                     prix_display = f"{raw_prix} د.ج" if raw_prix and str(raw_prix).isdigit() and int(raw_prix) > 0 else "قيد التقييم..."
 
                     # 1. رأس البطاقة
                     st.markdown(f"""
                         <div class="device-header" style="border-right: 6px solid {status_color};">
                             <div>
-                                <h3 class="device-title">{dev.get('Appareil')}</h3>
-                                <div class="device-id">Ticket #{dev.get('ID')}</div>
+                                <h3 class="device-title">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
+                                <div class="device-id">Ticket #{dev.get('ID', '0000')}</div>
                             </div>
                             <div class="status-badge-mini" style="background-color: {status_color};">
                                 {status_icon} {status}
@@ -474,83 +474,50 @@ if submit_search and user_phone:
                     
                     # 2. تفاصيل الجهاز
                     with st.expander("📄 عرض التفاصيل والمستحقات"):
-                        # جلب حالة الجهاز وتاريخ الخروج
                         d_sortie = dev.get("Date_Sortie")
                         
-                        # التأكد من ظهور شريط الضمان في حالات التسليم
-                        if status in ["Livre et payé", "Livré (Dette)"]:
-                            # محاولة جلب إحصائيات الضمان
+                        # عرض الضمان في حالة التسليم فقط
+                        if is_delivered and d_sortie and d_sortie != "---":
                             w = get_warranty_stats(d_sortie)
-                            
                             if w:
                                 val = w.get('percent_left', 0)
                                 is_expired = w.get('is_expired', False)
                                 b_color = "#FFD700" if not is_expired else "#4b4b4b"
                                 
-                                # إعداد نصوص الحالة
-                                if is_expired:
-                                    status_text = "<del style='color: #f85149;'>❌ فترة الضمان منتهية</del>"
-                                    days_text = "انتهت مدة 30 يوم"
-                                else:
-                                    status_text = f"<span style='color: #3fb950;'>🛡️ الضمان سارٍ (باقي {w.get('days_left')} يوم)</span>"
-                                    days_text = f"تاريخ الخروج: {d_sortie}"
-
+                                status_text = f"<span style='color: #3fb950;'>🛡️ الضمان سارٍ (باقي {w.get('days_left')} يوم)</span>" if not is_expired else "<del style='color: #f85149;'>❌ فترة الضمان منتهية</del>"
+                                
                                 st.markdown(f"""
-                                    <div style="margin-bottom: 5px;">
-                                        <span style="font-size: 0.9rem; font-weight: bold;">{status_text}</span>
-                                    </div>
+                                    <div style="margin-bottom: 5px;"><span style="font-size: 0.9rem; font-weight: bold;">{status_text}</span></div>
                                     <div style="width: 100%; background: #30363d; border-radius: 10px; height: 12px; overflow: hidden; border: 1px solid #444c56;">
-                                        <div style="width: {val}%; background: {b_color}; height: 100%; border-radius: 10px; transition: width 1s ease-in-out;"></div>
+                                        <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 1s ease-in-out;"></div>
                                     </div>
                                     <div style="display: flex; justify-content: space-between; margin-top: 3px;">
-                                        <span style="font-size: 10px; color: #8b949e;">{days_text}</span>
+                                        <span style="font-size: 10px; color: #8b949e;">خروج: {d_sortie}</span>
                                         <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
                                     </div>
                                 """, unsafe_allow_html=True)
-                            else:
-                                # هذا التنبيه يظهر إذا الدالة رجعت None (مشكل في صيغة التاريخ)
-                                st.info(f"⏳ في انتظار تفعيل الضمان (التاريخ المسجل: {d_sortie})")
+                        
 
-                        elif status == "Non Réparable":
-                            st.markdown(f"""
-                                <div style="text-align: center; padding: 15px; background: rgba(248, 81, 73, 0.05); border: 1px dashed #f85149; border-radius: 12px;">
-                                    <div style="font-size: 2rem;">🥀</div>
-                                    <b style="color: #f85149;">للأسف، الجهاز غير قابل للتصليح</b><br>
-                                    <div style="width: 100%; background: #30363d; border-radius: 10px; height: 8px; margin-top: 10px;">
-                                        <div style="width: 100%; background: #4b4b4b; height: 100%; border-radius: 10px;"></div>
-                                    </div>
-                                </div>
-                            """, unsafe_allow_html=True)
+                        # عرض شريط التقدم للأجهزة التي لا تزال في المحل
+                        elif status not in ["Non Réparable", "Annulé"] and not is_delivered:
+                            prog_map = {"En attente": 0.1, "En Cours": 0.4, "Réparable": 0.7, "Prêt": 1.0}
+                            p_val = prog_map.get(status, 0.2)
+                            st.write(f"🛠️ تقدم الصيانة:")
+                            st.progress(p_val)
 
-                        else:
-                            # شريط التقدم العادي
-                            prog_map = {
-                                "En attente": {"val": 0.0, "pct": "0%"},
-                                "En Cours":   {"val": 0.33, "pct": "33%"},
-                                "Réparable":  {"val": 0.66, "pct": "66%"},
-                                "Prêt":       {"val": 1.0, "pct": "100%"}
-                            }
-                            p_data = prog_map.get(status, {"val": 0.1, "pct": "..."})
-                            st.markdown(f"<div style='margin-bottom:5px; color:#8b949e;'>🛠️ تقدم الصيانة: <b>{p_data['pct']}</b></div>", unsafe_allow_html=True)
-                            st.progress(p_data['val'])
-
-                        # جدول البيانات
+                        # جدول البيانات النهائي
                         st.markdown(f"""
                             <table style="width:100%; margin-top: 15px; border-collapse: collapse;">
                                 <tr style="border-bottom: 1px solid #30363d;">
                                     <td style="padding: 8px; color: #8b949e;">📅 تاريخ الدخول</td>
                                     <td style="text-align: left;">{dev.get('Date_Entree', '---')}</td>
                                 </tr>
-                                <tr style="border-bottom: 1px solid #30363d;">
-                                    <td style="padding: 8px; color: #8b949e;">📅 تاريخ الخروج</td>
-                                    <td style="text-align: left;">{dev.get('Date_Sortie', '---')}</td>
-                                </tr>
                                 <tr>
                                     <td style="padding: 8px; color: #8b949e;">💰 المبلغ المستحق</td>
-                                    <td style="text-align: left; color: #58a6ff; font-weight: 900;">{dev.get('Prix', '0')} DZD</td>
+                                    <td style="text-align: left; color: #58a6ff; font-weight: 900;">{prix_display}</td>
                                 </tr>
                             </table>
-                        """, unsafe_allow_html=True)  
+                        """, unsafe_allow_html=True)
 
 # ==============================================================================
 # 7. تشغيل بوت التلغرام (المصحح)
