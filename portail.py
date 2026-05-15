@@ -178,6 +178,15 @@ st.markdown("""
         display: block !important;
     }
 
+    /* أنيميشن الحالة */
+    @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.7; } }
+    @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; } 50% { opacity: 0.7; } }
+    
+    .status-badge { padding: 8px 20px; border-radius: 10px; font-weight: bold; display: inline-block; font-family: 'Cairo'; }
+    .status-open { color: #3fb950; border: 2px solid #3fb950; animation: blink-green 2s infinite; }
+    .status-closed { color: #f85149; border: 2px solid #f85149; animation: blink-red 2s infinite; }
+
+
     /* 1. الستايل العام لكل الأكسباندرز (باش ما يبقاوش كحولة بزاف) */
     div[data-testid="stExpander"] {
         border: 1px solid #30363d !important;
