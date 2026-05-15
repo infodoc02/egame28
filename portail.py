@@ -231,31 +231,6 @@ try:
 except Exception:
     shop_status = True
 
-# عرض الهيرو مع الترحيب والوقت
-st.markdown(f'''
-    <div class="hero-container">
-        <!-- شريط المعلومات العلوي -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 10px; opacity: 0.8;">
-            <div style="text-align: left;">
-                <i class="fas fa-clock" style="color: #58a6ff;"></i> {current_time}<br>
-                <small style="font-size: 0.7rem;">Chlef, Algeria</small>
-            </div>
-            <div style="text-align: right;">
-                <span style="font-weight: bold;">{greeting}</span> <i class="fas fa-hand-sparkles" style="color: #ffcc00;"></i>
-            </div>
-        </div>
-
-        <div class="main-title">INFODOC</div>
-        <div class="sub-title">إصلاح وبرمجة الهواتف الذكية</div>
-        
-        <div style="margin-top: 20px;">
-            <div class="status-badge {'status-open' if shop_status else 'status-closed'}">
-                <i class="fas {'fa-door-open' if shop_status else 'fa-door-closed'}"></i>
-                {'المحل مفتوح الآن' if shop_status else 'المحل مغلق حالياً'}
-            </div>
-        </div>
-    </div>
-''', unsafe_allow_html=True)
 # 4. واجهة الهيدر
 st.markdown(f'''
     <div class="hero-container">
