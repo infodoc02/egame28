@@ -255,8 +255,7 @@ st.markdown(f'''
             </div>
         </div>
     </div>
-''', unsafe_allow_html=True)افتراضياً مفتوح إذا فشل الاتصال
-
+''', unsafe_allow_html=True)
 # 4. واجهة الهيدر
 st.markdown(f'''
     <div class="hero-container">
