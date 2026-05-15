@@ -269,42 +269,20 @@ st.markdown(f'''
 ''', unsafe_allow_html=True)
 
 # 2. أزرار التواصل السريع (Quick Actions)
-# أزرار التواصل السريع (Quick Actions)
+# توزيع الأزرار في 4 أعمدة
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.markdown('''
-        <a href="tel:0798661900" class="custom-btn">
-            <i class="fas fa-phone-alt" style="color: #3fb950;"></i>
-            <span style="font-size: 0.9rem;">اتصل بنا</span>
-        </a>
-    ''', unsafe_allow_html=True)
+    st.markdown('<a href="tel:0798661900" class="custom-btn"><i class="fas fa-phone-alt" style="color: #3fb950;"></i><b>اتصل بنا</b></a>', unsafe_allow_html=True)
 
 with col2:
-    st.markdown('''
-        <a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="custom-btn">
-            <i class="fas fa-map-marker-alt" style="color: #f85149;"></i>
-            <span style="font-size: 0.9rem;">موقعنا</span>
-        </a>
-    ''', unsafe_allow_html=True)
+    st.markdown('<a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="custom-btn"><i class="fas fa-map-marker-alt" style="color: #f85149;"></i><b>موقعنا</b></a>', unsafe_allow_html=True)
 
 with col3:
-    st.markdown('''
-        <a href="https://www.facebook.com/100095433977319/" target="_blank" class="custom-btn">
-            <i class="fab fa-facebook-f" style="color: #1877f2;"></i>
-            <span style="font-size: 0.9rem;">فيسبوك</span>
-        </a>
-    ''', unsafe_allow_html=True)
+    st.markdown('<a href="https://www.facebook.com/100095433977319/" target="_blank" class="custom-btn"><i class="fab fa-facebook-f" style="color: #1877f2;"></i><b>فيسبوك</b></a>', unsafe_allow_html=True)
 
 with col4:
-    st.markdown('''
-        <a href="https://www.tiktok.com/@infodoc02" target="_blank" class="custom-btn">
-            <i class="fab fa-tiktok" style="color: #ffffff;"></i>
-            <span style="font-size: 0.9rem;">تيك توك</span>
-        </a>
-    ''', unsafe_allow_html=True)
-
-st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
+    st.markdown('<a href="https://www.tiktok.com/@infodoc02" target="_blank" class="custom-btn"><i class="fab fa-tiktok" style="color: #ffffff;"></i><b>تيك توك</b></a>', unsafe_allow_html=True)
 
 # 3. صندوق ملاحظات الصيانة (Maintenance Policy)
 with st.expander("⚠️ ملاحظات وشروط الصيانة الهامة (يرجى القراءة)"):
