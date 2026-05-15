@@ -225,7 +225,6 @@ st.markdown("""
 # ==============================================================================
 # 4. واجهة المستخدم (UI)
 # ==============================================================================
-# منطق التحقق الصارم بالـ IP لضمان الدقة 100%
 if 'tracked' not in st.session_state:
     try:
         import requests
@@ -235,25 +234,23 @@ if 'tracked' not in st.session_state:
             user_ip = res.text.replace('.', '_')
             today = datetime.now().strftime('%Y-%m-%d')
             
+            # --- سطر مؤقت للتأكد (تقدر تحذفو لاحقاً) ---
+            # st.sidebar.info(f"IP الحالي: {user_ip}")
+            
             # 2. المرجع المباشر للـ IP الخاص باليوم
-            # نستعمل .get() ونتأكد من النتيجة بدقة
-            check_ref = db.reference(f"stats/daily_ips/{today}/{user_ip}").get()
+            ip_path = f"stats/daily_ips/{today}/{user_ip}"
+            check_ref = db.reference(ip_path).get()
             
-            # 3. التحقق: إذا لم نجد الـ IP مسجلاً (يعني أول مرة يدخل)
+            # 3. التحقق
             if check_ref is None:
-                # نسجل الـ IP فوراً لمنع التكرار
-                db.reference(f"stats/daily_ips/{today}/{user_ip}").set(True)
-                
-                # نزيد عداد زوار اليوم
-                # استعملنا هنا التحديث المباشر بدل Transaction للتجربة
-                current_count = db.reference(f"stats/daily_visitors/{today}").get() or 0
-                db.reference(f"stats/daily_visitors/{today}").set(current_count + 1)
+                # تسجيل الـ IP
+                db.reference(ip_path).set(True)
+                # زيادة العداد
+                current_v = db.reference(f"stats/daily_visitors/{today}").get() or 0
+                db.reference(f"stats/daily_visitors/{today}").set(current_v + 1)
             
-            # نمنع الكود من إعادة المحاولة في نفس الجلسة
             st.session_state['tracked'] = True
-    except Exception as e:
-        # يمكنك تفعيل السطر التالي مؤقتاً لتصحيح الأخطاء إذا لم يشتغل
-        # st.error(f"خطأ في جلب الـ IP: {e}")
+    except:
         pass
 # الهيدر
 algeria_tz = pytz.timezone('Africa/Algiers')
