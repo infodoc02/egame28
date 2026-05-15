@@ -391,10 +391,8 @@ if user_phone:
                                 </div>
                             """, unsafe_allow_html=True)
     
-    # شريط التقدم الخاص بـ Streamlit
+                            # شريط التقدم الخاص بـ Streamlit
                             st.progress(progress_data['val'])
-    
-                            st.markdown("<small style='color: #444;'>سيتم إعلامك فور انتقال الشريط إلى 100%</small>", unsafe_allow_html=True)
                         
                         st.markdown(f"""
                             <table class="details-table">
