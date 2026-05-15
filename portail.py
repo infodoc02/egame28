@@ -1,397 +1,656 @@
-import os
-import threading
+import streamlit as st
+import firebase_admin
+from firebase_admin import credentials, db
 import re
 from datetime import datetime
-import firebase_admin
-import pandas as pd
-import streamlit as st
+import pandas as pd # سيستخدم لاحقاً لعرض البيانات
+import threading
 import telebot
-import qrcode
-from io import BytesIO
-from firebase_admin import credentials, db, initialize_app
+import pandas as pd
+import io
+import pytz
 
-# الطريقة المباشرة (تخدم إذا كان الملف موجود في Secrets)
-TELEGRAM_TOKEN = st.secrets.get("TELEGRAM_TOKEN", "fallback_token_here")
-BOT_USERNAME = st.secrets.get("BOT_USERNAME", "default_bot")
-DB_URL = st.secrets.get("DB_URL", "https://your-default-db.firebaseio.com/")
+# ==============================================================================
+# 1. إعدادات الصفحة الأساسية (Configuration)
+# ==============================================================================
+st.set_page_config(
+    page_title="InfoDoc - Client Portal",
+    page_icon="📱",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-def ensure_firebase():
-    # التحقق إذا كان التطبيق مفعل مسبقاً
+# إضافة CSS مخصص لتحسين المظهر العام
+st.markdown("""
+    <style>
+    .main { background-color: #f5f7f9; }
+    .stButton>button { width: 100%; border-radius: 5px; height: 3em; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# ==============================================================================
+# 2. الاتصال بقاعدة البيانات (Firebase Connection)
+# ==============================================================================
+@st.cache_resource
+def init_db():
+    """ربط التطبيق بـ Firebase مع معالجة الأخطاء."""
     if not firebase_admin._apps:
         try:
-            # التأكد من أننا نستخدم بيانات المشروع الجديد info-2b186
+            # التأكد من وجود الإعدادات في secrets
+            if "firebase" not in st.secrets or "DB_URL" not in st.secrets:
+                st.error("⚠️ ملف الإعدادات (secrets.toml) غير مكتمل!")
+                return False
+                
             cred_dict = dict(st.secrets["firebase"])
             
-            # معالجة المفتاح الخاص (السطر الجديد)
-            if "\\n" in cred_dict["private_key"]:
+            # معالجة الرموز الخاصة بالمفتاح السري (مهمة جداً في الاستضافة)
+            if "\\n" in cred_dict.get("private_key", ""):
                 cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
             
             cred = credentials.Certificate(cred_dict)
-            
-            # تهيئة التطبيق مع تحديد الرابط بدقة
             firebase_admin.initialize_app(cred, {
                 'databaseURL': st.secrets["DB_URL"]
             })
-            # st.success("Connected to Firebase!") # للتحقق فقط، احذفه لاحقاً
+            return True
         except Exception as e:
-            st.error(f"فشل الاتصال: {e}")
-    else:
-        # إذا كان التطبيق موجوداً، نتأكد من أنه يستخدم الرابط الصحيح
-        pass
+            st.error(f"❌ فشل الاتصال بقاعدة البيانات: {e}")
+            return False
+    return True
 
-ensure_firebase()
+# محاولة الاتصال
+db_status = init_db()
+
+# ==============================================================================
+# 3. الدوال البرمجية المساعدة (Helper Functions)
+# ==============================================================================
 
 def normalize_phone(phone: str) -> str:
-    p = str(phone or "").replace(".0", "").strip()
-    p = re.sub(r"\D", "", p)
+    """تنسيق رقم الهاتف الجزائري ليصبح بصيغة 0XXXXXXXXX."""
+    if not phone: return ""
+    # حذف كل ما هو ليس رقماً
+    p = re.sub(r"\D", "", str(phone))
+    
+    # معالجة المقدمة الدولية
     if p.startswith("213"):
         p = "0" + p[3:]
+    elif p.startswith("00213"):
+        p = "0" + p[5:]
+    
+    # التأكد من أن الرقم يبدأ بـ 0 وطوله 10
     if len(p) == 9 and p[0] in ["5", "6", "7"]:
         p = "0" + p
+        
     return p
 
-def telegram_qr_bytes(phone: str):
-    qr = qrcode.QRCode(version=1, box_size=8, border=2)
-    qr.add_data(telegram_link(phone))
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    buf = BytesIO()
-    img.save(buf, format="PNG")
-    return buf.getvalue()
-
-
-def telegram_link(phone: str) -> str:
-    return f"https://t.me/{BOT_USERNAME}?start={phone}"
-
-
-def safe_send(bot: telebot.TeleBot, chat_id: str, message: str) -> bool:
-    if not chat_id:
-        return False
-    try:
-        bot.send_message(chat_id, message, parse_mode="Markdown")
-        return True
-    except Exception:
-        return False
-
-
-def link_telegram_id_to_phone(phone: str, telegram_id: str) -> int:
+def get_warranty_stats(date_sortie_str):
     """
-    Link telegram_id to all atelier tickets matching phone last 9 digits.
-    Returns number of updated records.
+    حساب وضع الضمان.
+    الصيغة الرياضية المتبعة:
+    $$\text{percent} = \left( \frac{\text{remaining\_days}}{30} \right) \times 100$$
     """
-    phone = normalize_phone(phone)
-    last9 = phone[-9:]
-    ref = db.reference("atelier")
-    raw = ref.get()
-    if not raw or not isinstance(raw, dict):
-        return 0
-    updated = 0
-    for key, val in raw.items():
-        if not isinstance(val, dict):
+    if not date_sortie_str or str(date_sortie_str).strip() in ["", "---", "None"]:
+        return None
+    
+    # قائمة الصيغ المحتملة للتواريخ
+    date_formats = [
+        "%Y-%m-%d %H:%M", "%d-%m-%Y %H:%M", 
+        "%Y-%m-%d", "%d-%m-%Y", 
+        "%d/%m/%Y", "%d/%m/%Y %H:%M"
+    ]
+    
+    now = datetime.now()
+    date_s = None
+    
+    for fmt in date_formats:
+        try:
+            date_s = datetime.strptime(str(date_sortie_str).strip(), fmt)
+            break 
+        except ValueError:
             continue
-        tel = normalize_phone(val.get("Telephone", ""))
-        if tel.endswith(last9):
-            ref.child(key).update({"Telegram_ID": str(telegram_id)})
-            updated += 1
-    return updated
+    
+    if date_s:
+        diff_days = (now - date_s).days
+        remaining_days = max(30 - diff_days, 0)
+        percent = (remaining_days / 30) * 100
+        return {
+            "percent": int(percent), 
+            "is_expired": diff_days > 30, 
+            "days_left": remaining_days,
+            "actual_date": date_s.strftime("%d/%m/%Y")
+        }
+    
+    return None
 
+# 1. دالة تحديد الأولوية (حطها الفوق مع الدوال المساعدة أو مباشرة قبل الفرز)
+def get_status_priority(status):
+    s = str(status).strip()
+    if s == "Prêt": return 1
+    elif s == "Annulé": return 2
+    elif s == "Non Réparable": return 3
+    elif s == "Réparable": return 4
+    elif s == "En Cours": return 5
+    elif s == "En Attente": return 6
+    elif "Livré" in s: return 7  # يجمع Livré & Payé و Livré (Dette)
+    else: return 99  # أي حالة غير معروفة تجي مع اللخر
 
-def run_bot():
-    bot = telebot.TeleBot(TELEGRAM_TOKEN)
-
-    @bot.message_handler(commands=["start"])
-    def handle_start(message):
-        args = message.text.split()
-        chat_id = str(message.chat.id)
-        if len(args) > 1:
-            phone = normalize_phone(args[1])
-            try:
-                updated = link_telegram_id_to_phone(phone, chat_id)
-                if updated > 0:
-                    msg = (
-                        "✅ تم تفعيل إشعارات InfoDoc بنجاح لهذا الرقم.\n\n"
-                        "من الآن فصاعداً ستصلك تحديثات حالة جهازك مباشرة هنا."
-                    )
-                else:
-                    msg = (
-                        "⚠️ لم نجد جهازاً مسجلاً بهذا الرقم حالياً.\n\n"
-                        "إذا سجلت جهازك لاحقاً بنفس الرقم سيتم الربط تلقائياً."
-                    )
-                safe_send(bot, chat_id, msg)
-            except Exception:
-                safe_send(bot, chat_id, "❌ حدث خطأ أثناء الربط، حاول لاحقاً.")
-        else:
-            safe_send(bot, chat_id, "👋 مرحباً بك. فعّل الإشعارات من بوابة InfoDoc.")
-
-    bot.remove_webhook()
-    bot.polling(none_stop=True, skip_pending=True)
-
-
-def fetch_customer_devices(phone: str) -> pd.DataFrame:
-    phone = normalize_phone(phone)
-    if len(phone) < 9:
-        return pd.DataFrame()
-    last9 = phone[-9:]
-    raw = db.reference("atelier").get()
-    if not raw or not isinstance(raw, dict):
-        return pd.DataFrame()
-    rows = []
-    for key, val in raw.items():
-        if not isinstance(val, dict):
-            continue
-        tel = normalize_phone(val.get("Telephone", ""))
-        if tel.endswith(last9):
-            r = val.copy()
-            r["_id"] = key
-            rows.append(r)
-    df = pd.DataFrame(rows)
-    if not df.empty and "ID" in df.columns:
-        df["ID"] = pd.to_numeric(df["ID"], errors="coerce").fillna(0).astype(int)
-        df = df.sort_values("ID", ascending=False)
-    return df
-
-
-def is_telegram_linked(df: pd.DataFrame) -> bool:
-    if df.empty or "Telegram_ID" not in df.columns:
-        return False
-    tg = df["Telegram_ID"].astype(str).str.strip()
-    return ((tg.str.isdigit()) & (tg.str.len() > 5)).any()
-
-
-# --- App ---
-st.set_page_config(page_title="InfoDoc - Portail Client", page_icon="📱", layout="wide")
-
-ensure_firebase()
-
-if "bot_thread" not in st.session_state:
-    try:
-        threading.Thread(target=run_bot, daemon=True).start()
-        st.session_state["bot_thread"] = True
-    except Exception:
-        st.session_state["bot_thread"] = False
-
-st.markdown(
-    """
+# ==============================================================================
+# 3. التنسيقات البصرية (CSS) - النسخة النهائية المنظمة
+# ==============================================================================
+st.markdown("""
     <style>
-    .stApp {
-        background:
-            radial-gradient(circle at 10% 10%, rgba(56,189,248,.20) 0%, transparent 25%),
-            radial-gradient(circle at 85% 20%, rgba(34,197,94,.14) 0%, transparent 23%),
-            radial-gradient(circle at 70% 80%, rgba(59,130,246,.16) 0%, transparent 30%),
-            linear-gradient(135deg, #020617 0%, #0b1220 35%, #0f172a 100%);
-        color: #e5ecf8;
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
+    
+    .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
+    
+    /* الحاوية الرئيسية */
+    .hero-container {
+        background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+        border: 1px solid #30363d; border-radius: 15px; padding: 25px;
+        margin-bottom: 20px; text-align: center;
     }
-    .main .block-container { padding-top: 1.6rem; }
-    .bg-circuit {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: -1;
-        opacity: 0.35;
-        background-image:
-            linear-gradient(rgba(56,189,248,0.18) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(56,189,248,0.18) 1px, transparent 1px);
-        background-size: 38px 38px;
-        mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+
+    .main-title {
+        font-family: 'Orbitron', sans-serif; color: #58a6ff;
+        font-size: clamp(2rem, 8vw, 3.5rem); font-weight: 900;
+        text-shadow: 0 0 15px rgba(88, 166, 255, 0.5); margin-bottom: 5px;
     }
-    @keyframes floatGlow {
-        0% { transform: translateY(0px); opacity: 0.55; }
-        50% { transform: translateY(-8px); opacity: 0.95; }
-        100% { transform: translateY(0px); opacity: 0.55; }
+
+    /* أزرار التواصل */
+    .custom-btn {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px; padding: 15px; text-decoration: none !important; color: white !important;
+        transition: 0.3s; min-height: 100px; margin-bottom: 10px;
     }
-    @keyframes pulseLineA {
-        0% { background-position: 0% 50%; }
-        100% { background-position: 200% 50%; }
+    .custom-btn:hover { border-color: #58a6ff; background: rgba(88, 166, 255, 0.15); transform: translateY(-3px); }
+
+    /* أنيميشن الحالة */
+    @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.7; } }
+    @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; } 50% { opacity: 0.7; } }
+    
+    .status-badge { padding: 8px 20px; border-radius: 10px; font-weight: bold; display: inline-block; font-family: 'Cairo'; }
+    .status-open { color: #3fb950; border: 2px solid #3fb950; animation: blink-green 2s infinite; }
+    .status-closed { color: #f85149; border: 2px solid #f85149; animation: blink-red 2s infinite; }
+
+
+    /* 1. الستايل العام لكل الأكسباندرز (باش ما يبقاوش كحولة بزاف) */
+    div[data-testid="stExpander"] {
+        border: 1px solid #30363d !important;
+        background: rgba(22, 27, 34, 0.5) !important;
+        border-radius: 12px !important;
+        margin-bottom: 15px !important;
     }
-    @keyframes pulseLineB {
-        0% { transform: translateY(-40%); opacity: 0; }
-        35% { opacity: .55; }
-        100% { transform: translateY(180%); opacity: 0; }
+
+    /* أنيميشن الإضاءة */
+    @keyframes yellow-glow {
+        0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; }
+        50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
     }
-    .portal-wrap {
-        position: relative;
-        border-radius: 22px;
-        overflow: hidden;
-        margin-bottom: 1.1rem;
-        border: 1px solid rgba(56,189,248,0.45);
+
+    /* استهداف الأكسباندر الأول فقط في الصفحة (اللي هو تاع الشروط) */
+    /* أو استهداف الأكسباندر اللي يحتوي على نص معين */
+    div[data-testid="stExpander"]:first-of-type {
+        border: 2px solid #d29922 !important;
+        animation: yellow-glow 3s infinite ease-in-out !important;
+        background: rgba(210, 153, 34, 0.05) !important;
+        direction: rtl !important; /* لضمان الاتجاه من اليمين */
     }
-    .circuit-bg {
-        position: absolute;
-        inset: 0;
-        background:
-            radial-gradient(circle at 18% 20%, rgba(56,189,248,0.50), transparent 28%),
-            radial-gradient(circle at 82% 28%, rgba(34,197,94,0.35), transparent 27%),
-            radial-gradient(circle at 35% 78%, rgba(59,130,246,0.45), transparent 30%),
-            linear-gradient(135deg, #020617 0%, #0b1220 40%, #1e3a8a 100%);
+    
+    /* تحسين شكل حقل الإدخال ليكون النص واضحاً */
+    input[aria-label=""] {
+        color: white !important;
+        background-color: #1c2128 !important;
+        border: 1px solid #444c56 !important;
     }
-    .circuit-lines {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(14,165,233,0.0) 15%,
-            rgba(14,165,233,0.45) 50%,
-            rgba(14,165,233,0.0) 85%,
-            transparent 100%
-        );
-        background-size: 200% 100%;
-        animation: pulseLineA 7s linear infinite;
-        mix-blend-mode: screen;
+    
+    /* إصلاح زر البحث (Submit Button) */
+    button[kind="primaryFormSubmit"] {
+        background-color: #58a6ff !important; /* لون أزرق جذاب */
+        color: white !important;
+        border-radius: 8px !important;
+        border: none !important;
+        font-weight: bold !important;
+        height: 3rem !important;
+        transition: 0.3s background-color !important;
     }
-    .scan-line {
-        position: absolute;
-        left: 0; right: 0;
-        height: 120px;
-        background: linear-gradient(180deg, transparent 0%, rgba(56,189,248,0.22) 45%, transparent 100%);
-        animation: pulseLineB 4.5s linear infinite;
-        pointer-events: none;
+
+    button[kind="primaryFormSubmit"]:hover {
+        background-color: #1f6feb !important; /* لون أغمق عند التمرير */
+        box-shadow: 0 0 10px rgba(88, 166, 255, 0.5) !important;
     }
-    .hero-card {
-        position: relative;
-        z-index: 2;
-        border-radius: 20px;
-        padding: 1.5rem 1.5rem;
-        color: #eef6ff;
-        backdrop-filter: blur(1.5px);
+
+    /* إخفاء حدود النموذج الافتراضية المزعجة */
+    div[data-testid="stForm"] {
+        border: none !important;
+        padding: 0 !important;
     }
-    .chip-dot {
-        width: 10px; height: 10px; border-radius: 50%;
-        background: #38bdf8; display: inline-block; margin-inline-end: 8px;
-        animation: floatGlow 2.3s ease-in-out infinite;
-        box-shadow: 0 0 14px rgba(56,189,248,0.9);
+
+    /* تنسيق العنوان (اضغط هنا...) */
+    div[data-testid="stExpander"]:first-of-type summary {
+        direction: rtl !important;
+        text-align: right !important;
+        display: flex !important;
+        flex-direction: row !important; /* ترتيب العناصر داخله */
+        justify-content: flex-start !important;
+        gap: 15px !important;
     }
-    .hero-card {
-        margin-bottom: 0.35rem;
-        box-shadow: 0 18px 40px rgba(2, 6, 23, 0.55);
+
+    div[data-testid="stExpander"]:first-of-type summary p {
+        font-family: 'Cairo', sans-serif !important;
+        font-weight: 900 !important;
+        color: #ffcc00 !important;
+        font-size: 1.1rem !important;
+        margin: 0 !important;
     }
-    .hero-title { font-size: 1.72rem; font-weight: 900; margin-bottom: 0.2rem; letter-spacing: .3px; }
-    .hero-subtitle { font-size: 0.96rem; opacity: 0.95; }
-    .section-card {
-        border: 1px solid rgba(56,189,248,0.45);
-        border-radius: 16px;
-        padding: 1rem 1.05rem;
-        background: rgba(15, 23, 42, 0.55);
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.30);
-        margin-bottom: 0.8rem;
+    
+    /* إذا حبيت تنحي السهم كامل وتقلبو جهة اليسار */
+    div[data-testid="stExpander"] summary {
+        flex-direction: row-reverse;
+        justify-content: space-between;
     }
-    .mini-tech {
-        border: 1px solid rgba(56,189,248,0.35);
-        background: rgba(15, 23, 42, 0.75);
-        color: #dbeafe;
-        border-radius: 12px;
-        padding: 0.65rem 0.8rem;
-        font-size: 0.84rem;
-        margin-bottom: 0.65rem;
-    }
-    .dev-card {
-        border: 1px solid rgba(56,189,248,0.35);
-        border-radius: 14px;
-        padding: 0.8rem 0.9rem;
-        background: rgba(15, 23, 42, 0.72);
-        margin-bottom: .55rem;
-    }
-    .dev-head { font-weight: 800; color: #f8fbff; margin-bottom: .22rem; }
-    .dev-sub { color: #bfd4ff; font-size: .88rem; }
-    .chip {
-        display: inline-block;
-        padding: .16rem .52rem;
-        border-radius: 999px;
-        font-size: .75rem;
-        font-weight: 700;
-        margin-top: .32rem;
-    }
-    .chip-ready { background: rgba(34,197,94,.18); color: #86efac; border: 1px solid rgba(134,239,172,.35); }
-    .chip-work { background: rgba(56,189,248,.18); color: #7dd3fc; border: 1px solid rgba(125,211,252,.35); }
-    .chip-other { background: rgba(251,191,36,.18); color: #fde68a; border: 1px solid rgba(253,230,138,.35); }
     </style>
-    """,
-    unsafe_allow_html=True,
-)
-st.markdown('<div class="bg-circuit"></div>', unsafe_allow_html=True)
-st.markdown(
-    """
-    <div class="portal-wrap">
-        <div class="circuit-bg"></div>
-        <div class="circuit-lines"></div>
-        <div class="scan-line"></div>
-        <div class="hero-card">
-            <div class="hero-title"><span class="chip-dot"></span>بوابة الزبائن InfoDoc</div>
-            <div class="hero-subtitle">متابعة احترافية لحالة الأجهزة، الأسعار، والتنبيهات الفورية عبر Telegram.</div>
-        </div>
+""", unsafe_allow_html=True)
+# ==============================================================================
+# 5. واجهة المستخدم الرأسية (Header Section)
+# ==============================================================================
+
+# ==============================================================================
+# 4. واجهة المستخدم (UI)
+# ==============================================================================
+
+# الهيدر
+algeria_tz = pytz.timezone('Africa/Algiers')
+now = datetime.now(algeria_tz)
+greeting = "عزيزي الزبون صباح الخير" if 5 <= now.hour < 12 else "عزيزي الزبون مساء الخير"
+
+# 2. جلب الحالة من قاعدة البيانات (كما هي)
+try:
+    # جلب القيمة مباشرة (تأكد أن التطبيق الرئيسي يرفعها كـ True أو False)
+    shop_status = db.reference("shop_settings/is_open").get()
+    
+    # في حال كانت القيمة فارغة في القاعدة لأي سبب
+    if shop_status is None:
+        shop_status = False
+except Exception as e:
+    shop_status = False # حالة احتياطية
+    # 4. واجهة الهيدر
+st.markdown(f'''
+    <div class="hero-container">
+        <div style="color: #8b949e; font-size: 0.9rem;">{greeting} | {now.strftime("%Y-%m-%d %H:%M")}</div>
+        <div class="main-title">INFODOC</div>
+        <div class="sub-title" style="color: #8b949e; margin-bottom: 20px;">Vente & Réparation Informatique</div>
+        <span class="status-badge {'status-open' if shop_status else 'status-closed'}">
+            {'● OPEN - مـفـتـوح' if shop_status else '● CLOSED - مـغـلـق'}
+        </span>
     </div>
-    """,
-    unsafe_allow_html=True,
-)
+''', unsafe_allow_html=True)
 
-st.markdown(
-    """
-    <div class="section-card">
-        <div style="font-size: 0.95rem; font-weight: 700; color: #dbeafe; margin-bottom: 0.35rem;">
-            📞 أدخل رقم هاتفك
+# أزرار التواصل (بداية من العمود الأول)
+st.markdown("""
+    <style>
+    .custom-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #21262d;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        padding: 12px 5px;
+        text-decoration: none !important;
+        color: #adbac7 !important;
+        transition: 0.3s all ease;
+        height: 80px;
+    }
+    .custom-btn:hover {
+        background: #30363d;
+        border-color: #58a6ff;
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        color: #58a6ff !important;
+    }
+    .custom-btn span { font-size: 1.5rem; margin-bottom: 5px; }
+    .custom-btn b { font-family: 'Cairo'; font-size: 0.8rem; }
+    </style>
+""", unsafe_allow_html=True)
+
+c1, c2, c3, c4 = st.columns(4)
+
+with c1: 
+    st.markdown('<a href="tel:0798661900" class="custom-btn"><span>📞</span><b>اتصل بنا</b></a>', unsafe_allow_html=True)
+
+with c2: 
+    st.markdown('<a href="https://maps.app.goo.gl/RBGLbVDiCeqAdxVT8" target="_blank" class="custom-btn"><span>📍</span><b>موقعنا</b></a>', unsafe_allow_html=True)
+
+with c3: 
+    st.markdown('<a href="https://www.facebook.com/share/18dX9h9otd/" target="_blank" class="custom-btn"><span>📘</span><b>فيسبوك</b></a>', unsafe_allow_html=True)
+
+with c4: 
+    st.markdown('<a href="https://tiktok.com/@infodoc02/" target="_blank" class="custom-btn"><span>📱</span><b>تيك توك</b></a>', unsafe_allow_html=True)
+
+# قسم الشروط (المضيء فقط)
+with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
+    st.markdown("""
+        <div style="text-align: right; direction: rtl; font-family: 'Cairo'; line-height: 1.8; color: #f0f6fc;">
+            1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<b>رفض الزبون ذلك</b>، يتم دفع <b>1000 دج</b> ثمن الجهد والفحص.<br>
+            2️⃣ أسعار العمل على <b>البطاقة الأم (Carte Mère)</b> تبدأ من <b>3000 دج</b>.<br>
+            3️⃣ أسعار <b>تفليش وفتح البيوس (Flash BIOS)</b> تبدأ من <b>1500 دج</b> حسب نوع الجهاز وجيله.<br>
+            4️⃣ <b>الموافقة التلقائية:</b> نصلح مباشرة إذا كان السعر بين 3000 و 4000 دج. فوق ذلك نطلب موافقتك أولاً.<br>
+            5️⃣ <b>سياسة الضمان:</b> الضمان صالح <b>فقط</b> على العنصر الذي تم إصلاحه، وأي خلل يمس عنصراً آخر خلال فترة الضمان لا يؤخذ بعين الاعتبار.<br>
+            6️⃣ <b>تنبيهات تلقائية:</b> ننصحك بتحميل تطبيق <b>Telegram</b> وفتح حساب فيه، ثم الضغط على الزر الأزرق العائم بالأسفل لربط جهازك لتصلك تحديثات حالة الصيانة فوراً.
         </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+    """, unsafe_allow_html=True)
 
-phone = st.text_input("رقم الهاتف", placeholder="0XXXXXXXXX", label_visibility="collapsed")
-phone_n = normalize_phone(phone)
+# ==============================================================================
+# 5. نظام البحث والتتبع (بتصميم البطاقات الاحترافية)
+# ==============================================================================
 
-if phone_n and len(phone_n) >= 9:
-    a1, a2, a3 = st.columns(3)
-    a1.markdown('<div class="mini-tech">🔧 Diagnostic Live</div>', unsafe_allow_html=True)
-    a2.markdown('<div class="mini-tech">📡 Telegram Alert Ready</div>', unsafe_allow_html=True)
-    a3.markdown('<div class="mini-tech">🧠 Smart Ticket Tracking</div>', unsafe_allow_html=True)
+# --- 1. CSS خاص بهذا القسم (لزر التلغرام العائم والبطاقات المدمجة) ---
+st.markdown("""
+    <style>
+    /* 1. استدعاء الخطوط وتطبيقها بشكل إجباري */
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Changa:wght@400;700&family=Orbitron:wght@400;700&display=swap');
 
-    df = fetch_customer_devices(phone_n)
+    /* تطبيق الخط على التطبيق بالكامل */
+    * {
+        font-family: 'Cairo', sans-serif !important;
+    }
 
-    if df.empty:
-        st.warning("⚠️ لا يوجد أجهزة مسجلة بهذا الرقم حالياً.")
-        st.info("إذا كنت تريد تفعيل الإشعارات مسبقاً، يمكنك ذلك وسيتم الربط تلقائياً عند تسجيل جهازك بنفس الرقم.")
+    /* 2. زر التلغرام - تغيير شامل في التصميم */
+    .floating-tg-btn {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        background: #0088cc;
+        color: white !important;
+        padding: 14px 28px;
+        border-radius: 50px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        z-index: 9999;
+        font-family: 'Cairo', sans-serif !important;
+        font-weight: 900 !important;
+        font-size: 1.1rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border: 2px solid rgba(255,255,255,0.1);
+    }
+
+    /* 3. رأس بطاقة الجهاز - جعل الخط عريض وواضح */
+    .device-header {
+        background: #1c2128 !important;
+        border: 1px solid #444c56 !important;
+        border-bottom: none !important;
+        border-radius: 15px 15px 0 0 !important;
+        padding: 20px 25px !important;
+        margin-top: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .device-title { 
+        margin: 0 !important; 
+        color: #ffffff !important; 
+        font-family: 'Cairo', sans-serif !important; 
+        font-size: 1.3rem !important; 
+        font-weight: 900 !important; /* أقصى سمك للخط */
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+    
+    .device-id { 
+        color: #58a6ff !important; 
+        font-size: 0.9rem !important; 
+        font-family: 'Orbitron', sans-serif !important; 
+        font-weight: 700 !important;
+    }
+    
+    .status-badge-mini {
+        padding: 6px 16px !important;
+        border-radius: 12px !important;
+        font-size: 0.8rem !important;
+        font-weight: 900 !important;
+        font-family: 'Changa', sans-serif !important;
+        text-transform: uppercase;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    /* تعديل الأكسباندر ليلتصق بالبطاقة */
+    div[data-testid="stExpander"] {
+        background: #0d1117 !important;
+        border: 1px solid #30363d !important;
+        border-top: 1px dashed #30363d !important; /* خط متقطع يفصل بين العنوان والتفاصيل */
+        border-radius: 0 0 12px 12px !important; /* تقويس من التحت فقط */
+        box-shadow: 0 10px 15px rgba(0,0,0,0.3) !important;
+        margin-bottom: 0px !important;
+    }
+    
+    /* جدول التفاصيل الداخلية */
+    .details-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #161b22; border-radius: 8px; overflow: hidden; }
+    .details-table td { padding: 12px; border-bottom: 1px solid #30363d; text-align: center; color: #c9d1d9; }
+    .details-table td:first-child { border-left: 1px solid #30363d; font-weight: bold; color: #8b949e; text-align: right; width: 40%; }
+
+    
+    /* تحسين خطوط الجداول */
+    .details-table td { 
+        padding: 15px !important; 
+        color: #f0f6fc !important; 
+        font-size: 1rem !important;
+        font-family: 'Cairo', sans-serif !important;
+    }
+    
+    .details-table td:first-child { 
+        font-weight: 700 !important; 
+        color: #8b949e !important; 
+        background: rgba(255,255,255,0.03);
+    }
+
+    /* تحسين شكل النصوص العادية داخل التطبيق */
+    p, span, label {
+        font-family: 'Cairo', sans-serif !important;
+        font-weight: 600;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# استخدام st.form لمنع البحث المتكرر مع كل حرف
+with st.form("search_form", clear_on_submit=False):
+    user_phone = st.text_input("", placeholder="0XXXXXXXXX", label_visibility="collapsed")
+    submit_search = st.form_submit_button("🔍 ابحث عن أجهزتي")
+
+if submit_search and user_phone:
+    norm_phone = normalize_phone(user_phone)
+    if len(norm_phone) < 9:
+        st.error("⚠️ يرجى إدخال رقم هاتف صحيح")
     else:
-        st.success(f"✅ تم العثور على {len(df)} جهاز/تذكرة لهذا الرقم.")
+        with st.spinner("⏳ جاري جلب بيانات أجهزتك..."):
+            db_ref = db.reference("atelier")
+            raw_data = db_ref.get()
+            
+            if raw_data:
+                # تصفية ذكية للأجهزة المرتبطة بالرقم (آخر 9 أرقام لضمان الدقة)
+                my_devices = [
+                    dict(v, _id=k) for k, v in raw_data.items() 
+                    if normalize_phone(v.get("Telephone", "")).endswith(norm_phone[-9:])
+                ]
+                
+                if not my_devices:
+                    st.warning("⚠️ لم نجد أي جهاز مرتبط بهذا الرقم في قاعدة بياناتنا.")
+                else:
+                    # 1. خيار ربط التلغرام (يظهر مرة واحدة في الأعلى)
+                    bot_user = st.secrets.get("BOT_USERNAME", "InfoDocBot")
+                    st.markdown(f'''
+                        <a href="https://t.me/{bot_user}?start={norm_phone}" target="_blank" class="floating-tg-btn">
+                            🚀 تفعيل إشعارات التلغرام
+                        </a>
+                    ''', unsafe_allow_html=True)
+                
+                # 3. ترتيب الأجهزة حسب الأولوية (باستخدام الدالة المعرفة سابقاً)
+                my_devices.sort(
+                    key=lambda x: (
+                        get_status_priority(x.get("Statut", "En Cours")), 
+                        -int(x.get("ID", 0)) if str(x.get("ID", 0)).isdigit() else 0
+                    )
+                )
+                
+                # 4. حلقة عرض الأجهزة بتصميم احترافي
+                for dev in my_devices:
+                    status = str(dev.get("Statut", "En Cours"))
+                    is_delivered = any(word in status for word in ["Livré", "Livre", "payé"])
+                    
+                    # 🎨 تحديد الألوان والأيقونات للهوية البصرية
+                    if status == "Prêt":
+                        status_color, status_icon = "#238636", "✅"  # أخضر نجاح
+                    elif status == "Annulé":
+                        status_color, status_icon = "#da3633", "❌"  # أحمر إلغاء
+                    elif status == "Non Réparable":
+                        status_color, status_icon = "#6e7681", "⚠️"  # رمادي تحذير
+                    elif is_delivered:
+                        status_color, status_icon = "#8b949e", "📦"  # رمادي تسليم
+                    else:
+                        status_color, status_icon = "#58a6ff", "⏳"  # أزرق عمل
 
-    st.subheader("🔔 تفعيل إشعارات Telegram")
-    if not df.empty and is_telegram_linked(df):
-        st.success("✅ الإشعارات مفعّلة (Telegram مرتبط).")
-    else:
-        st.warning("⚠️ الإشعارات غير مفعّلة بعد.")
-        t1, t2 = st.columns([2, 1])
-        with t1:
-            st.link_button("🚀 تفعيل الإشعارات عبر Telegram", telegram_link(phone_n))
-            st.caption("بعد فتح الرابط اضغط Start داخل Telegram لإتمام الربط.")
-        with t2:
-            st.image(telegram_qr_bytes(phone_n), caption="QR Telegram", width=120)
+                    # تحسين عرض السعر
+                    raw_prix = dev.get('Prix', 0)
+                    prix_display = f"{raw_prix} د.ج" if raw_prix and str(raw_prix).replace('.','').isdigit() and float(raw_prix) > 0 else "قيد التقييم..."
 
-    st.divider()
-    st.subheader("📋 أجهزتي")
-    if not df.empty:
-        for _, r in df.iterrows():
-            stt = str(r.get("Statut", "")).strip()
-            cls = "chip-other"
-            if stt == "Prêt":
-                cls = "chip-ready"
-            elif stt in ["En Cours", "En attente"]:
-                cls = "chip-work"
-            st.markdown(
-                f"""
-                <div class="dev-card">
-                    <div class="dev-head">#{int(pd.to_numeric(r.get("ID", 0), errors="coerce") or 0)} - {str(r.get("Appareil", "---"))}</div>
-                    <div class="dev-sub">العطل: {str(r.get("Panne", "---"))}</div>
-                    <div class="dev-sub">السعر: {float(pd.to_numeric(r.get("Prix", 0), errors="coerce") or 0):,.0f} DA</div>
-                    <div class="dev-sub">الدخول: {str(r.get("Date_Entree", "---"))}</div>
-                    <span class="chip {cls}">{stt or '---'}</span>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                    # 1. تصميم رأس البطاقة (Header)
+                    st.markdown(f"""
+                        <div style="border-right: 6px solid {status_color}; padding: 12px; background: #161b22; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d;">
+                            <div>
+                                <h3 style="margin: 0; color: #f0f6fc; font-size: 1.1rem;">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
+                                <div style="color: #8b949e; font-size: 0.8rem; font-family: monospace;">Ticket #{dev.get('ID', '0000')}</div>
+                            </div>
+                            <div style="background-color: {status_color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                                {status_icon} {status}
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # 2. تفاصيل الجهاز (داخل الـ expander)
+                    with st.expander("📄 عرض التفاصيل والمستحقات"):
+                        d_sortie = dev.get("Date_Sortie")
+                        info_html = "" 
+                        
+                        # --- القسم الأول: أشرطة الحالة الذكية ---
+                        if is_delivered:
+                            if d_sortie and str(d_sortie).strip() not in ["", "---", "None"]:
+                                w = get_warranty_stats(d_sortie)
+                                if w:
+                                    val = float(w.get('percent', 0)) 
+                                    is_expired = w.get('is_expired', False)
+                                    b_color = "#FFD700" if not is_expired else "#6e7681"
+                                    
+                                    info_html += f"""
+                                    <div style="margin-bottom: 15px; border: 1px solid #444c56; padding: 12px; border-radius: 10px; background: rgba(255, 215, 0, 0.05); clear: both; display: block;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
+                                            <div style="color: {b_color}; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                                                <span>🛡️</span>
+                                                <span>{'ضمان سارٍ' if not is_expired else 'ضمان منتهي'}</span>
+                                            </div>
+                                            <span style="color: {b_color}; font-weight: 800; font-family: monospace;">{int(val)}%</span>
+                                        </div>
+                                        <div style="width: 100%; background: #30363d; border-radius: 20px; height: 12px; overflow: hidden; border: 1px solid #444c56;">
+                                            <div style="width: {val}%; background: {b_color}; height: 100%;"></div>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; margin-top: 8px; color: #8b949e; font-size: 0.75rem;">
+                                            <span>الخروج: {w.get('actual_date')}</span>
+                                            <span>باقي: {w.get('days_left')} يوم</span>
+                                        </div>
+                                    </div>"""
+                                    
+                        elif status == "Non Réparable":
+                            info_html += f"""
+                            <div style="text-align: center; padding: 12px; background: rgba(248, 81, 73, 0.1); border: 1px dashed #f85149; border-radius: 10px; margin-bottom: 15px; display: block; clear: both;">
+                                <b style="color: #f85149;">⚠️ الجهاز غير قابل للتصليح</b>
+                            </div>"""
 
-        with st.expander("عرض جدول الأجهزة (تفصيلي)"):
-            show_cols = []
-            for c in ["ID", "Appareil", "Panne", "Statut", "Prix", "Date_Entree", "Date_Sortie"]:
-                if c in df.columns:
-                    show_cols.append(c)
-            st.dataframe(df[show_cols], use_container_width=True, hide_index=True)
-else:
-    st.info("أدخل رقم هاتفك لعرض قائمة الأجهزة.")
+                        elif status != "Annulé":
+                            prog_map = {
+                                "En attente": {"val": 15, "color": "#58a6ff"},
+                                "En Cours":   {"val": 45, "color": "#58a6ff"},
+                                "Réparable":  {"val": 75, "color": "#58a6ff"},
+                                "Prêt":       {"val": 100, "color": "#238636"}
+                            }
+                            p_data = prog_map.get(status, {"val": 20, "color": "#58a6ff"})
+                            info_html += f"""
+                            <div style="margin-bottom: 15px; display: block; clear: both;">
+                                <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color:#c9d1d9; font-size: 0.85rem; font-weight:bold;">🛠️ حالة الصيانة</span>
+                                    <span style="color:{p_data['color']}; font-weight: 800;">{p_data['val']}%</span>
+                                </div>
+                                <div style="width: 100%; background: #30363d; border-radius: 20px; height: 10px; overflow: hidden; border: 1px solid #444c56;">
+                                    <div style="width: {p_data['val']}%; background: {p_data['color']}; height: 100%;"></div>
+                                </div>
+                            </div>"""
+
+                        # --- القسم الثاني: الجدول (مغلف بـ div لحمايته) ---
+                        info_html += f"""
+                        <div style="background: rgba(22, 27, 34, 0.5); border-radius: 10px; padding: 12px; border: 1px solid #30363d; display: block; clear: both; width: 100%;">
+                            <table style="width:100%; border-collapse: collapse; direction: rtl; border: none;">
+                                <tr style="border-bottom: 1px solid #21262d;">
+                                    <td style="padding: 8px 0; color: #8b949e; font-size: 0.9rem; text-align: right;">📅 تاريخ الدخول</td>
+                                    <td style="text-align: left; color: #f0f6fc; font-weight: 500;">{dev.get('Date_Entree', '---')}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #21262d;">
+                                    <td style="padding: 8px 0; color: #8b949e; font-size: 0.9rem; text-align: right;">📅 تاريخ الخروج</td>
+                                    <td style="text-align: left; color: #f0f6fc; font-weight: 500;">{d_sortie if d_sortie else '---'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0 0 0; color: #8b949e; font-size: 0.9rem; text-align: right;">💰 المستحقات</td>
+                                    <td style="text-align: left; color: #ffd700; font-weight: 900; font-size: 1.2rem; padding-top: 10px;">{prix_display}</td>
+                                </tr>
+                            </table>
+                        </div>"""
+                        
+                        # التغليف النهائي بـ div واحد لمنع تداخل عناصر Streamlit
+                        st.markdown(f"<div style='display: block; width: 100%; padding: 5px 0;'>{info_html}</div>", unsafe_allow_html=True)
+
+# ==============================================================================
+# 7. تشغيل بوت التلغرام (المصحح)
+# ==============================================================================
+@st.cache_resource
+def start_telegram_bot():
+    token = st.secrets.get("TELEGRAM_TOKEN")
+    if not token: return "Missing Token"
+
+    try:
+        bot = telebot.TeleBot(token)
+
+        @bot.message_handler(commands=['start'])
+        def handle_start(m):
+            try:
+                command_parts = m.text.split()
+                if len(command_parts) > 1:
+                    client_phone = normalize_phone(command_parts[1])
+                    ref = db.reference("atelier")
+                    data = ref.get()
+                    if data:
+                        linked = False
+                        for k, v in data.items():
+                            # تصفية ذكية: التأكد من مطابقة آخر 9 أرقام
+                            db_phone = normalize_phone(v.get("Telephone", ""))
+                            if db_phone.endswith(client_phone[-9:]):
+                                ref.child(k).update({"Telegram_ID": str(m.chat.id)})
+                                linked = True
+                        
+                        if linked:
+                            bot.reply_to(m, "✅ تم ربط حسابك بنجاح! ستصلك إشعارات فورية هنا عند جاهزية أجهزتك.")
+                        else:
+                            bot.reply_to(m, "❌ عذراً، لم نجد أي جهاز مسجل بهذا الرقم في نظامنا.")
+                else:
+                    bot.reply_to(m, "مرحباً بك في InfoDoc! يرجى الدخول عبر الرابط المرسل لك لتفعيل الإشعارات.")
+            except Exception as e:
+                print(f"Error logic: {e}")
+
+        # تشغيل البوت في خيط منفصل
+        thread = threading.Thread(target=bot.infinity_polling, daemon=True)
+        thread.start()
+        return "Bot Started"
+    except Exception as e:
+        return f"Error: {e}"
+
+# تشغيل البوت
+if "TELEGRAM_TOKEN" in st.secrets:
+    start_telegram_bot()
