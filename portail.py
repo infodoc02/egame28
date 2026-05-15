@@ -370,10 +370,31 @@ if user_phone:
                             else:
                                 st.error("❌ **فترة الضمان منتهية**")
                         else:
-                            st.info(f"{status_icon} **الحالة:** {status}")
-                            # شريط تقدم بصري
-                            prog_map = {"En Cours": 0.4, "Réparable": 0.7, "Prêt": 1.0}
-                            st.progress(prog_map.get(status, 0.2))
+                            
+                            # حساب نسبة التقدم بناءً على الحالة
+                            prog_map = {
+                                "En Cours": {"val": 0.4, "pct": "40%"},
+                                "Réparable": {"val": 0.7, "pct": "70%"},
+                                "Prêt": {"val": 1.0, "pct": "100%"}
+                            }
+    
+                            # جلب البيانات أو وضع قيم افتراضية
+                            progress_data = prog_map.get(status, {"val": 0.2, "pct": "20%"})
+    
+                            # عرض النسبة المئوية بتصميم نيون صغير
+                            st.markdown(f"""
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                    <span style="color: #8b949e; font-size: 0.9rem; font-weight: bold;">🛠️ تقدم عملية الصيانة</span>
+                                    <span style="color: #00d4ff; font-family: 'Orbitron'; font-weight: 900; text-shadow: 0 0 5px #00d4ff;">
+                                        {progress_data['pct']}
+                                    </span>
+                                </div>
+                            """, unsafe_allow_html=True)
+    
+    # شريط التقدم الخاص بـ Streamlit
+                            st.progress(progress_data['val'])
+    
+                            st.markdown("<small style='color: #444;'>سيتم إعلامك فور انتقال الشريط إلى 100%</small>", unsafe_allow_html=True)
                         
                         st.markdown(f"""
                             <table class="details-table">
