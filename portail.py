@@ -432,10 +432,10 @@ if submit_search and user_phone:
                     # 3. ترتيب الأجهزة حسب الأولوية (باستخدام الدالة المعرفة سابقاً)
                     my_devices.sort(
                         key=lambda x: (
-                        get_status_priority(x.get("Statut", "En Cours")), 
-                        -int(x.get("ID", 0)) if str(x.get("ID", 0)).isdigit() else 0
+                            get_status_priority(x.get("Statut", "En Cours")), 
+                            -int(x.get("ID", 0)) if str(x.get("ID", 0)).isdigit() else 0
+                        )
                     )
-                )
                 
                 # 4. حلقة عرض الأجهزة بتصميم احترافي
                 for dev in my_devices:
