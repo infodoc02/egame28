@@ -46,7 +46,7 @@ def init_db():
                 
             cred_dict = dict(st.secrets["firebase"])
             
-            # معالجة الرموز الخاصة بالمفتاح السري (مهمة جداً في الاستضافة)
+            # معالجة الرموز الخاصة بالمفتاح السري (مهمة جداً في ��لاستضافة)
             if "\\n" in cred_dict.get("private_key", ""):
                 cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
             
@@ -234,7 +234,7 @@ def get_warranty_stats(date_sortie_str):
     return None
 
 def get_status_priority(status):
-    """دالة تحديد الأولوية للحالات."""
+    """دالة تحديد الأولوية للحالات (Livré في الآخر)."""
     s = str(status).strip()
     if s == "Prêt": return 1
     elif s == "Annulé": return 2
@@ -242,8 +242,8 @@ def get_status_priority(status):
     elif s == "Réparable": return 4
     elif s == "En Cours": return 5
     elif s == "En Attente": return 6
-    elif "Livré" in s: return 7
-    else: return 99
+    elif "Livré" in s: return 99  # يجب أن يكون في الآخر
+    else: return 98
 
 # ==============================================================================
 # 5. التنسيقات البصرية (CSS) - النسخة النهائية المنظمة
@@ -329,7 +329,7 @@ st.markdown("""
         box-shadow: 0 0 10px rgba(88, 166, 255, 0.5) !important;
     }
 
-    /* إخفاء حدود النموذج الافتراضية */
+    /* إخفاء حدود النموذج الافتر��ضية */
     div[data-testid="stForm"] {
         border: none !important;
         padding: 0 !important;
@@ -436,12 +436,12 @@ with c4:
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
     st.markdown("""
         <div style="text-align: right; direction: rtl; font-family: 'Cairo'; line-height: 1.8; color: #f0f6fc;">
-            1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<b>رفض الزبون ذلك</b>، يتم دفع <b>1000 دج</b> ثمن الجهد والفحص.<br>
-            2️⃣ أسعار العمل على <b>البطاقة الأم (Carte Mère)</b> تبدأ من <b>3000 دج</b>.<br>
-            3️⃣ أسعار <b>تفليش وفتح البيوس (Flash BIOS)</b> تبدأ من <b>1500 دج</b> حسب نوع الجهاز وجيله.<br>
-            4️⃣ <b>الموافقة التلقائية:</b> نصلح مباشرة إذا كان السعر بين 3000 و 4000 دج. فوق ذلك نطلب موافقتك أولاً.<br>
-            5️⃣ <b>سياسة الضمان:</b> الضمان صالح <b>فقط</b> على العنصر الذي تم إصلاحه، وأي خلل يمس عنصراً آخر خلال فترة الضمان غير مشمول.<br>
-            6️⃣ <b>تنبيهات تلقائية:</b> ننصحك بتحميل تطبيق <b>Telegram</b> وفتح حساب فيه، ثم الضغط على الزر الأزرق العائم لتفعيل الإشعارات.
+            <p>1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<b>رفض الزبون ذلك</b>، يتم دفع <b>1000 دج</b> ثمن الجهد والفحص.</p>
+            <p>2️⃣ أسعار العمل على <b>البطاقة الأم (Carte Mère)</b> تبدأ من <b>3000 دج</b>.</p>
+            <p>3️⃣ أسعار <b>تفليش وفتح البيوس (Flash BIOS)</b> تبدأ من <b>1500 دج</b> حسب نوع الجهاز وجيله.</p>
+            <p>4️⃣ <b>الموافقة التلقائية:</b> نصلح مباشرة إذا كان السعر بين 3000 و 4000 دج. فوق ذلك نطلب موافقتك أولاً.</p>
+            <p>5️⃣ <b>سياسة الضمان:</b> الضمان صالح <b>فقط</b> على العنصر الذي تم إصلاحه، وأي خلل يمس عنصراً آخر خلال فترة الضمان غير مشمول.</p>
+            <p>6️⃣ <b>تنبيهات تلقائية:</b> ننصحك بتحميل تطبيق <b>Telegram</b> وفتح حساب فيه، ثم الضغط على الزر الأزرق العائم لتفعيل الإشعارات.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -477,71 +477,107 @@ st.markdown("""
         border: 2px solid rgba(255,255,255,0.1);
     }
 
-    .device-header {
-        background: #1c2128 !important;
-        border: 1px solid #444c56 !important;
-        border-bottom: none !important;
-        border-radius: 15px 15px 0 0 !important;
-        padding: 20px 25px !important;
-        margin-top: 25px;
+    .device-card {
+        border-right: 6px solid;
+        padding: 12px;
+        background: #161b22;
+        border-radius: 10px;
+        margin-bottom: 8px;
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
 
     .device-title { 
-        margin: 0 !important; 
-        color: #ffffff !important; 
-        font-family: 'Cairo', sans-serif !important; 
-        font-size: 1.3rem !important; 
-        font-weight: 900 !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        margin: 0;
+        color: #ffffff;
+        font-family: 'Cairo', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 900;
     }
     
     .device-id { 
-        color: #58a6ff !important; 
-        font-size: 0.9rem !important; 
-        font-family: 'Orbitron', sans-serif !important; 
-        font-weight: 700 !important;
+        color: #8b949e;
+        font-size: 0.8rem;
+        font-family: monospace;
     }
     
-    .status-badge-mini {
-        padding: 6px 16px !important;
-        border-radius: 12px !important;
-        font-size: 0.8rem !important;
-        font-weight: 900 !important;
-        font-family: 'Changa', sans-serif !important;
-        text-transform: uppercase;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    .status-badge-card {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: white;
     }
 
-    div[data-testid="stExpander"] {
-        background: #0d1117 !important;
-        border: 1px solid #30363d !important;
-        border-top: 1px dashed #30363d !important;
-        border-radius: 0 0 12px 12px !important;
-        box-shadow: 0 10px 15px rgba(0,0,0,0.3) !important;
-        margin-bottom: 0px !important;
-    }
-    
-    .details-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #161b22; border-radius: 8px; overflow: hidden; }
-    .details-table td { padding: 12px; border-bottom: 1px solid #30363d; text-align: center; color: #c9d1d9; }
-    .details-table td:first-child { border-left: 1px solid #30363d; font-weight: bold; color: #8b949e; text-align: right; width: 40%; }
-
-    .details-table td { 
-        padding: 15px !important; 
-        color: #f0f6fc !important; 
-        font-size: 1rem !important;
-        font-family: 'Cairo', sans-serif !important;
-    }
-    
-    .details-table td:first-child { 
-        font-weight: 700 !important; 
-        color: #8b949e !important; 
-        background: rgba(255,255,255,0.03);
+    .expander-content {
+        padding: 15px;
+        direction: rtl;
+        font-family: 'Cairo', sans-serif;
     }
 
-    p, span, label {
+    .warranty-bar {
+        margin-bottom: 15px;
+        border: 1px solid #444c56;
+        padding: 12px;
+        border-radius: 10px;
+        background: rgba(255, 215, 0, 0.05);
+    }
+
+    .progress-bar {
+        width: 100%;
+        background: #30363d;
+        border-radius: 20px;
+        height: 12px;
+        overflow: hidden;
+        border: 1px solid #444c56;
+    }
+
+    .progress-fill {
+        height: 100%;
+    }
+
+    .details-info {
+        background: rgba(22, 27, 34, 0.5);
+        border-radius: 10px;
+        padding: 12px;
+        border: 1px solid #30363d;
+        margin-top: 10px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #21262d;
+        color: #f0f6fc;
+    }
+
+    .info-label {
+        color: #8b949e;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .info-value {
+        color: #f0f6fc;
+        font-weight: 500;
+    }
+
+    .price-row {
+        padding: 10px 0 0 0;
+    }
+
+    .price-value {
+        color: #ffd700;
+        font-weight: 900;
+        font-size: 1.2rem;
+    }
+
+    p {
         font-family: 'Cairo', sans-serif !important;
         font-weight: 600;
     }
@@ -593,7 +629,7 @@ if submit_search and user_phone:
                         status = str(dev.get("Statut", "En Cours"))
                         is_delivered = any(word in status for word in ["Livré", "Livre", "payé"])
                         
-                        # تحديد الألوان والأيقونات
+                        # تحديد الألوان و��لأيقونات
                         if status == "Prêt":
                             status_color, status_icon = "#238636", "✅"
                         elif status == "Annulé":
@@ -611,12 +647,12 @@ if submit_search and user_phone:
 
                         # رأس البطاقة
                         st.markdown(f"""
-                            <div style="border-right: 6px solid {status_color}; padding: 12px; background: #161b22; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <div class="device-card" style="border-right-color: {status_color};">
                                 <div>
-                                    <h3 style="margin: 0; color: #f0f6fc; font-size: 1.1rem;">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
-                                    <div style="color: #8b949e; font-size: 0.8rem; font-family: monospace;">Ticket #{dev.get('ID', '0000')}</div>
+                                    <h3 class="device-title">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
+                                    <div class="device-id">Ticket #{dev.get('ID', '0000')}</div>
                                 </div>
-                                <div style="background-color: {status_color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                                <div class="status-badge-card" style="background-color: {status_color};">
                                     {status_icon} {status}
                                 </div>
                             </div>
@@ -625,7 +661,6 @@ if submit_search and user_phone:
                         # التفاصيل
                         with st.expander("📄 عرض التفاصيل والمستحقات"):
                             d_sortie = dev.get("Date_Sortie")
-                            info_html = "" 
                             
                             # أشرطة الحالة
                             if is_delivered:
@@ -636,8 +671,8 @@ if submit_search and user_phone:
                                         is_expired = w.get('is_expired', False)
                                         b_color = "#FFD700" if not is_expired else "#6e7681"
                                         
-                                        info_html += f"""
-                                        <div style="margin-bottom: 15px; border: 1px solid #444c56; padding: 12px; border-radius: 10px; background: rgba(255, 215, 0, 0.05); clear: both; display: block;">
+                                        st.markdown(f"""
+                                        <div class="warranty-bar">
                                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
                                                 <div style="color: {b_color}; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
                                                     <span>🛡️</span>
@@ -645,20 +680,20 @@ if submit_search and user_phone:
                                                 </div>
                                                 <span style="color: {b_color}; font-weight: 800; font-family: monospace;">{int(val)}%</span>
                                             </div>
-                                            <div style="width: 100%; background: #30363d; border-radius: 20px; height: 12px; overflow: hidden; border: 1px solid #444c56;">
-                                                <div style="width: {val}%; background: {b_color}; height: 100%;"></div>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" style="width: {val}%; background: {b_color};"></div>
                                             </div>
                                             <div style="display: flex; justify-content: space-between; margin-top: 8px; color: #8b949e; font-size: 0.75rem;">
                                                 <span>الخروج: {w.get('actual_date')}</span>
                                                 <span>باقي: {w.get('days_left')} يوم</span>
                                             </div>
-                                        </div>"""
+                                        </div>""", unsafe_allow_html=True)
                                         
                             elif status == "Non Réparable":
-                                info_html += f"""
-                                <div style="text-align: center; padding: 12px; background: rgba(248, 81, 73, 0.1); border: 1px dashed #f85149; border-radius: 10px; margin-bottom: 15px; display: block; clear: both;">
+                                st.markdown("""
+                                <div style="text-align: center; padding: 12px; background: rgba(248, 81, 73, 0.1); border: 1px dashed #f85149; border-radius: 10px; margin-bottom: 15px;">
                                     <b style="color: #f85149;">⚠️ الجهاز غير قابل للتصليح</b>
-                                </div>"""
+                                </div>""", unsafe_allow_html=True)
 
                             elif status != "Annulé":
                                 prog_map = {
@@ -668,37 +703,33 @@ if submit_search and user_phone:
                                     "Prêt":       {"val": 100, "color": "#238636"}
                                 }
                                 p_data = prog_map.get(status, {"val": 20, "color": "#58a6ff"})
-                                info_html += f"""
-                                <div style="margin-bottom: 15px; display: block; clear: both;">
+                                st.markdown(f"""
+                                <div style="margin-bottom: 15px;">
                                     <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
                                         <span style="color:#c9d1d9; font-size: 0.85rem; font-weight:bold;">🛠️ حالة الصيانة</span>
                                         <span style="color:{p_data['color']}; font-weight: 800;">{p_data['val']}%</span>
                                     </div>
-                                    <div style="width: 100%; background: #30363d; border-radius: 20px; height: 10px; overflow: hidden; border: 1px solid #444c56;">
-                                        <div style="width: {p_data['val']}%; background: {p_data['color']}; height: 100%;"></div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: {p_data['val']}%; background: {p_data['color']};"></div>
                                     </div>
-                                </div>"""
+                                </div>""", unsafe_allow_html=True)
 
                             # الجدول
-                            info_html += f"""
-                            <div style="background: rgba(22, 27, 34, 0.5); border-radius: 10px; padding: 12px; border: 1px solid #30363d; display: block; clear: both; width: 100%;">
-                                <table style="width:100%; border-collapse: collapse; direction: rtl; border: none;">
-                                    <tr style="border-bottom: 1px solid #21262d;">
-                                        <td style="padding: 8px 0; color: #8b949e; font-size: 0.9rem; text-align: right;">📅 تاريخ الدخول</td>
-                                        <td style="text-align: left; color: #f0f6fc; font-weight: 500;">{dev.get('Date_Entree', '---')}</td>
-                                    </tr>
-                                    <tr style="border-bottom: 1px solid #21262d;">
-                                        <td style="padding: 8px 0; color: #8b949e; font-size: 0.9rem; text-align: right;">📅 تاريخ الخروج</td>
-                                        <td style="text-align: left; color: #f0f6fc; font-weight: 500;">{d_sortie if d_sortie else '---'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 10px 0 0 0; color: #8b949e; font-size: 0.9rem; text-align: right;">💰 المستحقات</td>
-                                        <td style="text-align: left; color: #ffd700; font-weight: 900; font-size: 1.2rem; padding-top: 10px;">{prix_display}</td>
-                                    </tr>
-                                </table>
-                            </div>"""
-                            
-                            st.markdown(f"<div style='display: block; width: 100%; padding: 5px 0;'>{info_html}</div>", unsafe_allow_html=True)
+                            st.markdown(f"""
+                            <div class="details-info">
+                                <div class="info-row">
+                                    <span class="info-label">📅 تاريخ الدخول</span>
+                                    <span class="info-value">{dev.get('Date_Entree', '---')}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">📅 تاريخ الخروج</span>
+                                    <span class="info-value">{d_sortie if d_sortie else '---'}</span>
+                                </div>
+                                <div class="info-row price-row">
+                                    <span class="info-label">💰 المستحقات</span>
+                                    <span class="price-value">{prix_display}</span>
+                                </div>
+                            </div>""", unsafe_allow_html=True)
 
 # ==============================================================================
 # 8. تشغيل بوت التلغرام
