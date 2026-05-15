@@ -225,31 +225,35 @@ st.markdown("""
 # ==============================================================================
 # 4. واجهة المستخدم (UI)
 # ==============================================================================
-# منطق التحقق الصارم بالـ IP والتاريخ (من العمود الأول)
+# منطق التحقق الصارم بالـ IP لضمان الدقة 100%
 if 'tracked' not in st.session_state:
     try:
         import requests
-        # 1. جلب الـ IP مع مهلة انتظار قصيرة
-        response = requests.get('https://api.ipify.org', timeout=3)
-        if response.status_code == 200:
-            client_ip = response.text.replace('.', '_')
+        # 1. جلب الـ IP
+        res = requests.get('https://api.ipify.org', timeout=5)
+        if res.status_code == 200:
+            user_ip = res.text.replace('.', '_')
             today = datetime.now().strftime('%Y-%m-%d')
             
-            # 2. المرجع في Firebase
-            ip_path = f"stats/daily_ips/{today}/{client_ip}"
-            ip_check = db.reference(ip_path).get()
+            # 2. المرجع المباشر للـ IP الخاص باليوم
+            # نستعمل .get() ونتأكد من النتيجة بدقة
+            check_ref = db.reference(f"stats/daily_ips/{today}/{user_ip}").get()
             
-            # 3. التحقق: إذا الـ IP غير مسجل اليوم، نزيد العداد
-            if ip_check is None:
-                # نسجل الـ IP أولاً في قاعدة البيانات
-                db.reference(ip_path).set(True)
+            # 3. التحقق: إذا لم نجد الـ IP مسجلاً (يعني أول مرة يدخل)
+            if check_ref is None:
+                # نسجل الـ IP فوراً لمنع التكرار
+                db.reference(f"stats/daily_ips/{today}/{user_ip}").set(True)
+                
                 # نزيد عداد زوار اليوم
-                db.reference(f"stats/daily_visitors/{today}").transaction(lambda current: (current or 0) + 1)
+                # استعملنا هنا التحديث المباشر بدل Transaction للتجربة
+                current_count = db.reference(f"stats/daily_visitors/{today}").get() or 0
+                db.reference(f"stats/daily_visitors/{today}").set(current_count + 1)
             
-            # نضع علامة في الجلسة لتقليل العمليات في نفس الصفحة
+            # نمنع الكود من إعادة المحاولة في نفس الجلسة
             st.session_state['tracked'] = True
-    except:
-        # في حالة أي خطأ (مثلاً نقص الإنترنت) يكمل التطبيق عمله عادي
+    except Exception as e:
+        # يمكنك تفعيل السطر التالي مؤقتاً لتصحيح الأخطاء إذا لم يشتغل
+        # st.error(f"خطأ في جلب الـ IP: {e}")
         pass
 # الهيدر
 algeria_tz = pytz.timezone('Africa/Algiers')
