@@ -119,140 +119,90 @@ def get_warranty_stats(date_sortie_str):
     return None
 
 # ==============================================================================
-# 4. التنسيقات البصرية المتقدمة (CSS Styling)
+# 3. التنسيقات البصرية (CSS) - النسخة النهائية المنظمة
 # ==============================================================================
 st.markdown("""
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
     
-    .stApp { 
-        background: #0d1117; 
-        color: white; 
-        font-family: 'Cairo', sans-serif;
-        direction: rtl;
-    }
+    .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
     
+    /* الحاوية الرئيسية */
     .hero-container {
-        text-align: center;
-        padding: 30px 10px;
-        background: linear-gradient(180deg, rgba(88,166,255,0.05) 0%, rgba(13,17,23,0) 100%);
-        border-radius: 20px;
-        margin-bottom: 10px;
+        background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+        border: 1px solid #30363d; border-radius: 15px; padding: 25px;
+        margin-bottom: 20px; text-align: center;
     }
 
     .main-title {
-        font-family: 'Orbitron', sans-serif; 
-        font-size: clamp(2rem, 8vw, 4rem); 
-        font-weight: 900;
-        text-align: center; 
-        margin-bottom: 10px; 
-        color: #fff; 
-        text-transform: uppercase;
-        letter-spacing: 2px; 
-        text-shadow: 0 0 15px #58a6ff, 0 0 30px #58a6ff;
-        animation: glow 2s ease-in-out infinite alternate;
+        font-family: 'Orbitron', sans-serif; color: #58a6ff;
+        font-size: clamp(2rem, 8vw, 3.5rem); font-weight: 900;
+        text-shadow: 0 0 15px rgba(88, 166, 255, 0.5); margin-bottom: 5px;
     }
 
-    .sub-title {
-        color: #8b949e;
-        font-size: 1.1rem;
-        font-weight: 400;
-        margin-top: -10px;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-    }
-    
-    @keyframes glow {
-        from { text-shadow: 0 0 10px #58a6ff, 0 0 20px #58a6ff; }
-        to { text-shadow: 0 0 20px #58a6ff, 0 0 50px #58a6ff; transform: scale(1.01); }
-    }
-
-    .status-container { text-align: center; margin-bottom: 20px; }
-    .status-badge { 
-        font-family: 'Orbitron'; 
-        font-size: 0.9rem; 
-        font-weight: 900; 
-        padding: 5px 20px; 
-        border-radius: 50px; 
-        display: inline-block; 
-    }
-    .status-open { color: #00ff41; border: 2px solid #00ff41; box-shadow: 0 0 10px #00ff41; animation: blink-g 2s infinite; }
-    .status-closed { color: #ff3131; border: 2px solid #ff3131; animation: blink-r 2s infinite; }
-    
-    @keyframes blink-g { 50% { opacity: 0.6; box-shadow: 0 0 20px #00ff41; } }
-    @keyframes blink-r { 50% { opacity: 0.6; box-shadow: 0 0 20px #ff3131; } }
-
+    /* أزرار التواصل */
     .custom-btn {
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.03); 
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 15px; 
-        padding: 20px; 
-        text-decoration: none !important; 
-        color: white !important;
-        transition: all 0.3s ease; 
-        width: 100%; 
-        min-height: 110px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px; padding: 15px; text-decoration: none !important; color: white !important;
+        transition: 0.3s; min-height: 100px; margin-bottom: 10px;
     }
-    .custom-btn:hover { 
-        border-color: #58a6ff; 
-        background: rgba(88, 166, 255, 0.1); 
-        transform: translateY(-5px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
-    .custom-btn i { font-size: 2.2rem; margin-bottom: 12px; color: #58a6ff; }
+    .custom-btn:hover { border-color: #58a6ff; background: rgba(88, 166, 255, 0.15); transform: translateY(-3px); }
 
-    [data-testid="stTextInput"] label { color: #58a6ff !important; font-weight: bold; }
-    div[data-baseweb="input"] { 
-        border-radius: 12px !important; 
-        border: 1px solid #30363d !important; 
-        background: #161b22 !important; 
-    }
+    /* أنيميشن الحالة */
+    @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.7; } }
+    @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; } 50% { opacity: 0.7; } }
     
-    .device-box {
-        background: #1c2128; 
-        border: 1px solid #30363d; 
-        border-radius: 15px 15px 0 0; 
-        padding: 20px; 
-        margin-top: 25px;
-        border-bottom: 2px solid #58a6ff;
-    }
-    
-    .stExpander {
-        background: #161b22 !important; 
+    .status-badge { padding: 8px 20px; border-radius: 10px; font-weight: bold; display: inline-block; font-family: 'Cairo'; }
+    .status-open { color: #3fb950; border: 2px solid #3fb950; animation: blink-green 2s infinite; }
+    .status-closed { color: #f85149; border: 2px solid #f85149; animation: blink-red 2s infinite; }
+
+
+    /* 1. الستايل العام لكل الأكسباندرز (باش ما يبقاوش كحولة بزاف) */
+    div[data-testid="stExpander"] {
         border: 1px solid #30363d !important;
-        border-radius: 0 0 15px 15px !important;
-        margin-bottom: 15px;
+        background: rgba(22, 27, 34, 0.5) !important;
+        border-radius: 12px !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* أنيميشن الإضاءة */
+    @keyframes yellow-glow {
+        0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; }
+        50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
+    }
+
+    /* استهداف الأكسباندر الأول فقط في الصفحة (اللي هو تاع الشروط) */
+    /* أو استهداف الأكسباندر اللي يحتوي على نص معين */
+    div[data-testid="stExpander"]:first-of-type {
+        border: 2px solid #d29922 !important;
+        animation: yellow-glow 3s infinite ease-in-out !important;
+        background: rgba(210, 153, 34, 0.05) !important;
+        direction: rtl !important; /* لضمان الاتجاه من اليمين */
+    }
+
+    /* تنسيق العنوان (اضغط هنا...) */
+    div[data-testid="stExpander"]:first-of-type summary {
+        direction: rtl !important;
+        text-align: right !important;
+        display: flex !important;
+        flex-direction: row !important; /* ترتيب العناصر داخله */
+        justify-content: flex-start !important;
+        gap: 15px !important;
+    }
+
+    div[data-testid="stExpander"]:first-of-type summary p {
+        font-family: 'Cairo', sans-serif !important;
+        font-weight: 900 !important;
+        color: #ffcc00 !important;
+        font-size: 1.1rem !important;
+        margin: 0 !important;
     }
     
-    .tg-btn { 
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        background: linear-gradient(45deg, #229ED9, #34aadc); 
-        color: white !important; 
-        padding: 15px; 
-        border-radius: 12px; 
-        text-decoration: none; 
-        font-weight: 900; 
-        transition: 0.3s;
-        box-shadow: 0 4px 15px rgba(34, 158, 217, 0.3);
-    }
-    .tg-btn:hover { transform: scale(1.02); box-shadow: 0 0 25px #229ED9; }
-
-    .badge-label { 
-        padding: 4px 12px; 
-        border-radius: 6px; 
-        font-weight: bold; 
-        font-size: 0.8rem; 
-        font-family: 'Orbitron'; 
-        background: rgba(88, 166, 255, 0.1);
-        color: #58a6ff;
+    /* إذا حبيت تنحي السهم كامل وتقلبو جهة اليسار */
+    div[data-testid="stExpander"] summary {
+        flex-direction: row-reverse;
+        justify-content: space-between;
     }
     </style>
 """, unsafe_allow_html=True)
