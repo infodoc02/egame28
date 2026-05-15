@@ -199,13 +199,48 @@ st.markdown(f'''
     </div>
 ''', unsafe_allow_html=True)
 
-# أزرار التواصل
+# أزرار التواصل (بداية من العمود الأول)
+st.markdown("""
+    <style>
+    .custom-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #21262d;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        padding: 12px 5px;
+        text-decoration: none !important;
+        color: #adbac7 !important;
+        transition: 0.3s all ease;
+        height: 80px;
+    }
+    .custom-btn:hover {
+        background: #30363d;
+        border-color: #58a6ff;
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        color: #58a6ff !important;
+    }
+    .custom-btn span { font-size: 1.5rem; margin-bottom: 5px; }
+    .custom-btn b { font-family: 'Cairo'; font-size: 0.8rem; }
+    </style>
+""", unsafe_allow_html=True)
+
 c1, c2, c3, c4 = st.columns(4)
-with c1: st.markdown('<a href="tel:0798661900" class="custom-btn"><span>📞</span><b>اتصل بنا</b></a>', unsafe_allow_html=True)
+
+with c1: 
+    st.markdown('<a href="tel:0798661900" class="custom-btn"><span>📞</span><b>اتصل بنا</b></a>', unsafe_allow_html=True)
+
 with c2: 
-    st.markdown("""<a href="https://maps.app.goo.gl/RBGLbVDiCeqAdxVT8"><span>📍</span><b>موقعنا</b></a>""", unsafe_allow_html=True)
-with c3: st.markdown('<a href="https://www.facebook.com/share/18dX9h9otd/" target="_blank" class="custom-btn"><span>📘</span><b>فيسبوك</b></a>', unsafe_allow_html=True)
-with c4: st.markdown('<a href="https://tiktok.com/@infodoc02/" target="_blank" class="custom-btn"><span>📱</span><b>تيك توك</b></a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://maps.app.goo.gl/RBGLbVDiCeqAdxVT8" target="_blank" class="custom-btn"><span>📍</span><b>موقعنا</b></a>', unsafe_allow_html=True)
+
+with c3: 
+    st.markdown('<a href="https://www.facebook.com/share/18dX9h9otd/" target="_blank" class="custom-btn"><span>📘</span><b>فيسبوك</b></a>', unsafe_allow_html=True)
+
+with c4: 
+    st.markdown('<a href="https://tiktok.com/@infodoc02/" target="_blank" class="custom-btn"><span>📱</span><b>تيك توك</b></a>', unsafe_allow_html=True)
 
 # قسم الشروط (المضيء فقط)
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
@@ -388,7 +423,6 @@ if user_phone:
                                 <div style="text-align: center; padding: 15px; background: rgba(248, 81, 73, 0.05); border: 1px dashed #f85149; border-radius: 12px; margin-bottom: 10px;">
                                     <div style="font-size: 2rem;">🥀</div>
                                     <b style="color: #f85149; font-family: 'Cairo';">للأسف، الجهاز غير قابل للتصليح</b><br>
-                                    <small style="color: #8b949e;">بذلنا قصارى جهدنا، لكن الضرر كان بليغاً.</small>
                                     <div style="width: 100%; background: #30363d; border-radius: 10px; height: 8px; margin-top: 10px;">
                                         <div style="width: 100%; background: #4b4b4b; height: 100%; border-radius: 10px;"></div>
                                     </div>
