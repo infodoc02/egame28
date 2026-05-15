@@ -494,7 +494,7 @@ if submit_search and user_phone:
     <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
         <div style="color: {b_color}; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
             <span>🛡️</span>
-            <span>{'ضمان ساري المفعول' if not is_expired else 'ضمان منتهي'} ({w.get('days_left')} يوم)</span>
+            <span>{'ضمان ساري المفعول' if not is_expired else 'ضمان منتهي'}</span>
         </div>
         <span style="color: {b_color}; font-weight: 800; font-family: 'Courier New', monospace;">{int(val)}%</span>
     </div>
@@ -503,7 +503,7 @@ if submit_search and user_phone:
     </div>
     <div style="display: flex; justify-content: space-between; margin-top: 8px;">
         <span>الخروج: {w.get('actual_date')}</span>
-        <span>باقي: {w.get('days_left')} يوم</span>
+        <span>الأيام المتبقية على انتهاء مدة الضمان: {w.get('days_left')} يوم</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
