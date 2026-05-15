@@ -408,42 +408,43 @@ if user_phone:
                     
                     # 2. تفاصيل الجهاز
                     with st.expander("📄 عرض التفاصيل والمستحقات"):
-                        # التأكد من ظهور شريط الضمان في حالات التسليم
+                        # التأكد من ظهور شريط الضمان في حالات التسليم (مدفوع أو دين)
                         if status in ["Livre et payé", "Livré (Dette)"]:
-                            # استدعاء دالة حساب الضمان بناءً على تاريخ الخروج
                             w = get_warranty_stats(dev.get("Date_Sortie"))
                             
                             if w:
+                                # نستعمل percent_left باش يبان شحال بقا في الضمان
                                 val = w.get('percent_left', 0)
                                 is_expired = w.get('is_expired', False)
+                                
+                                # اللون أصفر للضمان النشط، ورمادي داكن للمنتهي
                                 b_color = "#FFD700" if not is_expired else "#4b4b4b"
                                 
-                                # نص الحالة مع التشطيب إذا انتهى
                                 if is_expired:
                                     status_text = "<del style='color: #f85149;'>❌ فترة الضمان منتهية</del>"
-                                    days_text = "انتهى الضمان"
+                                    days_text = "30 يوم انتهت"
                                 else:
-                                    status_text = "<span style='color: #3fb950;'>🛡️ الضمان سارٍ (من تاريخ الخروج)</span>"
-                                    days_text = f"المتبقي: {w.get('days_left', 0)} يوم"
+                                    status_text = "<span style='color: #3fb950;'>🛡️ الضمان سارٍ (باقي {0} يوم)</span>".format(w.get('days_left'))
+                                    days_text = f"المتبقي: {w.get('days_left')} يوم"
 
                                 st.markdown(f"""
                                     <div style="margin-bottom: 5px;">
                                         <span style="font-size: 0.9rem; font-weight: bold;">{status_text}</span>
                                     </div>
-                                    <div style="width: 100%; background: #30363d; border-radius: 10px; height: 10px; overflow: hidden;">
-                                        <div style="width: {val}%; background: {b_color}; height: 100%; border-radius: 10px; transition: width 1s ease;"></div>
+                                    <div style="width: 100%; background: #30363d; border-radius: 10px; height: 12px; overflow: hidden; border: 1px solid #444c56;">
+                                        <div style="width: {val}%; background: {b_color}; height: 100%; border-radius: 10px; transition: width 1s ease-in-out;"></div>
                                     </div>
                                     <div style="display: flex; justify-content: space-between; margin-top: 3px;">
-                                        <span style="font-size: 10px; color: #8b949e;">{days_text}</span>
+                                        <span style="font-size: 10px; color: #8b949e;">المدة الإجمالية: 30 يوم</span>
                                         <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
                                     </div>
                                 """, unsafe_allow_html=True)
                             else:
-                                # في حال كان تاريخ الخروج فارغ أو بصيغة خاطئة
-                                st.warning("⚠️ شريط الضمان يتطلب تسجيل تاريخ الخروج (Date_Sortie).")
+                                # إذا لم يتم العثور على تاريخ أو الدالة رجعت None
+                                st.info("ℹ️ الضمان يبدأ فور تسجيل تاريخ خروج الجهاز.")
 
                         elif status == "Non Réparable":
-                            # حالة الحزن للجهاز غير القابل للتصليح
+                            # حالة الجهاز غير قابل للتصليح
                             st.markdown(f"""
                                 <div style="text-align: center; padding: 15px; background: rgba(248, 81, 73, 0.05); border: 1px dashed #f85149; border-radius: 12px;">
                                     <div style="font-size: 2rem;">🥀</div>
@@ -455,7 +456,7 @@ if user_phone:
                             """, unsafe_allow_html=True)
 
                         else:
-                            # شريط التقدم العادي للصيانة
+                            # شريط تقدم الصيانة العادي (En cours, Réparable...)
                             prog_map = {
                                 "En attente": {"val": 0.0, "pct": "0%"},
                                 "En Cours":   {"val": 0.33, "pct": "33%"},
