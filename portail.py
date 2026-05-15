@@ -130,7 +130,7 @@ def get_status_priority(status):
     elif s == "Réparable": return 4
     elif s == "En Cours": return 5
     elif s == "En Attente": return 6
-    elif "Livré" in s: return 7  # يجمع Livré & Payé و Livré (Dette)
+    #elif "Livré" in s: return 7  # يجمع Livré & Payé و Livré (Dette)
     else: return 99  # أي حالة غير معروفة تجي مع اللخر
 
 # ==============================================================================
