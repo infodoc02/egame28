@@ -130,7 +130,7 @@ def get_status_priority(status):
     elif s == "Réparable": return 4
     elif s == "En Cours": return 5
     elif s == "En Attente": return 6
-    elif "Livré" in s: return 7  # يجمع Livré & Payé و Livré (Dette)
+    #elif "Livré" in s: return 7  # يجمع Livré & Payé و Livré (Dette)
     else: return 99  # أي حالة غير معروفة تجي مع اللخر
 
 # ==============================================================================
@@ -195,35 +195,6 @@ st.markdown("""
         background: rgba(210, 153, 34, 0.05) !important;
         direction: rtl !important; /* لضمان الاتجاه من اليمين */
     }
-    
-    /* تحسين شكل حقل الإدخال ليكون النص واضحاً */
-    input[aria-label=""] {
-        color: white !important;
-        background-color: #1c2128 !important;
-        border: 1px solid #444c56 !important;
-    }
-    
-    /* إصلاح زر البحث (Submit Button) */
-    button[kind="primaryFormSubmit"] {
-        background-color: #58a6ff !important; /* لون أزرق جذاب */
-        color: white !important;
-        border-radius: 8px !important;
-        border: none !important;
-        font-weight: bold !important;
-        height: 3rem !important;
-        transition: 0.3s background-color !important;
-    }
-
-    button[kind="primaryFormSubmit"]:hover {
-        background-color: #1f6feb !important; /* لون أغمق عند التمرير */
-        box-shadow: 0 0 10px rgba(88, 166, 255, 0.5) !important;
-    }
-
-    /* إخفاء حدود النموذج الافتراضية المزعجة */
-    div[data-testid="stForm"] {
-        border: none !important;
-        padding: 0 !important;
-    }
 
     /* تنسيق العنوان (اضغط هنا...) */
     div[data-testid="stExpander"]:first-of-type summary {
@@ -250,14 +221,40 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
-# ==============================================================================
-# 5. واجهة المستخدم الرأسية (Header Section)
-# ==============================================================================
 
 # ==============================================================================
 # 4. واجهة المستخدم (UI)
 # ==============================================================================
-
+# منطق التحقق الصارم بالـ IP لضمان الدقة 100%
+if 'tracked' not in st.session_state:
+    try:
+        import requests
+        # 1. جلب الـ IP
+        res = requests.get('https://api.ipify.org', timeout=5)
+        if res.status_code == 200:
+            user_ip = res.text.replace('.', '_')
+            today = datetime.now().strftime('%Y-%m-%d')
+            
+            # 2. المرجع المباشر للـ IP الخاص باليوم
+            # نستعمل .get() ونتأكد من النتيجة بدقة
+            check_ref = db.reference(f"stats/daily_ips/{today}/{user_ip}").get()
+            
+            # 3. التحقق: إذا لم نجد الـ IP مسجلاً (يعني أول مرة يدخل)
+            if check_ref is None:
+                # نسجل الـ IP فوراً لمنع التكرار
+                db.reference(f"stats/daily_ips/{today}/{user_ip}").set(True)
+                
+                # نزيد عداد زوار اليوم
+                # استعملنا هنا التحديث المباشر بدل Transaction للتجربة
+                current_count = db.reference(f"stats/daily_visitors/{today}").get() or 0
+                db.reference(f"stats/daily_visitors/{today}").set(current_count + 1)
+            
+            # نمنع الكود من إعادة المحاولة في نفس الجلسة
+            st.session_state['tracked'] = True
+    except Exception as e:
+        # يمكنك تفعيل السطر التالي مؤقتاً لتصحيح الأخطاء إذا لم يشتغل
+        # st.error(f"خطأ في جلب الـ IP: {e}")
+        pass
 # الهيدر
 algeria_tz = pytz.timezone('Africa/Algiers')
 now = datetime.now(algeria_tz)
@@ -348,72 +345,65 @@ with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط 
 # --- 1. CSS خاص بهذا القسم (لزر التلغرام العائم والبطاقات المدمجة) ---
 st.markdown("""
     <style>
-    /* 1. استدعاء الخطوط وتطبيقها بشكل إجباري */
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Changa:wght@400;700&family=Orbitron:wght@400;700&display=swap');
-
-    /* تطبيق الخط على التطبيق بالكامل */
-    * {
-        font-family: 'Cairo', sans-serif !important;
-    }
-
-    /* 2. زر التلغرام - تغيير شامل في التصميم */
+    /* زر التلغرام العائم */
     .floating-tg-btn {
         position: fixed;
         bottom: 30px;
-        left: 30px;
-        background: #0088cc;
+        left: 30px; /* تقدر تبدلها right: 30px إذا حبيت */
+        background: linear-gradient(135deg, #229ED9, #1c7cb3);
         color: white !important;
-        padding: 14px 28px;
+        padding: 15px 25px;
         border-radius: 50px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        box-shadow: 0 10px 20px rgba(34, 158, 217, 0.4);
         z-index: 9999;
-        font-family: 'Cairo', sans-serif !important;
-        font-weight: 900 !important;
+        font-family: 'Cairo', sans-serif;
+        font-weight: 900;
         font-size: 1.1rem;
         text-decoration: none;
         display: flex;
         align-items: center;
-        gap: 12px;
-        border: 2px solid rgba(255,255,255,0.1);
+        gap: 10px;
+        animation: float-pulse 2s infinite ease-in-out;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .floating-tg-btn:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 15px 30px rgba(34, 158, 217, 0.6);
     }
 
-    /* 3. رأس بطاقة الجهاز - جعل الخط عريض وواضح */
+    @keyframes float-pulse {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-8px); box-shadow: 0 15px 25px rgba(34, 158, 217, 0.5); }
+        100% { transform: translateY(0); }
+    }
+
+    /* رأس البطاقة (المربع الخاص بالجهاز) */
     .device-header {
-        background: #1c2128 !important;
-        border: 1px solid #444c56 !important;
-        border-bottom: none !important;
-        border-radius: 15px 15px 0 0 !important;
-        padding: 20px 25px !important;
-        margin-top: 25px;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-bottom: none; /* نحيو الخط التحتاني باش يلصق مع الأكسباندر */
+        border-radius: 12px 12px 0 0; /* تقويس من الفوق فقط */
+        padding: 20px;
+        margin-top: 30px; /* مسافة بين كل جهاز والآخر */
         display: flex;
         justify-content: space-between;
         align-items: center;
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
     }
 
-    .device-title { 
-        margin: 0 !important; 
-        color: #ffffff !important; 
-        font-family: 'Cairo', sans-serif !important; 
-        font-size: 1.3rem !important; 
-        font-weight: 900 !important; /* أقصى سمك للخط */
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    }
-    
-    .device-id { 
-        color: #58a6ff !important; 
-        font-size: 0.9rem !important; 
-        font-family: 'Orbitron', sans-serif !important; 
-        font-weight: 700 !important;
-    }
+    .device-title { margin: 0; color: #ffffff; font-family: 'Orbitron', 'Cairo'; font-size: 1.4rem; font-weight: bold; }
+    .device-id { color: #8b949e; font-size: 0.9rem; font-family: 'Courier New', monospace; }
     
     .status-badge-mini {
-        padding: 6px 16px !important;
-        border-radius: 12px !important;
-        font-size: 0.8rem !important;
-        font-weight: 900 !important;
-        font-family: 'Changa', sans-serif !important;
+        padding: 6px 15px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 900;
+        font-family: 'Orbitron', 'Cairo';
+        color: white;
         text-transform: uppercase;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
     }
 
     /* تعديل الأكسباندر ليلتصق بالبطاقة */
@@ -430,27 +420,6 @@ st.markdown("""
     .details-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #161b22; border-radius: 8px; overflow: hidden; }
     .details-table td { padding: 12px; border-bottom: 1px solid #30363d; text-align: center; color: #c9d1d9; }
     .details-table td:first-child { border-left: 1px solid #30363d; font-weight: bold; color: #8b949e; text-align: right; width: 40%; }
-
-    
-    /* تحسين خطوط الجداول */
-    .details-table td { 
-        padding: 15px !important; 
-        color: #f0f6fc !important; 
-        font-size: 1rem !important;
-        font-family: 'Cairo', sans-serif !important;
-    }
-    
-    .details-table td:first-child { 
-        font-weight: 700 !important; 
-        color: #8b949e !important; 
-        background: rgba(255,255,255,0.03);
-    }
-
-    /* تحسين شكل النصوص العادية داخل التطبيق */
-    p, span, label {
-        font-family: 'Cairo', sans-serif !important;
-        font-weight: 600;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -486,13 +455,13 @@ if submit_search and user_phone:
                         </a>
                     ''', unsafe_allow_html=True)
                 
-                # 3. ترتيب الأجهزة حسب الأولوية (باستخدام الدالة المعرفة سابقاً)
-                my_devices.sort(
-                    key=lambda x: (
-                        get_status_priority(x.get("Statut", "En Cours")), 
-                        -int(x.get("ID", 0)) if str(x.get("ID", 0)).isdigit() else 0
+                    # 3. ترتيب الأجهزة حسب الأولوية (باستخدام الدالة المعرفة سابقاً)
+                    my_devices.sort(
+                        key=lambda x: (
+                            get_status_priority(x.get("Statut", "En Cours")), 
+                            -int(x.get("ID", 0)) if str(x.get("ID", 0)).isdigit() else 0
+                        )
                     )
-                )
                 
                 # 4. حلقة عرض الأجهزة بتصميم احترافي
                 for dev in my_devices:
@@ -513,8 +482,13 @@ if submit_search and user_phone:
 
                     # تحسين عرض السعر
                     raw_prix = dev.get('Prix', 0)
-                    prix_display = f"{raw_prix} د.ج" if raw_prix and str(raw_prix).replace('.','').isdigit() and float(raw_prix) > 0 else "قيد التقييم..."
-
+                    if status == "En Cours":
+                        prix_display = "قيد التقييم..."
+                    else:
+                        if raw_prix is not None and str(raw_prix).replace('.', '', 1).isdigit():
+                            prix_display = f"{raw_prix} د.ج"
+                        else:
+                            prix_display = "0 د.ج" # أو أي قيمة افتراضية تختارها للأجهزة المنتهية
                     # 1. تصميم رأس البطاقة (Header)
                     st.markdown(f"""
                         <div style="border-right: 6px solid {status_color}; padding: 12px; background: #161b22; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d;">
@@ -528,84 +502,89 @@ if submit_search and user_phone:
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    # 2. تفاصيل الجهاز (داخل الـ expander)
+# 2. تفاصيل الجهاز (داخل الـ expander)
                     with st.expander("📄 عرض التفاصيل والمستحقات"):
                         d_sortie = dev.get("Date_Sortie")
-                        info_html = "" 
                         
                         # --- القسم الأول: أشرطة الحالة الذكية ---
                         if is_delivered:
+                            # --- 🟡 شريط الضمان الذهبي (يظهر إذا وجد تاريخ خروج) ---
+                            warranty_shown = False
                             if d_sortie and str(d_sortie).strip() not in ["", "---", "None"]:
                                 w = get_warranty_stats(d_sortie)
                                 if w:
+                                    # استخراج البيانات من الدالة المعرفة سابقاً
                                     val = float(w.get('percent', 0)) 
                                     is_expired = w.get('is_expired', False)
                                     b_color = "#FFD700" if not is_expired else "#6e7681"
+                                    warranty_shown = True
                                     
-                                    info_html += f"""
-                                    <div style="margin-bottom: 15px; border: 1px solid #444c56; padding: 12px; border-radius: 10px; background: rgba(255, 215, 0, 0.05); clear: both; display: block;">
-                                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
-                                            <div style="color: {b_color}; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
-                                                <span>🛡️</span>
-                                                <span>{'ضمان سارٍ' if not is_expired else 'ضمان منتهي'}</span>
-                                            </div>
-                                            <span style="color: {b_color}; font-weight: 800; font-family: monospace;">{int(val)}%</span>
-                                        </div>
-                                        <div style="width: 100%; background: #30363d; border-radius: 20px; height: 12px; overflow: hidden; border: 1px solid #444c56;">
-                                            <div style="width: {val}%; background: {b_color}; height: 100%;"></div>
-                                        </div>
-                                        <div style="display: flex; justify-content: space-between; margin-top: 8px; color: #8b949e; font-size: 0.75rem;">
-                                            <span>الخروج: {w.get('actual_date')}</span>
-                                            <span>باقي: {w.get('days_left')} يوم</span>
-                                        </div>
-                                    </div>"""
-                                    
+                                    # تم إرجاع النص الأصلي (الأيام المتبقية + نظام 30 يوم) مع ضبط المسافات
+                                    st.markdown(f"""
+<div style="margin-bottom: 15px; border: 1px solid #444c56; padding: 12px; border-radius: 10px; background: rgba(255, 215, 0, 0.05); direction: rtl;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
+        <div style="color: {b_color}; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+            <span>🛡️</span>
+            <span>{'ضمان ساري المفعول' if not is_expired else 'ضمان منتهي'}</span>
+        </div>
+        <span style="color: {b_color}; font-weight: 800; font-family: 'Courier New', monospace;">{int(val)}%</span>
+    </div>
+    <div style="width: 100%; background: #30363d; border-radius: 20px; height: 12px; overflow: hidden; border: 1px solid #444c56; display: flex;">
+        <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px {b_color if not is_expired else 'transparent'};"></div>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+        <span>الخروج: {w.get('actual_date')}</span>
+        <span>الأيام المتبقية على انتهاء مدة الضمان: {w.get('days_left')} يوم</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
                         elif status == "Non Réparable":
-                            info_html += f"""
-                            <div style="text-align: center; padding: 12px; background: rgba(248, 81, 73, 0.1); border: 1px dashed #f85149; border-radius: 10px; margin-bottom: 15px; display: block; clear: both;">
-                                <b style="color: #f85149;">⚠️ الجهاز غير قابل للتصليح</b>
-                            </div>"""
+                            st.markdown(f"""
+                                <div style="text-align: center; padding: 15px; background: rgba(248, 81, 73, 0.05); border: 1px dashed #f85149; border-radius: 12px; margin-bottom: 15px;">
+                                    <b style="color: #f85149;">⚠️ الجهاز غير قابل للتصليح</b>
+                                </div>
+                            """, unsafe_allow_html=True)
 
                         elif status != "Annulé":
+                            # 🔵🟢 شريط تقدم الصيانة (أزرق ثم أخضر)
                             prog_map = {
-                                "En attente": {"val": 15, "color": "#58a6ff"},
-                                "En Cours":   {"val": 45, "color": "#58a6ff"},
-                                "Réparable":  {"val": 75, "color": "#58a6ff"},
+                                "En attente": {"val": 0, "color": "#58a6ff"},
+                                "En Cours":   {"val": 33, "color": "#58a6ff"},
+                                "Réparable":  {"val": 66, "color": "#58a6ff"},
                                 "Prêt":       {"val": 100, "color": "#238636"}
                             }
                             p_data = prog_map.get(status, {"val": 20, "color": "#58a6ff"})
-                            info_html += f"""
-                            <div style="margin-bottom: 15px; display: block; clear: both;">
-                                <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="color:#c9d1d9; font-size: 0.85rem; font-weight:bold;">🛠️ حالة الصيانة</span>
-                                    <span style="color:{p_data['color']}; font-weight: 800;">{p_data['val']}%</span>
+                            
+                            st.markdown(f"""
+                                <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
+                                    <span style="color:#c9d1d9; font-size: 0.85rem;">🛠️ تقدم عملية الصيانة</span>
+                                    <span style="color:{p_data['color']}; font-weight: bold; font-size: 0.85rem;">{p_data['val']}%</span>
                                 </div>
-                                <div style="width: 100%; background: #30363d; border-radius: 20px; height: 10px; overflow: hidden; border: 1px solid #444c56;">
-                                    <div style="width: {p_data['val']}%; background: {p_data['color']}; height: 100%;"></div>
+                                <div style="width: 100%; background: #30363d; border-radius: 20px; height: 10px; overflow: hidden; border: 1px solid #444c56; margin-bottom: 15px;">
+                                    <div style="width: {p_data['val']}%; background: {p_data['color']}; height: 100%; transition: width 1s;"></div>
                                 </div>
-                            </div>"""
+                            """, unsafe_allow_html=True)
 
-                        # --- القسم الثاني: الجدول (مغلف بـ div لحمايته) ---
-                        info_html += f"""
-                        <div style="background: rgba(22, 27, 34, 0.5); border-radius: 10px; padding: 12px; border: 1px solid #30363d; display: block; clear: both; width: 100%;">
-                            <table style="width:100%; border-collapse: collapse; direction: rtl; border: none;">
-                                <tr style="border-bottom: 1px solid #21262d;">
-                                    <td style="padding: 8px 0; color: #8b949e; font-size: 0.9rem; text-align: right;">📅 تاريخ الدخول</td>
-                                    <td style="text-align: left; color: #f0f6fc; font-weight: 500;">{dev.get('Date_Entree', '---')}</td>
-                                </tr>
-                                <tr style="border-bottom: 1px solid #21262d;">
-                                    <td style="padding: 8px 0; color: #8b949e; font-size: 0.9rem; text-align: right;">📅 تاريخ الخروج</td>
-                                    <td style="text-align: left; color: #f0f6fc; font-weight: 500;">{d_sortie if d_sortie else '---'}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px 0 0 0; color: #8b949e; font-size: 0.9rem; text-align: right;">💰 المستحقات</td>
-                                    <td style="text-align: left; color: #ffd700; font-weight: 900; font-size: 1.2rem; padding-top: 10px;">{prix_display}</td>
-                                </tr>
-                            </table>
-                        </div>"""
-                        
-                        # التغليف النهائي بـ div واحد لمنع تداخل عناصر Streamlit
-                        st.markdown(f"<div style='display: block; width: 100%; padding: 5px 0;'>{info_html}</div>", unsafe_allow_html=True)
+                        # --- القسم الثاني: جدول البيانات الاحترافي ---
+                        st.markdown(f"""
+                            <div style="background: rgba(48, 54, 61, 0.2); border-radius: 8px; padding: 10px; border: 1px solid #30363d;">
+                                <table style="width:100%; border-collapse: collapse; direction: rtl; text-align: right;">
+                                    <tr style="border-bottom: 1px solid #30363d;">
+                                        <td style="padding: 6px; color: #8b949e; font-size: 0.85rem;">📅 تاريخ الدخول</td>
+                                        <td style="text-align: left; color: #f0f6fc; font-size: 0.85rem;">{dev.get('Date_Entree', '---')}</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #30363d;">
+                                        <td style="padding: 6px; color: #8b949e; font-size: 0.85rem;">📅 تاريخ الخروج</td>
+                                        <td style="text-align: left; color: #f0f6fc; font-size: 0.85rem;">{d_sortie if d_sortie else '---'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 6px 0 6px; color: #8b949e; font-size: 0.85rem;">💰 المستحقات</td>
+                                        <td style="text-align: left; color: #58a6ff; font-weight: 800; font-size: 1.1rem; padding-top: 8px;">{prix_display}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        """, unsafe_allow_html=True)
 
 # ==============================================================================
 # 7. تشغيل بوت التلغرام (المصحح)
