@@ -370,15 +370,12 @@ if user_phone:
                 # 4. حلقة عرض الأجهزة
                 for dev in my_devices:
                     status = str(dev.get("Statut", "En Cours"))
-                    # المنطق: الضمان يشتغل إذا كانت كلمة Livré موجودة في الحالة
-                    is_done = "Livré" in status or "Livre" in status
+                    is_done = "Livré" in status
+                    status_color = "#238636" if status == "Prêt" else "#da3633" if status == "Annulé" else "#6e7681" if is_done else "#58a6ff"
                     
-                    # تحديد الألوان حسب الحالة (أخضر للجاهز، أحمر للملغي، رمادي للمسلم)
-                    status_color = "#238636" if status == "Prêt" else "#da3633" if status in ["Annulé", "Non Réparable"] else "#6e7681" if is_done else "#58a6ff"
-
                     # المربع الرئيسي (Header)
                     st.markdown(f"""
-                        <div class="device-box" style="border-right: 6px solid {status_color}; margin-bottom: 10px;">
+                        <div class="device-box" style="border-right: 6px solid {status_color};">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <h3 style="margin:0; color:white;">{dev.get('Appareil')}</h3>
@@ -389,148 +386,90 @@ if user_phone:
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    # الأكورديون (التفاصيل)
-                    with st.expander("📄 عرض التفاصيل والمستحقات"):
-                        # 1. حالة الضمان (إذا كان الجهاز مسلماً)
-                        if is_done:
-                            w = get_warranty_stats(dev.get("Date_Sortie"))
-                            if w:
-                                val = w.get('percent_left', 0)
-                                is_expired = w.get('is_expired', False)
-                                b_color = "#FFD700" if not is_expired else "#4b4b4b"
-                                
-                                status_text = "🛡️ الضمان سارٍ" if not is_expired else "❌ فترة الضمان منتهية"
-                                days_text = f"المتبقي: {int(w.get('days_left', 0))} يوم" if not is_expired else "انتهت الصلاحية"
-
-                                st.markdown(f"""
-                                    <div style="margin-bottom: 5px;">
-                                        <span style="font-size: 0.9rem; font-weight: bold; color:{b_color};">{status_text}</span>
-                                    </div>
-                                    <div style="width: 100%; background: #30363d; border-radius: 10px; height: 10px; overflow: hidden; border: 1px solid #444c56;">
-                                        <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 1s;"></div>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; margin-top: 3px;">
-                                        <span style="font-size: 10px; color: #8b949e;">{days_text}</span>
-                                        <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
-                                    </div>
-                                """, unsafe_allow_html=True)
+                    # 2. تفاصيل الجهاز
+                with st.expander("📄 عرض التفاصيل والمستحقات"):
+                    # جلب حالة الجهاز وتاريخ الخروج
+                    d_sortie = dev.get("Date_Sortie")
+                    
+                    # التعديل هنا: المنطق المرن للتحقق من أن الجهاز تم تسليمه
+                    if "Livré" in status or "Livre" in status:
+                        # حساب الضمان بناءً على تاريخ التسليم
+                        w = get_warranty_stats(d_sortie)
+                        
+                        if w:
+                            val, is_expired = w['percent_left'], w['is_expired']
+                            # اللون أصفر للضمان النشط، ورمادي للمنتهي
+                            b_color = "#FFD700" if not is_expired else "#4b4b4b"
+                            
+                            if is_expired:
+                                status_text = "<del style='color: #f85149;'>❌ فترة الضمان منتهية</del>"
+                                days_text = "انتهت الصلاحية"
                             else:
-                                st.info("ℹ️ الضمان يبدأ عند تسجيل تاريخ الخروج.")
+                                status_text = "<span style='color: #3fb950;'>🛡️ الضمان سارٍ (من تاريخ التسليم)</span>"
+                                days_text = f"المتبقي: {w.get('days_left', 0)} يوم"
 
-                        # 2. حالة غير قابل للتصليح
-                        elif status == "Non Réparable":
-                            st.markdown("""
-                                <div style="text-align: center; padding: 15px; border: 1px dashed #f85149; border-radius: 12px; background: rgba(248, 81, 73, 0.05);">
-                                    <span style="font-size: 1.5rem;">🥀</span><br>
-                                    <b style="color: #f85149;">نعتذر، الجهاز غير قابل للتصليح</b><br>
-                                    <small style="color: #8b949e;">يمكنك استلام جهازك من المحل</small>
+                            st.markdown(f"""
+                                <div style="margin-bottom: 5px;">
+                                    <span style="font-size: 0.9rem; font-weight: bold;">{status_text}</span>
+                                </div>
+                                <div style="width: 100%; background: #30363d; border-radius: 10px; height: 12px; overflow: hidden; border: 1px solid #444c56;">
+                                    <div style="width: {val}%; background: {b_color}; height: 100%; border-radius: 10px; transition: width 0.8s ease-in-out;"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 3px;">
+                                    <span style="font-size: 10px; color: #8b949e;">{days_text}</span>
+                                    <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
                                 </div>
                             """, unsafe_allow_html=True)
-
-                        # 3. حالات الصيانة (شريط التقدم العادي)
                         else:
-                            st.write("🛠️ حالة الصيانة الحالية:")
-                            p_level = 0.33 if status == "En Cours" else 0.66 if status == "Réparable" else 1.0 if status == "Prêt" else 0.1
-                            st.progress(p_level)
+                            # في حال كان التاريخ فارغاً أو بصيغة غير مفهومة
+                            st.info(f"⏳ في انتظار تفعيل الضمان (التاريخ المسجل: {d_sortie})")
 
-                        # جدول البيانات المالي والزمني
+                    elif status == "Non Réparable":
+                        # حالة الجهاز غير قابل للتصليح
                         st.markdown(f"""
-                            <table style="width:100%; margin-top: 15px; border-collapse: collapse;">
-                                <tr style="border-bottom: 1px solid #30363d;">
-                                    <td style="padding: 8px; color: #8b949e;">📅 تاريخ الدخول</td>
-                                    <td style="text-align: left;">{dev.get('Date_Entree', '---')}</td>
-                                </tr>
-                                <tr style="border-bottom: 1px solid #30363d;">
-                                    <td style="padding: 8px; color: #8b949e;">📅 تاريخ الخروج</td>
-                                    <td style="text-align: left;">{dev.get('Date_Sortie', '---')}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 8px; color: #8b949e;">💰 المبلغ الإجمالي</td>
-                                    <td style="text-align: left; color: #58a6ff; font-weight: 900; font-size: 1.1rem;">{dev.get('Prix', '0')} DZD</td>
-                                </tr>
-                            </table>
-                        """, unsafe_allow_html=True)
-                    
-                    # 4. حلقة عرض الأجهزة
-                    for dev in my_devices:
-                        status = str(dev.get("Statut", "En Cours"))
-                        # المنطق القديم: الضمان يشتغل إذا كانت كلمة Livré موجودة في الحالة
-                        is_done = "Livré" in status or "Livre" in status
-                        
-                        # تحديد الألوان حسب الحالة
-                        status_color = "#238636" if status == "Prêt" else "#da3633" if status in ["Annulé", "Non Réparable"] else "#6e7681" if is_done else "#58a6ff"
-
-                        # المربع الرئيسي (Header) - التصميم الاحترافي
-                        st.markdown(f"""
-                            <div class="device-box" style="border-right: 6px solid {status_color}; margin-bottom: 10px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <h3 style="margin:0; color:white;">{dev.get('Appareil')}</h3>
-                                        <small style="color:#8b949e;">رقم الوصل: #{dev.get('ID')}</small>
-                                    </div>
-                                    <span class="badge-label" style="background:{status_color}; color:white;">{status.upper()}</span>
+                            <div style="text-align: center; padding: 15px; background: rgba(248, 81, 73, 0.05); border: 1px dashed #f85149; border-radius: 12px;">
+                                <div style="font-size: 2rem; margin-bottom: 5px;">🥀</div>
+                                <b style="color: #f85149;">للأسف، الجهاز غير قابل للتصليح</b><br>
+                                <small style="color: #8b949e;">تم فحص المكونات بدقة، والضرر بليغ جداً.</small>
+                                <div style="width: 100%; background: #30363d; border-radius: 10px; height: 8px; margin-top: 12px;">
+                                    <div style="width: 100%; background: #4b4b4b; height: 100%; border-radius: 10px;"></div>
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
-                        
-                        # الأكورديون (التفاصيل)
-                        with st.expander("📄 عرض التفاصيل والمستحقات"):
-                            # 1. حالة الضمان (إذا كان الجهاز مسلماً)
-                            if is_done:
-                                w = get_warranty_stats(dev.get("Date_Sortie"))
-                                if w:
-                                    val = w.get('percent_left', 0)
-                                    is_expired = w.get('is_expired', False)
-                                    b_color = "#FFD700" if not is_expired else "#4b4b4b"
-                                    
-                                    status_text = "🛡️ الضمان سارٍ" if not is_expired else "❌ فترة الضمان منتهية"
-                                    days_text = f"المتبقي: {int(w.get('days_left', 0))} يوم" if not is_expired else "انتهت الصلاحية"
 
-                                    st.markdown(f"""
-                                        <div style="margin-bottom: 5px;">
-                                            <span style="font-size: 0.9rem; font-weight: bold; color:{b_color};">{status_text}</span>
-                                        </div>
-                                        <div style="width: 100%; background: #30363d; border-radius: 10px; height: 10px; overflow: hidden;">
-                                            <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 1s;"></div>
-                                        </div>
-                                        <div style="display: flex; justify-content: space-between; margin-top: 3px;">
-                                            <span style="font-size: 10px; color: #8b949e;">{days_text}</span>
-                                            <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
-                                        </div>
-                                    """, unsafe_allow_html=True)
-                                else:
-                                    st.info("ℹ️ الضمان يبدأ عند تسجيل تاريخ الخروج.")
+                    else:
+                        # حالة الجهاز قيد التصليح (نسب التقدم)
+                        prog_map = {
+                            "En attente": {"val": 0.0, "pct": "0%"},
+                            "En Cours":   {"val": 0.33, "pct": "33%"},
+                            "Réparable":  {"val": 0.66, "pct": "66%"},
+                            "Prêt":       {"val": 1.0, "pct": "100%"}
+                        }
+                        p_data = prog_map.get(status, {"val": 0.1, "pct": "في الانتظار..."})
 
-                            # 2. حالة غير قابل للتصليح
-                            elif status == "Non Réparable":
-                                st.markdown("""
-                                    <div style="text-align: center; padding: 10px; border: 1px dashed #f85149; border-radius: 10px;">
-                                        <span style="font-size: 1.5rem;">🥀</span><br>
-                                        <b style="color: #f85149;">نعتذر، الجهاز غير قابل للتصليح</b>
-                                    </div>
-                                """, unsafe_allow_html=True)
+                        st.markdown(f"""
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <span style="color: #8b949e; font-size: 0.9rem; font-weight: bold;">🛠️ تقدم عملية الصيانة</span>
+                                <span style="color: #00d4ff; font-family: 'Orbitron'; font-weight: 900; text-shadow: 0 0 5px #00d4ff;">{p_data['pct']}</span>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        st.progress(p_data['val'])
 
-                            # 3. حالات الصيانة (التقدم)
-                            else:
-                                st.write("🛠️ حالة الصيانة الحالية:")
-                                p_level = 0.33 if status == "En Cours" else 0.66 if status == "Réparable" else 1.0 if status == "Prêt" else 0.1
-                                st.progress(p_level)
-
-                            # جدول البيانات المالي والزمني (التصميم الجديد)
-                            st.markdown(f"""
-                                <table style="width:100%; margin-top: 15px; border-collapse: collapse;">
-                                    <tr style="border-bottom: 1px solid #30363d;">
-                                        <td style="padding: 8px; color: #8b949e;">📅 دخول</td>
-                                        <td style="text-align: left;">{dev.get('Date_Entree')}</td>
-                                    </tr>
-                                    <tr style="border-bottom: 1px solid #30363d;">
-                                        <td style="padding: 8px; color: #8b949e;">📅 خروج</td>
-                                        <td style="text-align: left;">{dev.get('Date_Sortie', '---')}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 8px; color: #8b949e;">💰 الإجمالي</td>
-                                        <td style="text-align: left; color: #58a6ff; font-weight: 900; font-size: 1.1rem;">{dev.get('Prix')} DZD</td>
-                                    </tr>
-                                </table>
-                            """, unsafe_allow_html=True)
+                    # جدول التواريخ والمبالغ (موجود دائماً في نهاية الـ expander)
+                    st.markdown(f"""
+                        <table style="width:100%; margin-top: 15px; border-collapse: collapse;">
+                            <tr style="border-bottom: 1px solid #30363d;">
+                                <td style="padding: 8px; color: #8b949e;">📅 تاريخ الدخول</td>
+                                <td style="text-align: left;">{dev.get('Date_Entree', '---')}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #30363d;">
+                                <td style="padding: 8px; color: #8b949e;">📅 تاريخ الخروج</td>
+                                <td style="text-align: left;">{dev.get('Date_Sortie', '---')}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; color: #8b949e;">💰 المبلغ المستحق</td>
+                                <td style="text-align: left; color: #58a6ff; font-weight: 900; font-size: 1.1rem;">{dev.get('Prix', '0')} DZD</td>
+                            </tr>
+                        </table>
+                    """, unsafe_allow_html=True)
                         
