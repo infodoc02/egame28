@@ -371,6 +371,20 @@ if user_phone:
                 for dev in my_devices:
                     status = str(dev.get("Statut", "En Cours"))
                     is_done = "Livré" in status
+                    status_color = "#238636" if status == "Prêt" else "#da3633" if status == "Annulé" else "#6e7681" if is_done else "#58a6ff"
+                    
+                    # المربع الرئيسي (Header)
+                    st.markdown(f"""
+                        <div class="device-box" style="border-right: 6px solid {status_color};">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h3 style="margin:0; color:white;">{dev.get('Appareil')}</h3>
+                                    <small style="color:#8b949e;">رقم الوصل: #{dev.get('ID')}</small>
+                                </div>
+                                <span class="badge-label" style="background:{status_color}; color:white;">{status.upper()}</span>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
                     
                     # --- إضافة الأيقونات بناءً على الحالة ---
                     status_icon = "⏳" # الافتراضي
