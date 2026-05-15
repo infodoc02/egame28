@@ -429,9 +429,9 @@ if submit_search and user_phone:
                         </a>
                     ''', unsafe_allow_html=True)
                 
-                # 3. ترتيب الأجهزة حسب الأولوية (باستخدام الدالة المعرفة سابقاً)
-                my_devices.sort(
-                    key=lambda x: (
+                    # 3. ترتيب الأجهزة حسب الأولوية (باستخدام الدالة المعرفة سابقاً)
+                    my_devices.sort(
+                        key=lambda x: (
                         get_status_priority(x.get("Statut", "En Cours")), 
                         -int(x.get("ID", 0)) if str(x.get("ID", 0)).isdigit() else 0
                     )
