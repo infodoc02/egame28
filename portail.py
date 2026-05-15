@@ -226,18 +226,19 @@ st.markdown("""
 # 4. واجهة المستخدم (UI)
 # ==============================================================================
 # --- وضع الكود هنا (بعد الإعدادات وقبل محتوى الصفحة) ---
+
 if 'visited' not in st.session_state:
     try:
-        # 1. جلب تاريخ اليوم
+            # 1. جلب تاريخ اليوم
         today_date = datetime.now().strftime('%Y-%m-%d')
             
-        # 2. تحديث العداد في Firebase (المسار المخصص لزوار اليوم)
+            # 2. تحديث العداد في Firebase (المسار المخصص لزوار اليوم)
         db.reference(f"stats/daily_visitors/{today_date}").transaction(lambda current: (current or 0) + 1)
             
-        # 3. وضع علامة في الجلسة لكي لا يتكرر الحساب عند كل ضغطة زر
+            # 3. وضع علامة في الجلسة لكي لا يتكرر الحساب عند كل ضغطة زر
         st.session_state['visited'] = True
     except:
-        # في حال وجود مشكلة في الاتصال لا يتوقف التطبيق عن العمل
+            # في حال وجود مشكلة في الاتصال لا يتوقف التطبيق عن العمل
         pass
 # الهيدر
 algeria_tz = pytz.timezone('Africa/Algiers')
