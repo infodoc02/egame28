@@ -149,6 +149,24 @@ st.markdown("""
         animation: glow 2s ease-in-out infinite alternate;
     }
     
+    /* À insérer vers la ligne 162 */
+    .hero-container {
+        text-align: center;
+        padding: 30px 10px;
+        background: linear-gradient(180deg, rgba(88,166,255,0.05) 0%, rgba(13,17,23,0) 100%);
+        border-radius: 20px;
+        margin-bottom: 10px;
+    }
+
+    .sub-title {
+        color: #8b949e;
+        font-size: 1.1rem;
+        font-weight: 400;
+        margin-top: -10px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
     @keyframes glow {
         from { text-shadow: 0 0 10px #58a6ff, 0 0 20px #58a6ff; }
         to { text-shadow: 0 0 20px #58a6ff, 0 0 50px #58a6ff; transform: scale(1.01); }
