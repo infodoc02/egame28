@@ -48,7 +48,18 @@ def get_warranty_stats(date_sortie_str):
             date_s = datetime.strptime(str(date_sortie_str).strip(), fmt)
             diff_days = (datetime.now() - date_s).days
             remaining_days = max(30 - diff_days, 0)
-            return {"percent": (remaining_days / 30) * 100, "is_expired": diff_days > 30, "days_left": remaining_days}
+            
+            # حساب النسب
+            p_left = (remaining_days / 30) * 100
+            p_consumed = min((diff_days / 30) * 100, 100) if diff_days >= 0 else 0
+            
+            return {
+                "percent": p_left,          # المفتاح القديم (للموافقة)
+                "percent_left": p_left,     # المفتاح الجديد
+                "consumed_percent": p_consumed, # عمود النقصان (الأصفر)
+                "is_expired": diff_days > 30, 
+                "days_left": remaining_days
+            }
         except: continue
     return None
 
