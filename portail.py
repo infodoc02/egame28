@@ -75,6 +75,15 @@ def get_status_priority(status):
     elif "Livré" in s: return 7  # يجمع Livré & Payé و Livré (Dette)
     else: return 99  # أي حالة غير معروفة تجي مع اللخر
 
+# هذا الجزء يبقى في بوابة الزبائن فقط ليزيد العدد
+def increment_visitor_count():
+    if 'visited' not in st.session_state:
+        ref = db.reference("stats/visitor_count")
+        ref.transaction(lambda current: (current or 0) + 1)
+        st.session_state['visited'] = True
+
+increment_visitor_count()
+
 # ==============================================================================
 # 3. التنسيقات البصرية (CSS) - النسخة النهائية المنظمة
 # ==============================================================================
