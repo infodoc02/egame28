@@ -122,6 +122,7 @@ def get_warranty_stats(date_sortie_str):
 # 3. التنسيقات البصرية (CSS) - النسخة النهائية المنظمة
 # ==============================================================================
 st.markdown("""
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
     
@@ -140,23 +141,42 @@ st.markdown("""
         text-shadow: 0 0 15px rgba(88, 166, 255, 0.5); margin-bottom: 5px;
     }
 
-    /* أزرار التواصل */
+    /* أزرار التواصل - النسخة المعدلة والمضمونة */
     .custom-btn {
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 15px; padding: 15px; text-decoration: none !important; color: white !important;
-        transition: 0.3s; min-height: 100px; margin-bottom: 10px;
+        display: flex !important;
+        flex-direction: column !important; /* تجعل الأيقونة فوق النص */
+        align-items: center !important;
+        justify-content: center !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 15px !important;
+        padding: 15px !important;
+        text-decoration: none !important;
+        color: white !important;
+        transition: 0.3s !important;
+        min-height: 110px !important;
+        width: 100% !important;
+        margin-bottom: 10px !important;
     }
-    .custom-btn:hover { border-color: #58a6ff; background: rgba(88, 166, 255, 0.15); transform: translateY(-3px); }
 
-    /* أنيميشن الحالة */
-    @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.7; } }
-    @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; } 50% { opacity: 0.7; } }
-    
-    .status-badge { padding: 8px 20px; border-radius: 10px; font-weight: bold; display: inline-block; font-family: 'Cairo'; }
-    .status-open { color: #3fb950; border: 2px solid #3fb950; animation: blink-green 2s infinite; }
-    .status-closed { color: #f85149; border: 2px solid #f85149; animation: blink-red 2s infinite; }
+    .custom-btn:hover {
+        border-color: #58a6ff !important;
+        background: rgba(88, 166, 255, 0.15) !important;
+        transform: translateY(-5px) !important;
+    }
 
+    /* تنسيق الأيقونات داخل الأزرار رغما عن المتصفح */
+    .custom-btn i {
+        font-size: 2.2rem !important; /* تكبير الأيقونة */
+        margin-bottom: 10px !important; /* مسافة واضحة تحت الأيقونة */
+        display: block !important;
+    }
+
+    .custom-btn b {
+        font-size: 0.9rem !important;
+        font-weight: 700 !important;
+        display: block !important;
+    }
 
     /* 1. الستايل العام لكل الأكسباندرز (باش ما يبقاوش كحولة بزاف) */
     div[data-testid="stExpander"] {
