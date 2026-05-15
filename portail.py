@@ -47,18 +47,8 @@ def get_warranty_stats(date_sortie_str):
         try:
             date_s = datetime.strptime(str(date_sortie_str).strip(), fmt)
             diff_days = (datetime.now() - date_s).days
-            # الأيام المتبقية
             remaining_days = max(30 - diff_days, 0)
-            # النسبة المستهلكة (للعرض باللون الأصفر)
-            consumed_percent = min((diff_days / 30) * 100, 100) if diff_days >= 0 else 0
-            
-            return {
-                "percent_left": (remaining_days / 30) * 100, 
-                "consumed_percent": consumed_percent,
-                "is_expired": diff_days > 30, 
-                "days_left": remaining_days,
-                "days_passed": diff_days
-            }
+            return {"percent": (remaining_days / 30) * 100, "is_expired": diff_days > 30, "days_left": remaining_days}
         except: continue
     return None
 
@@ -403,7 +393,26 @@ if user_phone:
     
                             # شريط التقدم الخاص بـ Streamlit
                             st.progress(progress_data['val'])
-                        
+                            
+                            w = get_warranty_stats(row['Date_Sortie'])
+
+                            if w:
+    # حساب النسبة (من 100 تهبط لـ 0)
+                                val = w['percent_left']
+    # اللون أصفر إذا كان كاين ضمان، ورمادي إذا خلاص
+                                b_color = "#FFD700" if not w['is_expired'] else "#4b4b4b"
+    
+                                st.markdown(f"""
+                                    <div style="width: 100%; background-color: #30363d; border-radius: 10px; height: 8px;">
+                                        <div style="width: {val}%; background-color: {b_color}; height: 100%; border-radius: 10px; transition: width 0.5s;">
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-top: 3px;">
+                                        <span style="font-size: 10px; color: #8b949e;">Restant: {w['days_left']} ج</span>
+                                        <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
+                                    </div>
+                                """, unsafe_allow_html=True)
+
                         st.markdown(f"""
                             <table class="details-table">
                                 <tr>
