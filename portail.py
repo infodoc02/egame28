@@ -523,9 +523,9 @@ if submit_search and user_phone:
                         elif status != "Annulé":
                             # 🔵🟢 شريط تقدم الصيانة (أزرق ثم أخضر)
                             prog_map = {
-                                "En attente": {"val": 15, "color": "#58a6ff"},
-                                "En Cours":   {"val": 45, "color": "#58a6ff"},
-                                "Réparable":  {"val": 75, "color": "#58a6ff"},
+                                "En attente": {"val": 0, "color": "#58a6ff"},
+                                "En Cours":   {"val": 33, "color": "#58a6ff"},
+                                "Réparable":  {"val": 66, "color": "#58a6ff"},
                                 "Prêt":       {"val": 100, "color": "#238636"}
                             }
                             p_data = prog_map.get(status, {"val": 20, "color": "#58a6ff"})
