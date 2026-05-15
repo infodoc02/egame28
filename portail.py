@@ -456,8 +456,13 @@ if submit_search and user_phone:
 
                     # تحسين عرض السعر
                     raw_prix = dev.get('Prix', 0)
-                    prix_display = f"{raw_prix} د.ج" if raw_prix and str(raw_prix).replace('.','').isdigit() and float(raw_prix) > 0 else "قيد التقييم..."
-
+                    if status == "En Cours":
+                        prix_display = "قيد التقييم..."
+                    else:
+                        if raw_prix is not None and str(raw_prix).replace('.', '', 1).isdigit():
+                            prix_display = f"{raw_prix} د.ج"
+                        else:
+                            prix_display = "0 د.ج" # أو أي قيمة افتراضية تختارها للأجهزة المنتهية
                     # 1. تصميم رأس البطاقة (Header)
                     st.markdown(f"""
                         <div style="border-right: 6px solid {status_color}; padding: 12px; background: #161b22; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d;">
