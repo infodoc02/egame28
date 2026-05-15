@@ -210,8 +210,13 @@ st.markdown("""
 # 5. واجهة المستخدم الرأسية (Header Section)
 # ==============================================================================
 
-# الترحيب والوقت
+# ==============================================================================
+# 5. عرض الواجهة العلوية (Header & Hero)
+# ==============================================================================
+
+# حساب الوقت والترحيب
 now = datetime.now()
+current_time = now.strftime("%H:%M")
 if 5 <= now.hour < 12:
     greeting = "صباح الخير"
 elif 12 <= now.hour < 18:
@@ -219,13 +224,38 @@ elif 12 <= now.hour < 18:
 else:
     greeting = "مساء الخير"
 
-# جلب حالة المحل من Firebase مع معالجة حالة عدم الاتصال
+# استخراج حالة المحل
 try:
-    # أضفت .get() مع التحقق من القيمة
     shop_ref = db.reference("shop_settings/is_open").get()
     shop_status = True if shop_ref is True else False
 except Exception:
-    shop_status = True # افتراضياً مفتوح إذا فشل الاتصال
+    shop_status = True
+
+# عرض الهيرو مع الترحيب والوقت
+st.markdown(f'''
+    <div class="hero-container">
+        <!-- شريط المعلومات العلوي -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 10px; opacity: 0.8;">
+            <div style="text-align: left;">
+                <i class="fas fa-clock" style="color: #58a6ff;"></i> {current_time}<br>
+                <small style="font-size: 0.7rem;">Chlef, Algeria</small>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-weight: bold;">{greeting}</span> <i class="fas fa-hand-sparkles" style="color: #ffcc00;"></i>
+            </div>
+        </div>
+
+        <div class="main-title">INFODOC</div>
+        <div class="sub-title">إصلاح وبرمجة الهواتف الذكية</div>
+        
+        <div style="margin-top: 20px;">
+            <div class="status-badge {'status-open' if shop_status else 'status-closed'}">
+                <i class="fas {'fa-door-open' if shop_status else 'fa-door-closed'}"></i>
+                {'المحل مفتوح الآن' if shop_status else 'المحل مغلق حالياً'}
+            </div>
+        </div>
+    </div>
+''', unsafe_allow_html=True)افتراضياً مفتوح إذا فشل الاتصال
 
 # 4. واجهة الهيدر
 st.markdown(f'''
