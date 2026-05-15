@@ -363,25 +363,42 @@ if user_phone:
                     # 2. تفاصيل الجهاز
                     with st.expander("📄 عرض التفاصيل والمستحقات"):
                         if is_done:
+                             # حالة الجهاز منتهي ومسلم: نعرض الضمان الأصفر
                             w = get_warranty_stats(dev.get("Date_Sortie"))
-                            if w and not w["is_expired"]:
-                                st.success(f"🛡️ **الضمان سارٍ:** متبقي {int(w['days_left'])} يوم")
-                                st.progress(w['percent']/100)
+                             
+                            if w:
+                                val = w['percent_left']
+                                 # اللون أصفر للضمان، ورمادي إذا انتهى
+                                b_color = "#FFD700" if not w['is_expired'] else "#4b4b4b"
+                                status_text = "🛡️ الضمان سارٍ" if not w['is_expired'] else "❌ فترة الضمان منتهية"
+                                 
+                                st.markdown(f"""
+                                    <div style="margin-bottom: 5px;">
+                                        <span style="color: #8b949e; font-size: 0.9rem; font-weight: bold;">{status_text}</span>
+                                    </div>
+                                    <div style="width: 100%; background-color: #30363d; border-radius: 10px; height: 8px;">
+                                        <div style="width: {val}%; background-color: {b_color}; height: 100%; border-radius: 10px; transition: width 0.5s;">
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-top: 3px;">
+                                        <span style="font-size: 10px; color: #8b949e;">المتبقي: {w['days_left']} يوم</span>
+                                        <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
+                                    </div>
+                                """, unsafe_allow_html=True)
                             else:
-                                st.error("❌ **فترة الضمان منتهية**")
+                                st.info("معلومات الضمان غير متوفرة لهذا الجهاز.")
+
                         else:
-                            
-                            # حساب نسبة التقدم بناءً على الحالة
+                             # حالة الجهاز قيد التصليح: نعرض شريط التقدم (النيون)
                             prog_map = {
                                 "En Cours": {"val": 0.4, "pct": "40%"},
                                 "Réparable": {"val": 0.7, "pct": "70%"},
                                 "Prêt": {"val": 1.0, "pct": "100%"}
                             }
-    
-                            # جلب البيانات أو وضع قيم افتراضية
+
+                             # جلب البيانات أو وضع قيم افتراضية
                             progress_data = prog_map.get(status, {"val": 0.2, "pct": "20%"})
-    
-                            # عرض النسبة المئوية بتصميم نيون صغير
+
                             st.markdown(f"""
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                                     <span style="color: #8b949e; font-size: 0.9rem; font-weight: bold;">🛠️ تقدم عملية الصيانة</span>
@@ -390,28 +407,9 @@ if user_phone:
                                     </span>
                                 </div>
                             """, unsafe_allow_html=True)
-    
-                            # شريط التقدم الخاص بـ Streamlit
-                            st.progress(progress_data['val'])
-                            
-                            w = get_warranty_stats(row['Date_Sortie'])
 
-                            if w:
-    # حساب النسبة (من 100 تهبط لـ 0)
-                                val = w['percent_left']
-    # اللون أصفر إذا كان كاين ضمان، ورمادي إذا خلاص
-                                b_color = "#FFD700" if not w['is_expired'] else "#4b4b4b"
-    
-                                st.markdown(f"""
-                                    <div style="width: 100%; background-color: #30363d; border-radius: 10px; height: 8px;">
-                                        <div style="width: {val}%; background-color: {b_color}; height: 100%; border-radius: 10px; transition: width 0.5s;">
-                                        </div>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; margin-top: 3px;">
-                                        <span style="font-size: 10px; color: #8b949e;">Restant: {w['days_left']} ج</span>
-                                        <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
-                                    </div>
-                                """, unsafe_allow_html=True)
+                             # شريط التقدم الأزرق الافتراضي للصيانة
+                            st.progress(progress_data['val'])
 
                         st.markdown(f"""
                             <table class="details-table">
