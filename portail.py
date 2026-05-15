@@ -491,83 +491,82 @@ if submit_search and user_phone:
                     """, unsafe_allow_html=True)
                     
                     # 2. تفاصيل الجهاز (داخل الـ expander)
-                            with st.expander("📄 عرض التفاصيل والمستحقات"):
-                                d_sortie = dev.get("Date_Sortie")
-                                info_html = "" # سنجمع كل شيء هنا لمنع التداخل
+                    with st.expander("📄 عرض التفاصيل والمستحقات"):
+                        d_sortie = dev.get("Date_Sortie")
+                        info_html = "" # تجميع المحتوى لمنع التداخل
                         
                         # --- القسم الأول: أشرطة الحالة الذكية ---
-                                if is_delivered:
-                                    if d_sortie and str(d_sortie).strip() not in ["", "---", "None"]:
-                                        w = get_warranty_stats(d_sortie)
-                                        if w:
-                                            val = float(w.get('percent', 0)) 
-                                            is_expired = w.get('is_expired', False)
-                                            b_color = "#FFD700" if not is_expired else "#6e7681"
-                                            
-                                            info_html += f"""
-                                            <div class="warranty-container" style="margin-bottom: 15px; border: 1px solid #444c56; padding: 12px; border-radius: 10px; background: rgba(255, 215, 0, 0.05); direction: rtl;">
-                                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
-                                                    <div style="color: {b_color}; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
-                                                        <span>🛡️</span>
-                                                        <span>{'ضمان سارٍ' if not is_expired else 'ضمان منتهي'} ({w.get('days_left')} يوم)</span>
-                                                    </div>
-                                                    <span style="color: {b_color}; font-weight: 800; font-family: 'Courier New', monospace;">{int(val)}%</span>
-                                                </div>
-                                                <div style="width: 100%; background: #30363d; border-radius: 20px; height: 12px; overflow: hidden; border: 1px solid #444c56; display: flex;">
-                                                    <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px {b_color if not is_expired else 'transparent'};"></div>
-                                                </div>
-                                                <div style="display: flex; justify-content: space-between; margin-top: 8px;">
-                                                    <span style="color: #8b949e; font-size: 0.75rem;">تاريخ الخروج: {w.get('actual_date')}</span>
-                                                    <span style="color: #8b949e; font-size: 0.75rem;">نظام 30 يوم</span>
-                                                </div>
-                                            </div>"""
-                                            
-                                elif status == "Non Réparable":
+                        if is_delivered:
+                            if d_sortie and str(d_sortie).strip() not in ["", "---", "None"]:
+                                w = get_warranty_stats(d_sortie)
+                                if w:
+                                    val = float(w.get('percent', 0)) 
+                                    is_expired = w.get('is_expired', False)
+                                    b_color = "#FFD700" if not is_expired else "#6e7681"
+                                    
                                     info_html += f"""
-                                    <div style="text-align: center; padding: 15px; background: rgba(248, 81, 73, 0.05); border: 1px dashed #f85149; border-radius: 12px; margin-bottom: 15px;">
-                                        <b style="color: #f85149;">⚠️ الجهاز غير قابل للتصليح</b>
-                                    </div>"""
-
-                                elif status != "Annulé":
-                                    prog_map = {
-                                        "En attente": {"val": 15, "color": "#58a6ff"},
-                                        "En Cours":   {"val": 45, "color": "#58a6ff"},
-                                        "Réparable":  {"val": 75, "color": "#58a6ff"},
-                                        "Prêt":       {"val": 100, "color": "#238636"}
-                                    }
-                                    p_data = prog_map.get(status, {"val": 20, "color": "#58a6ff"})
-                                    info_html += f"""
-                                    <div style="margin-bottom: 15px;">
-                                        <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
-                                            <span style="color:#c9d1d9; font-size: 0.85rem; font-weight:bold;">🛠️ تقدم عملية الصيانة</span>
-                                            <span style="color:{p_data['color']}; font-weight: bold; font-size: 0.85rem;">{p_data['val']}%</span>
+                                    <div style="margin-bottom: 15px; border: 1px solid #444c56; padding: 12px; border-radius: 10px; background: rgba(255, 215, 0, 0.05); direction: rtl;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
+                                            <div style="color: {b_color}; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                                                <span>🛡️</span>
+                                                <span>{'ضمان سارٍ' if not is_expired else 'ضمان منتهي'} ({w.get('days_left')} يوم)</span>
+                                            </div>
+                                            <span style="color: {b_color}; font-weight: 800; font-family: 'Courier New', monospace;">{int(val)}%</span>
                                         </div>
-                                        <div style="width: 100%; background: #30363d; border-radius: 20px; height: 10px; overflow: hidden; border: 1px solid #444c56;">
-                                            <div style="width: {p_data['val']}%; background: {p_data['color']}; height: 100%; transition: width 1s;"></div>
+                                        <div style="width: 100%; background: #30363d; border-radius: 20px; height: 12px; overflow: hidden; border: 1px solid #444c56; display: flex;">
+                                            <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 0.6s ease; box-shadow: 0 0 10px {b_color if not is_expired else 'transparent'};"></div>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                                            <span style="color: #8b949e; font-size: 0.75rem;">تاريخ الخروج: {w.get('actual_date')}</span>
+                                            <span style="color: #8b949e; font-size: 0.75rem;">نظام 30 يوم</span>
                                         </div>
                                     </div>"""
+                                    
+                        elif status == "Non Réparable":
+                            info_html += f"""
+                            <div style="text-align: center; padding: 15px; background: rgba(248, 81, 73, 0.05); border: 1px dashed #f85149; border-radius: 12px; margin-bottom: 15px;">
+                                <b style="color: #f85149; font-family: 'Cairo', sans-serif;">⚠️ الجهاز غير قابل للتصليح</b>
+                            </div>"""
 
-                        # --- القسم الثاني: جدول البيانات الاحترافي ---
-                                info_html += f"""
-                                <div style="background: rgba(48, 54, 61, 0.2); border-radius: 10px; padding: 12px; border: 1px solid #30363d; direction: rtl;">
-                                    <table style="width:100%; border-collapse: collapse; text-align: right;">
-                                        <tr style="border-bottom: 1px solid #21262d;">
-                                            <td style="padding: 10px 5px; color: #8b949e; font-size: 0.9rem;">📅 تاريخ الدخول</td>
-                                            <td style="text-align: left; color: #f0f6fc; font-weight: 500;">{dev.get('Date_Entree', '---')}</td>
-                                        </tr>
-                                        <tr style="border-bottom: 1px solid #21262d;">
-                                            <td style="padding: 10px 5px; color: #8b949e; font-size: 0.9rem;">📅 تاريخ الخروج</td>
-                                            <td style="text-align: left; color: #f0f6fc; font-weight: 500;">{d_sortie if d_sortie else '---'}</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding: 12px 5px 5px 5px; color: #8b949e; font-size: 0.9rem;">💰 المستحقات</td>
-                                            <td style="text-align: left; color: #ffd700; font-weight: 900; font-size: 1.2rem;">{prix_display}</td>
-                                        </tr>
-                                    </table>
-                                </div>"""
-                                
-                                # عرض كل المحتوى دفعة واحدة
-                                st.markdown(info_html, unsafe_allow_html=True)
+                        elif status != "Annulé":
+                            prog_map = {
+                                "En attente": {"val": 15, "color": "#58a6ff"},
+                                "En Cours":   {"val": 45, "color": "#58a6ff"},
+                                "Réparable":  {"val": 75, "color": "#58a6ff"},
+                                "Prêt":       {"val": 100, "color": "#238636"}
+                            }
+                            p_data = prog_map.get(status, {"val": 20, "color": "#58a6ff"})
+                            info_html += f"""
+                            <div style="margin-bottom: 15px; direction: rtl;">
+                                <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color:#c9d1d9; font-size: 0.9rem; font-weight:bold; font-family: 'Cairo', sans-serif;">🛠️ حالة الصيانة</span>
+                                    <span style="color:{p_data['color']}; font-weight: 800; font-family: 'Orbitron', sans-serif;">{p_data['val']}%</span>
+                                </div>
+                                <div style="width: 100%; background: #30363d; border-radius: 20px; height: 12px; overflow: hidden; border: 1px solid #444c56;">
+                                    <div style="width: {p_data['val']}%; background: {p_data['color']}; height: 100%; transition: width 1s ease-in-out;"></div>
+                                </div>
+                            </div>"""
+
+                        # --- القسم الثاني: جدول البيانات ---
+                        info_html += f"""
+                        <div style="background: rgba(48, 54, 61, 0.3); border-radius: 10px; padding: 12px; border: 1px solid #30363d; direction: rtl;">
+                            <table style="width:100%; border-collapse: collapse; text-align: right; font-family: 'Cairo', sans-serif;">
+                                <tr style="border-bottom: 1px solid #21262d;">
+                                    <td style="padding: 10px 5px; color: #8b949e; font-size: 0.9rem;">📅 تاريخ الدخول</td>
+                                    <td style="text-align: left; color: #f0f6fc; font-weight: 500;">{dev.get('Date_Entree', '---')}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #21262d;">
+                                    <td style="padding: 10px 5px; color: #8b949e; font-size: 0.9rem;">📅 تاريخ الخروج</td>
+                                    <td style="text-align: left; color: #f0f6fc; font-weight: 500;">{d_sortie if d_sortie else '---'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px 5px 5px 5px; color: #8b949e; font-size: 0.9rem;">💰 المستحقات</td>
+                                    <td style="text-align: left; color: #ffd700; font-weight: 900; font-size: 1.25rem;">{prix_display}</td>
+                                </tr>
+                            </table>
+                        </div>"""
+                        
+                        st.markdown(info_html, unsafe_allow_html=True)
 
 # ==============================================================================
 # 7. تشغيل بوت التلغرام (المصحح)
