@@ -195,6 +195,28 @@ st.markdown("""
         background: rgba(210, 153, 34, 0.05) !important;
         direction: rtl !important; /* لضمان الاتجاه من اليمين */
     }
+    
+    /* تنسيق زر البحث ليصبح واضحاً */
+    button[kind="primaryFormSubmit"] {
+        background-color: #58a6ff !important;
+        color: white !important;
+        border: none !important;
+        font-weight: bold !important;
+        margin-top: 10px !important;
+    }
+    button[kind="primaryFormSubmit"]:hover {
+        background-color: #1f6feb !important;
+        box-shadow: 0 0 15px rgba(88, 166, 255, 0.4) !important;
+    }
+    
+    /* تنسيق حقل الإدخال */
+    div[data-baseweb="input"] {
+        background-color: #0d1117 !important;
+        border: 1px solid #30363d !important;
+    }
+    input[data-testid="stTextInputEnterChat"] {
+        color: white !important;
+    }
 
     /* تنسيق العنوان (اضغط هنا...) */
     div[data-testid="stExpander"]:first-of-type summary {
