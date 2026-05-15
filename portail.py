@@ -119,15 +119,15 @@ def get_warranty_stats(date_sortie_str):
     return None
 
 # ==============================================================================
-# 3. التنسيقات البصرية (CSS) - النسخة الاحترافية المنظمة
+# 3. التنسيقات البصرية (CSS) - النسخة النهائية المنظمة
 # ==============================================================================
 st.markdown("""
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
     
     .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
     
+    /* الحاوية الرئيسية */
     .hero-container {
         background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
         border: 1px solid #30363d; border-radius: 15px; padding: 25px;
@@ -140,41 +140,16 @@ st.markdown("""
         text-shadow: 0 0 15px rgba(88, 166, 255, 0.5); margin-bottom: 5px;
     }
 
+    /* أزرار التواصل */
     .custom-btn {
-        display: flex !important; 
-        flex-direction: column !important; 
-        align-items: center !important; 
-        justify-content: center !important;
-        background: rgba(255, 255, 255, 0.05) !important; 
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 15px !important; 
-        padding: 15px !important; 
-        text-decoration: none !important; 
-        color: white !important;
-        transition: 0.3s !important; 
-        min-height: 110px !important; 
-        width: 100% !important; 
-        margin-bottom: 10px !important;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px; padding: 15px; text-decoration: none !important; color: white !important;
+        transition: 0.3s; min-height: 100px; margin-bottom: 10px;
     }
+    .custom-btn:hover { border-color: #58a6ff; background: rgba(88, 166, 255, 0.15); transform: translateY(-3px); }
 
-    .custom-btn:hover {
-        border-color: #58a6ff !important;
-        background: rgba(88, 166, 255, 0.15) !important;
-        transform: translateY(-5px) !important;
-    }
-
-    .custom-btn i {
-        font-size: 2.2rem !important; 
-        margin-bottom: 10px !important; 
-        display: block !important;
-    }
-
-    .custom-btn b {
-        font-size: 0.9rem !important;
-        font-weight: 700 !important;
-        display: block !important;
-    }
-
+    /* أنيميشن الحالة */
     @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.7; } }
     @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; } 50% { opacity: 0.7; } }
     
@@ -182,6 +157,8 @@ st.markdown("""
     .status-open { color: #3fb950; border: 2px solid #3fb950; animation: blink-green 2s infinite; }
     .status-closed { color: #f85149; border: 2px solid #f85149; animation: blink-red 2s infinite; }
 
+
+    /* 1. الستايل العام لكل الأكسباندرز (باش ما يبقاوش كحولة بزاف) */
     div[data-testid="stExpander"] {
         border: 1px solid #30363d !important;
         background: rgba(22, 27, 34, 0.5) !important;
@@ -189,23 +166,27 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
 
+    /* أنيميشن الإضاءة */
     @keyframes yellow-glow {
         0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; }
         50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
     }
 
+    /* استهداف الأكسباندر الأول فقط في الصفحة (اللي هو تاع الشروط) */
+    /* أو استهداف الأكسباندر اللي يحتوي على نص معين */
     div[data-testid="stExpander"]:first-of-type {
         border: 2px solid #d29922 !important;
         animation: yellow-glow 3s infinite ease-in-out !important;
         background: rgba(210, 153, 34, 0.05) !important;
-        direction: rtl !important;
+        direction: rtl !important; /* لضمان الاتجاه من اليمين */
     }
 
+    /* تنسيق العنوان (اضغط هنا...) */
     div[data-testid="stExpander"]:first-of-type summary {
         direction: rtl !important;
         text-align: right !important;
         display: flex !important;
-        flex-direction: row !important;
+        flex-direction: row !important; /* ترتيب العناصر داخله */
         justify-content: flex-start !important;
         gap: 15px !important;
     }
@@ -218,6 +199,7 @@ st.markdown("""
         margin: 0 !important;
     }
     
+    /* إذا حبيت تنحي السهم كامل وتقلبو جهة اليسار */
     div[data-testid="stExpander"] summary {
         flex-direction: row-reverse;
         justify-content: space-between;
@@ -258,20 +240,19 @@ st.markdown(f'''
 ''', unsafe_allow_html=True)
 
 # 2. أزرار التواصل السريع (Quick Actions)
-# توزيع الأزرار في 4 أعمدة
+# استخدمت الأيقونات التي استوردناها في الجزء الثاني
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.markdown('<a href="tel:0798661900" class="custom-btn"><i class="fas fa-phone-alt" style="color: #3fb950;"></i><b>اتصل بنا</b></a>', unsafe_allow_html=True)
-
+    st.markdown('<a href="tel:0798661900" class="custom-btn"><i class="fas fa-phone-alt"></i><b>اتصل بنا</b></a>', unsafe_allow_html=True)
 with col2:
-    st.markdown('<a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="custom-btn"><i class="fas fa-map-marker-alt" style="color: #f85149;"></i><b>موقعنا</b></a>', unsafe_allow_html=True)
-
+    st.markdown('<a href="https://maps.google.com/?q=36.1648,1.3317" target="_blank" class="custom-btn"><i class="fas fa-map-marker-alt"></i><b>موقعنا</b></a>', unsafe_allow_html=True)
 with col3:
-    st.markdown('<a href="https://www.facebook.com/100095433977319/" target="_blank" class="custom-btn"><i class="fab fa-facebook-f" style="color: #1877f2;"></i><b>فيسبوك</b></a>', unsafe_allow_html=True)
-
+    st.markdown('<a href="https://www.facebook.com/100095433977319/" target="_blank" class="custom-btn"><i class="fab fa-facebook-f"></i><b>فيسبوك</b></a>', unsafe_allow_html=True)
 with col4:
-    st.markdown('<a href="https://www.tiktok.com/@infodoc02" target="_blank" class="custom-btn"><i class="fab fa-tiktok" style="color: #ffffff;"></i><b>تيك توك</b></a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://www.tiktok.com/@infodoc02" target="_blank" class="custom-btn"><i class="fab fa-tiktok"></i><b>تيك توك</b></a>', unsafe_allow_html=True)
+
+st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
 # 3. صندوق ملاحظات الصيانة (Maintenance Policy)
 with st.expander("⚠️ ملاحظات وشروط الصيانة الهامة (يرجى القراءة)"):
