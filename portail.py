@@ -214,7 +214,7 @@ st.markdown("""
 # 5. عرض الواجهة العلوية (Header & Hero)
 # ==============================================================================
 
-# الترحيب والوقت
+# حساب الوقت والترحيب
 now = datetime.now()
 current_time = now.strftime("%H:%M")
 if 5 <= now.hour < 12:
@@ -223,24 +223,6 @@ elif 12 <= now.hour < 18:
     greeting = "طاب يومك"
 else:
     greeting = "مساء الخير"
-
-# عرض الواجهة (الترحيب والوقت يساراً و chlef-Algeria يميناً)
-st.markdown(f'''
-    <div class="hero-container">
-        <div style="display: flex; justify-content: space-between; align-items: center; direction: ltr;">
-            <!-- الجانب الأيسر -->
-            <div style="text-align: left;">
-                <div style="font-size: 1.1rem; font-weight: 900; color: #ffffff;">{greeting}</div>
-                <div style="font-size: 0.8rem; color: #8b949e;">{current_time}</div>
-            </div>
-            
-            <!-- الجانب الأيمن -->
-            <div style="text-align: right;">
-                <div style="font-size: 0.9rem; font-weight: bold; color: #58a6ff;">chlef-Algeria</div>
-            </div>
-        </div>
-    </div>
-''', unsafe_allow_html=True)
 
 # استخراج حالة المحل
 try:
