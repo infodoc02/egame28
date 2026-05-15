@@ -370,12 +370,15 @@ if user_phone:
                 # 4. حلقة عرض الأجهزة
                 for dev in my_devices:
                     status = str(dev.get("Statut", "En Cours"))
-                    is_done = "Livré" in status
-                    status_color = "#238636" if status == "Prêt" else "#da3633" if status == "Annulé" else "#6e7681" if is_done else "#58a6ff"
+                    # المنطق: الضمان يشتغل إذا كانت كلمة Livré موجودة في الحالة
+                    is_done = "Livré" in status or "Livre" in status
                     
+                    # تحديد الألوان حسب الحالة (أخضر للجاهز، أحمر للملغي، رمادي للمسلم)
+                    status_color = "#238636" if status == "Prêt" else "#da3633" if status in ["Annulé", "Non Réparable"] else "#6e7681" if is_done else "#58a6ff"
+
                     # المربع الرئيسي (Header)
                     st.markdown(f"""
-                        <div class="device-box" style="border-right: 6px solid {status_color};">
+                        <div class="device-box" style="border-right: 6px solid {status_color}; margin-bottom: 10px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <h3 style="margin:0; color:white;">{dev.get('Appareil')}</h3>
@@ -386,52 +389,148 @@ if user_phone:
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    # الأكورديون (الذي يكمل المربع)
-                    with st.expander("📄 تفاصيل السعر، الضمان والمواعيد"):
-                        # شريط الحالة والضمان
+                    # الأكورديون (التفاصيل)
+                    with st.expander("📄 عرض التفاصيل والمستحقات"):
+                        # 1. حالة الضمان (إذا كان الجهاز مسلماً)
                         if is_done:
-                            warranty = get_warranty_stats(dev.get("Date_Sortie"))
-                            if warranty and not warranty["is_expired"]:
-                                st.write(f"🛡️ الضمان سارٍ: متبقي {int(warranty['days_left'])} يوم")
-                                st.progress(warranty['percent']/100)
+                            w = get_warranty_stats(dev.get("Date_Sortie"))
+                            if w:
+                                val = w.get('percent_left', 0)
+                                is_expired = w.get('is_expired', False)
+                                b_color = "#FFD700" if not is_expired else "#4b4b4b"
+                                
+                                status_text = "🛡️ الضمان سارٍ" if not is_expired else "❌ فترة الضمان منتهية"
+                                days_text = f"المتبقي: {int(w.get('days_left', 0))} يوم" if not is_expired else "انتهت الصلاحية"
+
+                                st.markdown(f"""
+                                    <div style="margin-bottom: 5px;">
+                                        <span style="font-size: 0.9rem; font-weight: bold; color:{b_color};">{status_text}</span>
+                                    </div>
+                                    <div style="width: 100%; background: #30363d; border-radius: 10px; height: 10px; overflow: hidden; border: 1px solid #444c56;">
+                                        <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 1s;"></div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-top: 3px;">
+                                        <span style="font-size: 10px; color: #8b949e;">{days_text}</span>
+                                        <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
+                                    </div>
+                                """, unsafe_allow_html=True)
                             else:
-                                st.error("❌ فترة الضمان منتهية")
+                                st.info("ℹ️ الضمان يبدأ عند تسجيل تاريخ الخروج.")
+
+                        # 2. حالة غير قابل للتصليح
+                        elif status == "Non Réparable":
+                            st.markdown("""
+                                <div style="text-align: center; padding: 15px; border: 1px dashed #f85149; border-radius: 12px; background: rgba(248, 81, 73, 0.05);">
+                                    <span style="font-size: 1.5rem;">🥀</span><br>
+                                    <b style="color: #f85149;">نعتذر، الجهاز غير قابل للتصليح</b><br>
+                                    <small style="color: #8b949e;">يمكنك استلام جهازك من المحل</small>
+                                </div>
+                            """, unsafe_allow_html=True)
+
+                        # 3. حالات الصيانة (شريط التقدم العادي)
                         else:
                             st.write("🛠️ حالة الصيانة الحالية:")
-                            p_level = 0.3 if status == "En Cours" else 0.7 if status == "Réparable" else 1.0
+                            p_level = 0.33 if status == "En Cours" else 0.66 if status == "Réparable" else 1.0 if status == "Prêt" else 0.1
                             st.progress(p_level)
-                        
+
                         # جدول البيانات المالي والزمني
                         st.markdown(f"""
-                            <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 10px; margin: 10px 0; border: 1px solid #30363d;">
-                                <table style="width: 100%; text-align: center; border-collapse: collapse;">
-                                    <tr>
-                                        <td style="color: #8b949e; padding: 5px;">تاريخ الاستلام</td>
-                                        <td style="color: #8b949e; padding: 5px;">تاريخ التسليم</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight: bold;">{dev.get('Date_Entree')}</td>
-                                        <td style="font-weight: bold;">{dev.get('Date_Sortie', '---')}</td>
-                                    </tr>
-                                </table>
-                                <div style="text-align: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid #333;">
-                                    <span style="font-size: 1.3rem; color: #58a6ff; font-weight: 900;">السعر الإجمالي: {dev.get('Prix')} دج</span>
+                            <table style="width:100%; margin-top: 15px; border-collapse: collapse;">
+                                <tr style="border-bottom: 1px solid #30363d;">
+                                    <td style="padding: 8px; color: #8b949e;">📅 تاريخ الدخول</td>
+                                    <td style="text-align: left;">{dev.get('Date_Entree', '---')}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #30363d;">
+                                    <td style="padding: 8px; color: #8b949e;">📅 تاريخ الخروج</td>
+                                    <td style="text-align: left;">{dev.get('Date_Sortie', '---')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; color: #8b949e;">💰 المبلغ الإجمالي</td>
+                                    <td style="text-align: left; color: #58a6ff; font-weight: 900; font-size: 1.1rem;">{dev.get('Prix', '0')} DZD</td>
+                                </tr>
+                            </table>
+                        """, unsafe_allow_html=True)
+                    
+                    # 4. حلقة عرض الأجهزة
+                    for dev in my_devices:
+                        status = str(dev.get("Statut", "En Cours"))
+                        # المنطق القديم: الضمان يشتغل إذا كانت كلمة Livré موجودة في الحالة
+                        is_done = "Livré" in status or "Livre" in status
+                        
+                        # تحديد الألوان حسب الحالة
+                        status_color = "#238636" if status == "Prêt" else "#da3633" if status in ["Annulé", "Non Réparable"] else "#6e7681" if is_done else "#58a6ff"
+
+                        # المربع الرئيسي (Header) - التصميم الاحترافي
+                        st.markdown(f"""
+                            <div class="device-box" style="border-right: 6px solid {status_color}; margin-bottom: 10px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <h3 style="margin:0; color:white;">{dev.get('Appareil')}</h3>
+                                        <small style="color:#8b949e;">رقم الوصل: #{dev.get('ID')}</small>
+                                    </div>
+                                    <span class="badge-label" style="background:{status_color}; color:white;">{status.upper()}</span>
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
                         
-                        # زر تحميل الفاتورة
-                        try:
-                            pdf_data = pd.DataFrame([{"رقم": dev.get('ID'), "الجهاز": dev.get('Appareil'), "السعر": dev.get('Prix')}])
-                            excel_buf = io.BytesIO()
-                            with pd.ExcelWriter(excel_buf, engine='xlsxwriter') as wr:
-                                pdf_data.to_excel(wr, index=False)
-                            st.download_button(
-                                label=f"📥 تحميل وصل {dev.get('Appareil')}",
-                                data=excel_buf.getvalue(),
-                                file_name=f"InfoDoc_{dev.get('ID')}.xlsx",
-                                key=f"dl_{dev.get('_id')}"
-                            )
-                        except:
-                            pass
+                        # الأكورديون (التفاصيل)
+                        with st.expander("📄 عرض التفاصيل والمستحقات"):
+                            # 1. حالة الضمان (إذا كان الجهاز مسلماً)
+                            if is_done:
+                                w = get_warranty_stats(dev.get("Date_Sortie"))
+                                if w:
+                                    val = w.get('percent_left', 0)
+                                    is_expired = w.get('is_expired', False)
+                                    b_color = "#FFD700" if not is_expired else "#4b4b4b"
+                                    
+                                    status_text = "🛡️ الضمان سارٍ" if not is_expired else "❌ فترة الضمان منتهية"
+                                    days_text = f"المتبقي: {int(w.get('days_left', 0))} يوم" if not is_expired else "انتهت الصلاحية"
+
+                                    st.markdown(f"""
+                                        <div style="margin-bottom: 5px;">
+                                            <span style="font-size: 0.9rem; font-weight: bold; color:{b_color};">{status_text}</span>
+                                        </div>
+                                        <div style="width: 100%; background: #30363d; border-radius: 10px; height: 10px; overflow: hidden;">
+                                            <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 1s;"></div>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; margin-top: 3px;">
+                                            <span style="font-size: 10px; color: #8b949e;">{days_text}</span>
+                                            <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
+                                        </div>
+                                    """, unsafe_allow_html=True)
+                                else:
+                                    st.info("ℹ️ الضمان يبدأ عند تسجيل تاريخ الخروج.")
+
+                            # 2. حالة غير قابل للتصليح
+                            elif status == "Non Réparable":
+                                st.markdown("""
+                                    <div style="text-align: center; padding: 10px; border: 1px dashed #f85149; border-radius: 10px;">
+                                        <span style="font-size: 1.5rem;">🥀</span><br>
+                                        <b style="color: #f85149;">نعتذر، الجهاز غير قابل للتصليح</b>
+                                    </div>
+                                """, unsafe_allow_html=True)
+
+                            # 3. حالات الصيانة (التقدم)
+                            else:
+                                st.write("🛠️ حالة الصيانة الحالية:")
+                                p_level = 0.33 if status == "En Cours" else 0.66 if status == "Réparable" else 1.0 if status == "Prêt" else 0.1
+                                st.progress(p_level)
+
+                            # جدول البيانات المالي والزمني (التصميم الجديد)
+                            st.markdown(f"""
+                                <table style="width:100%; margin-top: 15px; border-collapse: collapse;">
+                                    <tr style="border-bottom: 1px solid #30363d;">
+                                        <td style="padding: 8px; color: #8b949e;">📅 دخول</td>
+                                        <td style="text-align: left;">{dev.get('Date_Entree')}</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #30363d;">
+                                        <td style="padding: 8px; color: #8b949e;">📅 خروج</td>
+                                        <td style="text-align: left;">{dev.get('Date_Sortie', '---')}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; color: #8b949e;">💰 الإجمالي</td>
+                                        <td style="text-align: left; color: #58a6ff; font-weight: 900; font-size: 1.1rem;">{dev.get('Prix')} DZD</td>
+                                    </tr>
+                                </table>
+                            """, unsafe_allow_html=True)
                         
