@@ -227,20 +227,15 @@ try:
 except Exception:
     shop_status = True # افتراضياً مفتوح إذا فشل الاتصال
 
-# 1. عرض الهيرو (Hero Section)
+# 4. واجهة الهيدر
 st.markdown(f'''
     <div class="hero-container">
-        <div style="color: #8b949e; font-size: 0.9rem; margin-bottom: 10px;">
-            <i class="far fa-clock"></i> {greeting} | {now.strftime("%d/%m/%Y - %H:%M")}
-        </div>
+        <div style="color: #8b949e; font-size: 0.9rem;">{greeting} | {now.strftime("%Y-%m-%d %H:%M")}</div>
         <div class="main-title">INFODOC</div>
-        <div class="sub-title">Vente & Réparation Informatique</div>
-        
-        <div style="margin-top: 20px;">
-            <span class="status-badge {'status-open' if shop_status else 'status-closed'}">
-                {'<i class="fas fa-door-open"></i> مـفـتـوح الآن' if shop_status else '<i class="fas fa-door-closed"></i> مـغـلـق حـالـيـاً'}
-            </span>
-        </div>
+        <div class="sub-title" style="color: #8b949e; margin-bottom: 20px;">Vente & Réparation Informatique</div>
+        <span class="status-badge {'status-open' if shop_status else 'status-closed'}">
+            {'● OPEN - مـفـتـوح' if shop_status else '● CLOSED - مـغـلـق'}
+        </span>
     </div>
 ''', unsafe_allow_html=True)
 
