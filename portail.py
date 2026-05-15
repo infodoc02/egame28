@@ -472,51 +472,81 @@ if submit_search and user_phone:
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    # 2. تفاصيل الجهاز
+                    # 2. تفاصيل الجهاز (داخل الـ expander)
                     with st.expander("📄 عرض التفاصيل والمستحقات"):
                         d_sortie = dev.get("Date_Sortie")
                         
-                        # عرض الضمان في حالة التسليم فقط
-                        if is_delivered and d_sortie and d_sortie != "---":
+                        # --- القسم الأول: أشرطة الحالة (الضمان أو التقدم) ---
+                        if is_delivered:
+                            # عرض شريط الضمان الذهبي للأجهزة المستلمة
                             w = get_warranty_stats(d_sortie)
                             if w:
                                 val = w.get('percent_left', 0)
                                 is_expired = w.get('is_expired', False)
-                                b_color = "#FFD700" if not is_expired else "#4b4b4b"
+                                b_color = "#FFD700" if not is_expired else "#4b4b4b" # ذهبي للضمان
                                 
-                                status_text = f"<span style='color: #3fb950;'>🛡️ الضمان سارٍ (باقي {w.get('days_left')} يوم)</span>" if not is_expired else "<del style='color: #f85149;'>❌ فترة الضمان منتهية</del>"
+                                status_text = f"<span style='color: #3fb950;'>🛡️ الضمان سارٍ (باقي {w.get('days_left')} يوم)</span>" if not is_expired else "<span style='color: #f85149;'>❌ فترة الضمان منتهية</span>"
                                 
                                 st.markdown(f"""
-                                    <div style="margin-bottom: 5px;"><span style="font-size: 0.9rem; font-weight: bold;">{status_text}</span></div>
-                                    <div style="width: 100%; background: #30363d; border-radius: 10px; height: 12px; overflow: hidden; border: 1px solid #444c56;">
-                                        <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 1s ease-in-out;"></div>
+                                    <div style="margin-bottom: 5px; font-weight: bold; font-size: 0.9rem;">{status_text}</div>
+                                    <div style="width: 100%; background: #30363d; border-radius: 20px; height: 10px; overflow: hidden; border: 1px solid #444c56; margin-bottom: 4px;">
+                                        <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 0.8s ease-in-out;"></div>
                                     </div>
-                                    <div style="display: flex; justify-content: space-between; margin-top: 3px;">
-                                        <span style="font-size: 10px; color: #8b949e;">خروج: {d_sortie}</span>
-                                        <span style="font-size: 10px; color: {b_color}; font-weight: bold;">{int(val)}%</span>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <span style="font-size: 0.8rem; color: #8b949e;">تاريخ الخروج: {d_sortie}</span>
+                                        <span style="font-size: 0.85rem; color: {b_color}; font-weight: bold;">{int(val)}%</span>
                                     </div>
                                 """, unsafe_allow_html=True)
-                        
+                            else:
+                                st.info(f"⏳ في انتظار تفعيل الضمان (التاريخ: {d_sortie})")
 
-                        # عرض شريط التقدم للأجهزة التي لا تزال في المحل
-                        elif status not in ["Non Réparable", "Annulé"] and not is_delivered:
-                            prog_map = {"En attente": 0.1, "En Cours": 0.4, "Réparable": 0.7, "Prêt": 1.0}
-                            p_val = prog_map.get(status, 0.2)
-                            st.write(f"🛠️ تقدم الصيانة:")
-                            st.progress(p_val)
+                        elif status == "Non Réparable":
+                            # حالة الجهاز غير القابل للتصليح
+                            st.markdown(f"""
+                                <div style="text-align: center; padding: 15px; background: rgba(248, 81, 73, 0.05); border: 1.5px dashed #f85149; border-radius: 12px; margin-bottom: 10px;">
+                                    <div style="font-size: 2rem; margin-bottom: 5px;">⚠️</div>
+                                    <b style="color: #f85149;">نعتذر، الجهاز غير قابل للتصليح</b>
+                                </div>
+                            """, unsafe_allow_html=True)
 
-                        # جدول البيانات النهائي
+                        elif status != "Annulé":
+                            # شريط تقدم الصيانة (أزرق أثناء العمل، أخضر عند الجاهزية)
+                            prog_map = {
+                                "En attente": {"val": 15, "color": "#58a6ff"},
+                                "En Cours":   {"val": 45, "color": "#58a6ff"},
+                                "Réparable":  {"val": 75, "color": "#58a6ff"},
+                                "Prêt":       {"val": 100, "color": "#238636"} # أخضر عند الاكتمال
+                            }
+                            p_data = prog_map.get(status, {"val": 20, "color": "#58a6ff"})
+                            
+                            st.markdown(f"""
+                                <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
+                                    <span style="color:#c9d1d9; font-weight: 500; font-size: 0.9rem;">🛠️ تقدم عملية الصيانة</span>
+                                    <span style="color:{p_data['color']}; font-weight: bold; font-size: 0.9rem;">{p_data['val']}%</span>
+                                </div>
+                                <div style="width: 100%; background: #30363d; border-radius: 20px; height: 10px; overflow: hidden; border: 1px solid #444c56; margin-bottom: 15px;">
+                                    <div style="width: {p_data['val']}%; background: {p_data['color']}; height: 100%; transition: width 1s ease-in-out;"></div>
+                                </div>
+                            """, unsafe_allow_html=True)
+
+                        # --- القسم الثاني: جدول البيانات الموحد بتصميم احترافي ---
                         st.markdown(f"""
-                            <table style="width:100%; margin-top: 15px; border-collapse: collapse;">
-                                <tr style="border-bottom: 1px solid #30363d;">
-                                    <td style="padding: 8px; color: #8b949e;">📅 تاريخ الدخول</td>
-                                    <td style="text-align: left;">{dev.get('Date_Entree', '---')}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 8px; color: #8b949e;">💰 المبلغ المستحق</td>
-                                    <td style="text-align: left; color: #58a6ff; font-weight: 900;">{prix_display}</td>
-                                </tr>
-                            </table>
+                            <div style="background: rgba(48, 54, 61, 0.3); border-radius: 10px; padding: 12px; border: 1px solid #30363d;">
+                                <table style="width:100%; border-collapse: collapse; direction: rtl;">
+                                    <tr style="border-bottom: 1px solid #444c56;">
+                                        <td style="padding: 8px 0; color: #8b949e; font-size: 0.85rem;">📅 تاريخ الدخول</td>
+                                        <td style="text-align: left; padding: 8px 0; font-weight: 500; font-size: 0.9rem;">{dev.get('Date_Entree', '---')}</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #444c56;">
+                                        <td style="padding: 8px 0; color: #8b949e; font-size: 0.85rem;">📅 تاريخ الخروج</td>
+                                        <td style="text-align: left; padding: 8px 0; font-weight: 500; font-size: 0.9rem;">{d_sortie if d_sortie else '---'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px 0 0 0; color: #8b949e; font-size: 0.85rem;">💰 المبلغ المستحق</td>
+                                        <td style="text-align: left; padding: 10px 0 0 0; color: #58a6ff; font-weight: 900; font-size: 1.1rem;">{prix_display}</td>
+                                    </tr>
+                                </table>
+                            </div>
                         """, unsafe_allow_html=True)
 
 # ==============================================================================
