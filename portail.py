@@ -46,7 +46,7 @@ def init_db():
                 
             cred_dict = dict(st.secrets["firebase"])
             
-            # معالجة الرموز الخاصة بالمفتاح السري (مهمة جداً في ��لاستضافة)
+            # معالجة الرموز الخاصة بالمفتاح السري (مهمة جداً في الاستضافة)
             if "\\n" in cred_dict.get("private_key", ""):
                 cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
             
@@ -78,31 +78,26 @@ def get_client_ip():
     return "UNKNOWN"
 
 def hash_ip(ip: str) -> str:
-    """تشفير IP للحفاظ على الخصوصية مع الاحتفاظ بالقيمة المميزة."""
+    """تشفير IP للحفاظ على الخصوصية."""
     return hashlib.sha256(ip.encode()).hexdigest()[:16]
 
 def track_visitor():
     """تسجيل زيارة الزائر في Firebase."""
     try:
-        # الحصول على IP
         ip_address = get_client_ip()
         ip_hash = hash_ip(ip_address)
         
-        # الحصول على الوقت الحالي بتوقيت الجزائر
         algeria_tz = pytz.timezone('Africa/Algiers')
         visit_time = datetime.now(algeria_tz).isoformat()
         
-        # البيانات المراد حفظها
         visit_data = {
             "ip_hash": ip_hash,
             "timestamp": visit_time,
             "session_id": st.session_state.get("session_id", "UNKNOWN")
         }
         
-        # حفظ في Firebase تحت مسار الزوار
         ref = db.reference("visitors")
         ref.push(visit_data)
-        
         return True
     except Exception as e:
         print(f"❌ خطأ في تسجيل الزيارة: {e}")
@@ -123,11 +118,9 @@ def get_visitor_stats():
                 "recent_visits": []
             }
         
-        # معالجة البيانات
         total_visits = len(visitors)
         unique_ips = len(set(v.get("ip_hash") for v in visitors.values() if v))
         
-        # حساب الزيارات اليومية
         algeria_tz = pytz.timezone('Africa/Algiers')
         today = datetime.now(algeria_tz).date()
         today_visits = 0
@@ -143,7 +136,6 @@ def get_visitor_stats():
                 except:
                     pass
         
-        # أحدث الزيارات
         recent = sorted(
             [v for v in visitors.values() if v],
             key=lambda x: x.get("timestamp", ""),
@@ -166,7 +158,6 @@ def init_visitor_tracking():
     if "session_id" not in st.session_state:
         st.session_state["session_id"] = str(uuid.uuid4())
     
-    # تسجيل الزيارة
     track_visitor()
 
 # تهيئة النظام
@@ -179,16 +170,13 @@ init_visitor_tracking()
 def normalize_phone(phone: str) -> str:
     """تنسيق رقم الهاتف الجزائري ليصبح بصيغة 0XXXXXXXXX."""
     if not phone: return ""
-    # حذف كل ما هو ليس رقماً
     p = re.sub(r"\D", "", str(phone))
     
-    # معالجة المقدمة الدولية
     if p.startswith("213"):
         p = "0" + p[3:]
     elif p.startswith("00213"):
         p = "0" + p[5:]
     
-    # التأكد من أن الرقم يبدأ بـ 0 وطوله 10
     if len(p) == 9 and p[0] in ["5", "6", "7"]:
         p = "0" + p
         
@@ -203,7 +191,6 @@ def get_warranty_stats(date_sortie_str):
     if not date_sortie_str or str(date_sortie_str).strip() in ["", "---", "None"]:
         return None
     
-    # قائمة الصيغ المحتملة للتواريخ
     date_formats = [
         "%Y-%m-%d %H:%M", "%d-%m-%Y %H:%M", 
         "%Y-%m-%d", "%d-%m-%Y", 
@@ -234,7 +221,7 @@ def get_warranty_stats(date_sortie_str):
     return None
 
 def get_status_priority(status):
-    """دالة تحديد الأولوية للحالات (Livré في الآخر)."""
+    """دالة تحديد الأولوية (Livré يجب أن يكون في الآخر)"""
     s = str(status).strip()
     if s == "Prêt": return 1
     elif s == "Annulé": return 2
@@ -242,11 +229,11 @@ def get_status_priority(status):
     elif s == "Réparable": return 4
     elif s == "En Cours": return 5
     elif s == "En Attente": return 6
-    elif "Livré" in s: return 99  # يجب أن يكون في الآخر
+    elif "Livré" in s: return 99  # الأخير
     else: return 98
 
 # ==============================================================================
-# 5. التنسيقات البصرية (CSS) - النسخة النهائية المنظمة
+# 5. التنسيقات البصرية (CSS)
 # ==============================================================================
 st.markdown("""
     <style>
@@ -254,7 +241,6 @@ st.markdown("""
     
     .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
     
-    /* الحاوية الرئيسية */
     .hero-container {
         background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
         border: 1px solid #30363d; border-radius: 15px; padding: 25px;
@@ -267,7 +253,6 @@ st.markdown("""
         text-shadow: 0 0 15px rgba(88, 166, 255, 0.5); margin-bottom: 5px;
     }
 
-    /* أزرار التواصل */
     .custom-btn {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
@@ -276,7 +261,6 @@ st.markdown("""
     }
     .custom-btn:hover { border-color: #58a6ff; background: rgba(88, 166, 255, 0.15); transform: translateY(-3px); }
 
-    /* أنيميشن الحالة */
     @keyframes blink-green { 0%, 100% { box-shadow: 0 0 15px #3fb950; } 50% { opacity: 0.7; } }
     @keyframes blink-red { 0%, 100% { box-shadow: 0 0 15px #f85149; } 50% { opacity: 0.7; } }
     
@@ -284,7 +268,6 @@ st.markdown("""
     .status-open { color: #3fb950; border: 2px solid #3fb950; animation: blink-green 2s infinite; }
     .status-closed { color: #f85149; border: 2px solid #f85149; animation: blink-red 2s infinite; }
 
-    /* الستايل العام لكل الأكسباندرز */
     div[data-testid="stExpander"] {
         border: 1px solid #30363d !important;
         background: rgba(22, 27, 34, 0.5) !important;
@@ -292,13 +275,11 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
 
-    /* أنيميشن الإضاءة */
     @keyframes yellow-glow {
         0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; }
         50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
     }
 
-    /* استهداف الأكسباندر الأول فقط في الصفحة */
     div[data-testid="stExpander"]:first-of-type {
         border: 2px solid #d29922 !important;
         animation: yellow-glow 3s infinite ease-in-out !important;
@@ -306,14 +287,12 @@ st.markdown("""
         direction: rtl !important;
     }
     
-    /* تحسين شكل حقل الإدخال */
     input[aria-label=""] {
         color: white !important;
         background-color: #1c2128 !important;
         border: 1px solid #444c56 !important;
     }
     
-    /* إصلاح زر البحث (Submit Button) */
     button[kind="primaryFormSubmit"] {
         background-color: #58a6ff !important;
         color: white !important;
@@ -329,13 +308,11 @@ st.markdown("""
         box-shadow: 0 0 10px rgba(88, 166, 255, 0.5) !important;
     }
 
-    /* إخفاء حدود النموذج الافتر��ضية */
     div[data-testid="stForm"] {
         border: none !important;
         padding: 0 !important;
     }
 
-    /* تنسيق العنوان */
     div[data-testid="stExpander"]:first-of-type summary {
         direction: rtl !important;
         text-align: right !important;
@@ -364,12 +341,10 @@ st.markdown("""
 # 6. واجهة المستخدم (UI)
 # ==============================================================================
 
-# الهيدر
 algeria_tz = pytz.timezone('Africa/Algiers')
 now = datetime.now(algeria_tz)
 greeting = "عزيزي الزبون صباح الخير" if 5 <= now.hour < 12 else "عزيزي الزبون مساء الخير"
 
-# جلب الحالة من قاعدة البيانات
 try:
     shop_status = db.reference("shop_settings/is_open").get()
     if shop_status is None:
@@ -377,7 +352,6 @@ try:
 except Exception as e:
     shop_status = False
 
-# واجهة الهيدر
 st.markdown(f'''
     <div class="hero-container">
         <div style="color: #8b949e; font-size: 0.9rem;">{greeting} | {now.strftime("%Y-%m-%d %H:%M")}</div>
@@ -389,7 +363,6 @@ st.markdown(f'''
     </div>
 ''', unsafe_allow_html=True)
 
-# أزرار التواصل
 st.markdown("""
     <style>
     .custom-btn {
@@ -432,21 +405,16 @@ with c3:
 with c4: 
     st.markdown('<a href="https://tiktok.com/@infodoc02/" target="_blank" class="custom-btn"><span>📱</span><b>تيك توك</b></a>', unsafe_allow_html=True)
 
-# قسم الشروط
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
-    st.markdown("""
-        <div style="text-align: right; direction: rtl; font-family: 'Cairo'; line-height: 1.8; color: #f0f6fc;">
-            <p>1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<b>رفض الزبون ذلك</b>، يتم دفع <b>1000 دج</b> ثمن الجهد والفحص.</p>
-            <p>2️⃣ أسعار العمل على <b>البطاقة الأم (Carte Mère)</b> تبدأ من <b>3000 دج</b>.</p>
-            <p>3️⃣ أسعار <b>تفليش وفتح البيوس (Flash BIOS)</b> تبدأ من <b>1500 دج</b> حسب نوع الجهاز وجيله.</p>
-            <p>4️⃣ <b>الموافقة التلقائية:</b> نصلح مباشرة إذا كان السعر بين 3000 و 4000 دج. فوق ذلك نطلب موافقتك أولاً.</p>
-            <p>5️⃣ <b>سياسة الضمان:</b> الضمان صالح <b>فقط</b> على العنصر الذي تم إصلاحه، وأي خلل يمس عنصراً آخر خلال فترة الضمان غير مشمول.</p>
-            <p>6️⃣ <b>تنبيهات تلقائية:</b> ننصحك بتحميل تطبيق <b>Telegram</b> وفتح حساب فيه، ثم الضغط على الزر الأزرق العائم لتفعيل الإشعارات.</p>
-        </div>
-    """, unsafe_allow_html=True)
+    st.write("1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح ورفض الزبون ذلك، يتم دفع **1000 دج** ثمن الجهد والفحص.")
+    st.write("2️⃣ أسعار العمل على **البطاقة الأم (Carte Mère)** تبدأ من **3000 دج**.")
+    st.write("3️⃣ أسعار **تفليش وفتح البيوس (Flash BIOS)** تبدأ من **1500 دج** حسب نوع الجهاز وجيله.")
+    st.write("4️⃣ **الموافقة التلقائية:** نصلح مباشرة إذا كان السعر بين 3000 و 4000 دج. فوق ذلك نطلب موافقتك أولاً.")
+    st.write("5️⃣ **سياسة الضمان:** الضمان صالح **فقط** على العنصر الذي تم إصلاحه، وأي خلل يمس عنصراً آخر غير مشمول.")
+    st.write("6️⃣ **تنبيهات تلقائية:** ننصحك بتحميل تطبيق **Telegram** وتفعيل الإشعارات من خلال الزر الأزرق العائم.")
 
 # ==============================================================================
-# 7. نظام البحث والتتبع (Search & Tracking System)
+# 7. نظام البحث والتتبع
 # ==============================================================================
 
 st.markdown("""
@@ -477,114 +445,30 @@ st.markdown("""
         border: 2px solid rgba(255,255,255,0.1);
     }
 
-    .device-card {
-        border-right: 6px solid;
-        padding: 12px;
-        background: #161b22;
-        border-radius: 10px;
-        margin-bottom: 8px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+    .details-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #161b22; border-radius: 8px; overflow: hidden; }
+    .details-table td { padding: 12px; border-bottom: 1px solid #30363d; text-align: center; color: #c9d1d9; }
+    .details-table td:first-child { border-left: 1px solid #30363d; font-weight: bold; color: #8b949e; text-align: right; width: 40%; }
 
-    .device-title { 
-        margin: 0;
-        color: #ffffff;
-        font-family: 'Cairo', sans-serif;
-        font-size: 1.1rem;
-        font-weight: 900;
+    .details-table td { 
+        padding: 15px !important; 
+        color: #f0f6fc !important; 
+        font-size: 1rem !important;
+        font-family: 'Cairo', sans-serif !important;
     }
     
-    .device-id { 
-        color: #8b949e;
-        font-size: 0.8rem;
-        font-family: monospace;
-    }
-    
-    .status-badge-card {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        color: white;
+    .details-table td:first-child { 
+        font-weight: 700 !important; 
+        color: #8b949e !important; 
+        background: rgba(255,255,255,0.03);
     }
 
-    .expander-content {
-        padding: 15px;
-        direction: rtl;
-        font-family: 'Cairo', sans-serif;
-    }
-
-    .warranty-bar {
-        margin-bottom: 15px;
-        border: 1px solid #444c56;
-        padding: 12px;
-        border-radius: 10px;
-        background: rgba(255, 215, 0, 0.05);
-    }
-
-    .progress-bar {
-        width: 100%;
-        background: #30363d;
-        border-radius: 20px;
-        height: 12px;
-        overflow: hidden;
-        border: 1px solid #444c56;
-    }
-
-    .progress-fill {
-        height: 100%;
-    }
-
-    .details-info {
-        background: rgba(22, 27, 34, 0.5);
-        border-radius: 10px;
-        padding: 12px;
-        border: 1px solid #30363d;
-        margin-top: 10px;
-    }
-
-    .info-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid #21262d;
-        color: #f0f6fc;
-    }
-
-    .info-label {
-        color: #8b949e;
-        font-size: 0.9rem;
-        font-weight: 600;
-    }
-
-    .info-value {
-        color: #f0f6fc;
-        font-weight: 500;
-    }
-
-    .price-row {
-        padding: 10px 0 0 0;
-    }
-
-    .price-value {
-        color: #ffd700;
-        font-weight: 900;
-        font-size: 1.2rem;
-    }
-
-    p {
+    p, span, label {
         font-family: 'Cairo', sans-serif !important;
         font-weight: 600;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# نموذج البحث
 with st.form("search_form", clear_on_submit=False):
     user_phone = st.text_input("", placeholder="0XXXXXXXXX", label_visibility="collapsed")
     submit_search = st.form_submit_button("🔍 ابحث عن أجهزتي")
@@ -599,7 +483,6 @@ if submit_search and user_phone:
             raw_data = db_ref.get()
             
             if raw_data:
-                # تصفية الأجهزة المرتبطة بالرقم
                 my_devices = [
                     dict(v, _id=k) for k, v in raw_data.items() 
                     if normalize_phone(v.get("Telephone", "")).endswith(norm_phone[-9:])
@@ -608,7 +491,6 @@ if submit_search and user_phone:
                 if not my_devices:
                     st.warning("⚠️ لم نجد أي جهاز مرتبط بهذا الرقم في قاعدة بياناتنا.")
                 else:
-                    # زر التلغرام
                     bot_user = st.secrets.get("BOT_USERNAME", "InfoDocBot")
                     st.markdown(f'''
                         <a href="https://t.me/{bot_user}?start={norm_phone}" target="_blank" class="floating-tg-btn">
@@ -616,7 +498,6 @@ if submit_search and user_phone:
                         </a>
                     ''', unsafe_allow_html=True)
                 
-                    # ترتيب الأجهزة حسب الأولوية
                     my_devices.sort(
                         key=lambda x: (
                             get_status_priority(x.get("Statut", "En Cours")), 
@@ -624,12 +505,10 @@ if submit_search and user_phone:
                         )
                     )
                     
-                    # عرض الأجهزة
                     for dev in my_devices:
                         status = str(dev.get("Statut", "En Cours"))
                         is_delivered = any(word in status for word in ["Livré", "Livre", "payé"])
                         
-                        # تحديد الألوان و��لأيقونات
                         if status == "Prêt":
                             status_color, status_icon = "#238636", "✅"
                         elif status == "Annulé":
@@ -641,28 +520,24 @@ if submit_search and user_phone:
                         else:
                             status_color, status_icon = "#58a6ff", "⏳"
 
-                        # عرض السعر
                         raw_prix = dev.get('Prix', 0)
                         prix_display = f"{raw_prix} د.ج" if raw_prix and str(raw_prix).replace('.','').isdigit() and float(raw_prix) > 0 else "قيد التقييم..."
 
-                        # رأس البطاقة
                         st.markdown(f"""
-                            <div class="device-card" style="border-right-color: {status_color};">
+                            <div style="border-right: 6px solid {status_color}; padding: 12px; background: #161b22; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <h3 class="device-title">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
-                                    <div class="device-id">Ticket #{dev.get('ID', '0000')}</div>
+                                    <h3 style="margin: 0; color: #f0f6fc; font-size: 1.1rem;">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
+                                    <div style="color: #8b949e; font-size: 0.8rem; font-family: monospace;">Ticket #{dev.get('ID', '0000')}</div>
                                 </div>
-                                <div class="status-badge-card" style="background-color: {status_color};">
+                                <div style="background-color: {status_color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 5px;">
                                     {status_icon} {status}
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
                         
-                        # التفاصيل
                         with st.expander("📄 عرض التفاصيل والمستحقات"):
                             d_sortie = dev.get("Date_Sortie")
                             
-                            # أشرطة الحالة
                             if is_delivered:
                                 if d_sortie and str(d_sortie).strip() not in ["", "---", "None"]:
                                     w = get_warranty_stats(d_sortie)
@@ -672,7 +547,7 @@ if submit_search and user_phone:
                                         b_color = "#FFD700" if not is_expired else "#6e7681"
                                         
                                         st.markdown(f"""
-                                        <div class="warranty-bar">
+                                        <div style="margin-bottom: 15px; border: 1px solid #444c56; padding: 12px; border-radius: 10px; background: rgba(255, 215, 0, 0.05); clear: both; display: block;">
                                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
                                                 <div style="color: {b_color}; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
                                                     <span>🛡️</span>
@@ -680,8 +555,8 @@ if submit_search and user_phone:
                                                 </div>
                                                 <span style="color: {b_color}; font-weight: 800; font-family: monospace;">{int(val)}%</span>
                                             </div>
-                                            <div class="progress-bar">
-                                                <div class="progress-fill" style="width: {val}%; background: {b_color};"></div>
+                                            <div style="width: 100%; background: #30363d; border-radius: 20px; height: 12px; overflow: hidden; border: 1px solid #444c56;">
+                                                <div style="width: {val}%; background: {b_color}; height: 100%;"></div>
                                             </div>
                                             <div style="display: flex; justify-content: space-between; margin-top: 8px; color: #8b949e; font-size: 0.75rem;">
                                                 <span>الخروج: {w.get('actual_date')}</span>
@@ -691,7 +566,7 @@ if submit_search and user_phone:
                                         
                             elif status == "Non Réparable":
                                 st.markdown("""
-                                <div style="text-align: center; padding: 12px; background: rgba(248, 81, 73, 0.1); border: 1px dashed #f85149; border-radius: 10px; margin-bottom: 15px;">
+                                <div style="text-align: center; padding: 12px; background: rgba(248, 81, 73, 0.1); border: 1px dashed #f85149; border-radius: 10px; margin-bottom: 15px; display: block; clear: both;">
                                     <b style="color: #f85149;">⚠️ الجهاز غير قابل للتصليح</b>
                                 </div>""", unsafe_allow_html=True)
 
@@ -704,31 +579,32 @@ if submit_search and user_phone:
                                 }
                                 p_data = prog_map.get(status, {"val": 20, "color": "#58a6ff"})
                                 st.markdown(f"""
-                                <div style="margin-bottom: 15px;">
+                                <div style="margin-bottom: 15px; display: block; clear: both;">
                                     <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
                                         <span style="color:#c9d1d9; font-size: 0.85rem; font-weight:bold;">🛠️ حالة الصيانة</span>
                                         <span style="color:{p_data['color']}; font-weight: 800;">{p_data['val']}%</span>
                                     </div>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: {p_data['val']}%; background: {p_data['color']};"></div>
+                                    <div style="width: 100%; background: #30363d; border-radius: 20px; height: 10px; overflow: hidden; border: 1px solid #444c56;">
+                                        <div style="width: {p_data['val']}%; background: {p_data['color']}; height: 100%;"></div>
                                     </div>
                                 </div>""", unsafe_allow_html=True)
 
-                            # الجدول
                             st.markdown(f"""
-                            <div class="details-info">
-                                <div class="info-row">
-                                    <span class="info-label">📅 تاريخ الدخول</span>
-                                    <span class="info-value">{dev.get('Date_Entree', '---')}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="info-label">📅 تاريخ الخروج</span>
-                                    <span class="info-value">{d_sortie if d_sortie else '---'}</span>
-                                </div>
-                                <div class="info-row price-row">
-                                    <span class="info-label">💰 المستحقات</span>
-                                    <span class="price-value">{prix_display}</span>
-                                </div>
+                            <div style="background: rgba(22, 27, 34, 0.5); border-radius: 10px; padding: 12px; border: 1px solid #30363d; display: block; clear: both; width: 100%;">
+                                <table style="width:100%; border-collapse: collapse; direction: rtl; border: none;">
+                                    <tr style="border-bottom: 1px solid #21262d;">
+                                        <td style="padding: 8px 0; color: #8b949e; font-size: 0.9rem; text-align: right;">📅 تاريخ الدخول</td>
+                                        <td style="text-align: left; color: #f0f6fc; font-weight: 500;">{dev.get('Date_Entree', '---')}</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #21262d;">
+                                        <td style="padding: 8px 0; color: #8b949e; font-size: 0.9rem; text-align: right;">📅 تاريخ الخروج</td>
+                                        <td style="text-align: left; color: #f0f6fc; font-weight: 500;">{d_sortie if d_sortie else '---'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px 0 0 0; color: #8b949e; font-size: 0.9rem; text-align: right;">💰 المستحقات</td>
+                                        <td style="text-align: left; color: #ffd700; font-weight: 900; font-size: 1.2rem; padding-top: 10px;">{prix_display}</td>
+                                    </tr>
+                                </table>
                             </div>""", unsafe_allow_html=True)
 
 # ==============================================================================
@@ -773,6 +649,5 @@ def start_telegram_bot():
     except Exception as e:
         return f"Error: {e}"
 
-# تشغيل البوت
 if "TELEGRAM_TOKEN" in st.secrets:
     start_telegram_bot()
