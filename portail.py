@@ -352,7 +352,7 @@ if submit_search and user_phone:
                     # 1. خيار ربط التلغرام (يظهر مرة واحدة في الأعلى)
                     bot_user = st.secrets.get("BOT_USERNAME", "InfoDocBot")
                     st.markdown(f'''
-                        <div style="background: rgba(34, 158, 217, 0.1); padding: 15px; border-radius: 12px; border: 1px border #229ED9; margin-bottom: 20px;">
+                        <div style="background: rgba(34, 158, 217, 0.1); padding: 15px; border-radius: 12px; border: 1px solid #229ED9; margin-bottom: 20px;">
                             <p style="margin-bottom:10px; text-align:center;">🚀 احصل على إشعارات فورية عند جاهزية جهازك!</p>
                             <a href="https://t.me/{bot_user}?start={norm_phone}" target="_blank" class="tg-btn">
                                 <i class="fab fa-telegram-plane"></i> تفعيل إشعارات تليغرام
