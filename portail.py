@@ -225,20 +225,31 @@ st.markdown("""
 # ==============================================================================
 # 4. واجهة المستخدم (UI)
 # ==============================================================================
-# --- وضع الكود هنا (بعد الإعدادات وقبل محتوى الصفحة) ---
-
-if 'visited' not in st.session_state:
+# منطق التحقق الصارم بالـ IP والتاريخ (من العمود الأول)
+if 'tracked' not in st.session_state:
     try:
-            # 1. جلب تاريخ اليوم
-        today_date = datetime.now().strftime('%Y-%m-%d')
+        import requests
+        # 1. جلب الـ IP مع مهلة انتظار قصيرة
+        response = requests.get('https://api.ipify.org', timeout=3)
+        if response.status_code == 200:
+            client_ip = response.text.replace('.', '_')
+            today = datetime.now().strftime('%Y-%m-%d')
             
-            # 2. تحديث العداد في Firebase (المسار المخصص لزوار اليوم)
-        db.reference(f"stats/daily_visitors/{today_date}").transaction(lambda current: (current or 0) + 1)
+            # 2. المرجع في Firebase
+            ip_path = f"stats/daily_ips/{today}/{client_ip}"
+            ip_check = db.reference(ip_path).get()
             
-            # 3. وضع علامة في الجلسة لكي لا يتكرر الحساب عند كل ضغطة زر
-        st.session_state['visited'] = True
+            # 3. التحقق: إذا الـ IP غير مسجل اليوم، نزيد العداد
+            if ip_check is None:
+                # نسجل الـ IP أولاً في قاعدة البيانات
+                db.reference(ip_path).set(True)
+                # نزيد عداد زوار اليوم
+                db.reference(f"stats/daily_visitors/{today}").transaction(lambda current: (current or 0) + 1)
+            
+            # نضع علامة في الجلسة لتقليل العمليات في نفس الصفحة
+            st.session_state['tracked'] = True
     except:
-            # في حال وجود مشكلة في الاتصال لا يتوقف التطبيق عن العمل
+        # في حالة أي خطأ (مثلاً نقص الإنترنت) يكمل التطبيق عمله عادي
         pass
 # الهيدر
 algeria_tz = pytz.timezone('Africa/Algiers')
