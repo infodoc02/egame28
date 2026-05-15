@@ -348,7 +348,13 @@ with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط 
 # --- 1. CSS خاص بهذا القسم (لزر التلغرام العائم والبطاقات المدمجة) ---
 st.markdown("""
     <style>
-    
+    /* 1. استدعاء الخطوط وتطبيقها بشكل إجباري */
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Changa:wght@400;700&family=Orbitron:wght@400;700&display=swap');
+
+    /* تطبيق الخط على التطبيق بالكامل */
+    * {
+        font-family: 'Cairo', sans-serif !important;
+    }
 
     /* 2. زر التلغرام - تغيير شامل في التصميم */
     .floating-tg-btn {
@@ -410,13 +416,22 @@ st.markdown("""
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
-    /* 4. تعديل الأكسباندر ليكون الخط داخله واضحاً */
+    /* تعديل الأكسباندر ليلتصق بالبطاقة */
     div[data-testid="stExpander"] {
         background: #0d1117 !important;
-        border: 1px solid #444c56 !important;
-        border-radius: 0 0 15px 15px !important;
+        border: 1px solid #30363d !important;
+        border-top: 1px dashed #30363d !important; /* خط متقطع يفصل بين العنوان والتفاصيل */
+        border-radius: 0 0 12px 12px !important; /* تقويس من التحت فقط */
+        box-shadow: 0 10px 15px rgba(0,0,0,0.3) !important;
+        margin-bottom: 0px !important;
     }
+    
+    /* جدول التفاصيل الداخلية */
+    .details-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #161b22; border-radius: 8px; overflow: hidden; }
+    .details-table td { padding: 12px; border-bottom: 1px solid #30363d; text-align: center; color: #c9d1d9; }
+    .details-table td:first-child { border-left: 1px solid #30363d; font-weight: bold; color: #8b949e; text-align: right; width: 40%; }
 
+    
     /* تحسين خطوط الجداول */
     .details-table td { 
         padding: 15px !important; 
