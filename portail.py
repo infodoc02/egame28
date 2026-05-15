@@ -41,26 +41,20 @@ def normalize_phone(phone: str) -> str:
     return p
 
 def get_warranty_stats(date_sortie_str):
-    if not date_sortie_str or str(date_sortie_str).strip() in ["", "---", "None"]: return None
+    """حساب النسبة المئوية والأيام المتبقية للضمان (30 يوم)"""
+    if not date_sortie_str or str(date_sortie_str).strip() in ["", "---", "None"]:
+        return None
+    
     date_formats = ["%Y-%m-%d %H:%M", "%d-%m-%Y %H:%M", "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%d/%m/%Y %H:%M"]
     for fmt in date_formats:
         try:
             date_s = datetime.strptime(str(date_sortie_str).strip(), fmt)
             diff_days = (datetime.now() - date_s).days
             remaining_days = max(30 - diff_days, 0)
-            
-            # حساب النسب
-            p_left = (remaining_days / 30) * 100
-            p_consumed = min((diff_days / 30) * 100, 100) if diff_days >= 0 else 0
-            
-            return {
-                "percent": p_left,          # المفتاح القديم (للموافقة)
-                "percent_left": p_left,     # المفتاح الجديد
-                "consumed_percent": p_consumed, # عمود النقصان (الأصفر)
-                "is_expired": diff_days > 30, 
-                "days_left": remaining_days
-            }
-        except: continue
+            percent = (remaining_days / 30) * 100
+            return {"percent": percent, "is_expired": diff_days > 30, "days_left": remaining_days}
+        except:
+            continue
     return None
 
 # 1. دالة تحديد الأولوية (حطها الفوق مع الدوال المساعدة أو مباشرة قبل الفرز)
