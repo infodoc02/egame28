@@ -504,8 +504,8 @@ if submit_search and user_phone:
                         else:
                             try:
                                 formatted_p = f"{int(float(raw_prix)):,}".replace(',', ' ')
-                                prix_html = f'<div style="display: flex; flex-direction: row; justify-content: flex-end; align-items: baseline; gap: 6px; direction: ltr;"><span style="font-family: \'Orbitron\'; font-size: 1.6rem; color: #facc15; font-weight: 900;">{formatted_p}</span><span style="font-family: \'Cairo\'; font-size: 1.1rem; color: #facc15; font-weight: bold;">د.ج</span></div>'
-                            except: prix_html = '<div style="display: flex; flex-direction: row; justify-content: flex-end; align-items: baseline; gap: 6px; direction: ltr;"><span style="font-family: \'Orbitron\'; font-size: 1.6rem; color: #facc15;">0</span><span style="font-family: \'Cairo\'; font-size: 1.1rem; color: #facc15;">د.ج</span></div>'
+                                prix_html = f'<div style="display: flex; flex-direction: row; justify-content: flex-end; align-items: baseline; gap: 6px; direction: ltr;"><span style="font-family: \'Orbitron\'; font-size: 1.6rem; color: #facc15; font-weight: 900;">{formatted_p}</span><span style="font-family: \'Cairo\'; font-size: 1.1rem; color: #facc15; font-weight: bold;"DA</span></div>'
+                            except: prix_html = '<div style="display: flex; flex-direction: row; justify-content: flex-end; align-items: baseline; gap: 6px; direction: ltr;"><span style="font-family: \'Orbitron\'; font-size: 1.6rem; color: #facc15;">0</span><span style="font-family: \'Cairo\'; font-size: 1.1rem; color: #facc15;"DA</span></div>'
 
                         # 🛠️ الكرت العلوي
                         st.markdown(f"""
