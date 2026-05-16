@@ -497,15 +497,15 @@ if submit_search and user_phone:
                         else:
                             status_color, status_bg, status_text = "#3b82f6", "rgba(59, 130, 246, 0.15)", "⏳ قيد الفحص والصيانة"
 
-                        # تنسيق السعر (منع الانعكاس)
+                       # تنسيق السعر (حل نهائي ومضمون لمنع الانعكاس)
                         raw_prix = dev.get('Prix', 0)
                         if status == "En Cours":
                             prix_html = '<span style="font-size: 1.15rem; color:#94a3b8; font-family: \'Cairo\';">⚙️ قيد التقييم...</span>'
                         else:
                             try:
                                 formatted_p = f"{int(float(raw_prix)):,}".replace(',', ' ')
-                                prix_html = f'<div style="direction: ltr; text-align: left;"><span style="font-family: \'Orbitron\'; font-size: 1.6rem; color: #facc15;">{formatted_p} د.ج</span> <span style="font-size: 1.1rem; color: #facc15; font-family: \'Cairo\'; margin-left: 4px;"</span></div>'
-                            except: prix_html = '<span style="font-family: \'Orbitron\'; font-size: 1.5rem; color: #facc15;">0 د.ج</span>'
+                                prix_html = f'<div style="display: flex; flex-direction: row; justify-content: flex-end; align-items: baseline; gap: 6px; direction: ltr;"><span style="font-family: \'Orbitron\'; font-size: 1.6rem; color: #facc15; font-weight: 900;">{formatted_p}</span><span style="font-family: \'Cairo\'; font-size: 1.1rem; color: #facc15; font-weight: bold;">د.ج</span></div>'
+                            except: prix_html = '<div style="display: flex; flex-direction: row; justify-content: flex-end; align-items: baseline; gap: 6px; direction: ltr;"><span style="font-family: \'Orbitron\'; font-size: 1.6rem; color: #facc15;">0</span><span style="font-family: \'Cairo\'; font-size: 1.1rem; color: #facc15;">د.ج</span></div>'
 
                         # 🛠️ الكرت العلوي
                         st.markdown(f"""
@@ -528,7 +528,7 @@ if submit_search and user_phone:
                             
                             # --- نظام الضمان (Warranty) ---
                             if is_delivered and d_sortie and str(d_sortie).strip() not in ["", "---", "None"]:
-                                w = get_warranty_stats(d_sortie) # تأكد أن هذه الدالة موجودة في كودك
+                                w = get_warranty_stats(d_sortie)
                                 if w:
                                     val = float(w.get('percent', 0)) 
                                     is_expired = w.get('is_expired', False)
