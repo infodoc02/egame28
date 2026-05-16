@@ -163,8 +163,12 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Inter:wght@400;500;700;900&display=swap');
     
-    .stApp { background: #0d1117; color: white; font-family: 'Cairo', 'Tajawal', sans-serif; }
-    
+    .stApp { background: #0d1117; color: white; font-family: 'Cairo', 'Tajawal', sans-serif; direction: rtl; }
+    .stApp, .stApp div, .stApp section, .stApp span, .stApp p, .stApp a, .stApp label,
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5 {
+        font-family: 'Cairo', 'Tajawal', sans-serif !important;
+    }
+
     /* الحاوية الرئيسية */
     .hero-container {
         background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
@@ -426,28 +430,34 @@ st.markdown("""
         background: #161b22;
         border: 1px solid #30363d;
         border-bottom: none; /* نحيو الخط التحتاني باش يلصق مع الأكسباندر */
-        border-radius: 12px 12px 0 0; /* تقويس من الفوق فقط */
-        padding: 20px;
+        border-radius: 16px 16px 0 0; /* تقويس من الفوق فقط */
+        padding: 22px 22px 18px;
         margin-top: 30px; /* مسافة بين كل جهاز والآخر */
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 18px;
         align-items: center;
-        box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+        box-shadow: 0 -5px 18px rgba(0,0,0,0.25);
     }
 
-    .device-title { margin: 0; color: #ffffff; font-family: 'Orbitron', 'Cairo'; font-size: 1.4rem; font-weight: bold; }
-    .device-id { color: #8b949e; font-size: 0.9rem; font-family: 'Courier New', monospace; }
+    .device-title { margin: 0; color: #f0f6fc; font-family: 'Orbitron', 'Cairo'; font-size: 1.55rem; font-weight: 800; letter-spacing: 0.02em; }
+    .device-id { color: #8b949e; font-size: 1rem; font-family: 'Courier New', monospace; margin-top: 6px; }
     
-    .status-badge-mini {
-        padding: 6px 15px;
-        border-radius: 8px;
-        font-size: 0.85rem;
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 18px;
+        border-radius: 999px;
+        font-size: 1rem;
         font-weight: 900;
-        font-family: 'Orbitron', 'Cairo';
         color: white;
         text-transform: uppercase;
-        box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
+        box-shadow: inset 0 0 12px rgba(0,0,0,0.25);
+        min-width: 140px;
+        justify-content: center;
     }
+    .status-pill span { font-size: 1.6rem; line-height: 1; }
 
     /* تعديل الأكسباندر ليلتصق بالبطاقة */
     div[data-testid="stExpander"]:has(.expander-normal) {
@@ -471,7 +481,7 @@ st.markdown("""
         color: #c9d1d9 !important;
         font-family: 'Cairo', sans-serif !important;
         font-weight: 700 !important;
-        font-size: 1rem !important;
+        font-size: 1.08rem !important;
         text-align: right !important;
         direction: rtl !important;
     }
@@ -481,14 +491,14 @@ st.markdown("""
         color: #ffcc00 !important;
         font-weight: 900 !important;
         font-family: 'Cairo', sans-serif !important;
-        font-size: 1.05rem !important;
+        font-size: 1.12rem !important;
         text-align: right !important;
         direction: rtl !important;
     }
     
     /* جدول التفاصيل الداخلية */
     .details-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #161b22; border-radius: 8px; overflow: hidden; }
-    .details-table td { padding: 12px; border-bottom: 1px solid #30363d; text-align: center; color: #c9d1d9; }
+    .details-table td { padding: 14px; border-bottom: 1px solid #30363d; text-align: center; color: #c9d1d9; font-size: 1rem; line-height: 1.75; }
     .details-table td:first-child { border-left: 1px solid #30363d; font-weight: bold; color: #8b949e; text-align: right; width: 40%; }
     </style>
 """, unsafe_allow_html=True)
@@ -566,13 +576,14 @@ if submit_search and user_phone:
                             prix_display = "0 د.ج" # أو أي قيمة افتراضية تختارها للأجهزة المنتهية
                     # 1. تصميم رأس البطاقة (Header)
                     st.markdown(f"""
-                        <div style="border-right: 6px solid {status_color}; padding: 16px; background: #161b22; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d;">
+                        <div class="device-header" style="border-right: 6px solid {status_color};">
                             <div>
-                                <h3 style="margin: 0; color: #f0f6fc; font-size: 1.25rem;">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
-                                <div style="color: #8b949e; font-size: 0.95rem; font-family: monospace;">Ticket #{dev.get('ID', '0000')}</div>
+                                <h3 class="device-title">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
+                                <div class="device-id">Ticket #{dev.get('ID', '0000')}</div>
                             </div>
-                            <div style="background-color: {status_color}; color: white; padding: 6px 14px; border-radius: 22px; font-size: 0.95rem; font-weight: bold; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 1.2rem; line-height: 1;">{status_icon}</span> {status}
+                            <div class="status-pill" style="background-color: {status_color}; color: white;">
+                                <span>{status_icon}</span>
+                                <strong>{status}</strong>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
