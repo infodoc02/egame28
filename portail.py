@@ -333,10 +333,10 @@ with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط 
 st.markdown('</div>', unsafe_allow_html=True)
 st.divider()
 # ==============================================================================
-# 5. نظام البحث والتتبع (بتصميم الحاويات المستقلة والخطوط الواضحة)
+# 5. نظام البحث والتتبع (النسخة المصححة والمحسنة بصرياً بالكامل)
 # ==============================================================================
 
-# --- 1. CSS مستقل تماماً لمنع التداخل وضبط الأحجام الكبيرة والأنيميشن ---
+# --- 1. CSS المعدل لضبط الخطوط، المحاذاة، ومنع تداخل الأكسباندر ---
 st.markdown("""
     <style>
     /* زر التلغرام العائم المتطور */
@@ -371,27 +371,28 @@ st.markdown("""
         50% { transform: translateY(-10px); box-shadow: 0 18px 30px rgba(36, 161, 222, 0.5); }
     }
 
-    /* كرت رأس الجهاز (البطاقة العلوية المستقلة) */
+    /* كرت رأس الجهاز - عريض وواضح */
     .custom-device-card {
         background: #1e293b;
         border: 2px solid #334155;
-        border-radius: 14px;
+        border-radius: 14px 14px 0 0; /* دمج علوي مع الأكسباندر */
         padding: 22px;
         margin-top: 25px;
-        margin-bottom: -15px; /* مدمج بصرياً مع الأكسباندر بدون تداخل */
+        margin-bottom: 0px; 
         position: relative;
         z-index: 2;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     }
 
-    /* تنسيق اسم وعنوان الجهاز والـ ID الكبير */
+    /* تصحيح اسم الجهاز ليصبح ناصع البياض وواضح جداً */
     .card-title-text { 
         margin: 0; 
-        color: #f8fafc; 
-        font-family: 'Cairo', 'Orbitron', sans-serif; 
-        font-size: 1.5rem; 
+        color: #ffffff !important; /* أبيض ناصع */
+        font-family: 'Cairo', sans-serif; 
+        font-size: 1.6rem; 
         font-weight: 900; 
         line-height: 1.4;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* ظل لإبراز الخط الداكن */
     }
     .card-ticket-id { 
         color: #94a3b8; 
@@ -415,7 +416,7 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
-    /* حماية الأكسباندر الداخلي وتكبير خط العنوان */
+    /* 🛠️ إصلاح الأكسباندر ليكون على خط محاذاة واحد تماماً مع الكرت العلوى دون الدخول للداخل */
     div[data-testid="stExpander"] {
         background: #0f172a !important;
         border: 2px solid #334155 !important;
@@ -424,12 +425,25 @@ st.markdown("""
         box-shadow: 0 12px 25px rgba(0,0,0,0.4) !important;
         position: relative;
         z-index: 1;
+        margin-top: -2px !important; /* إلغاء الفراغات العمودية */
+        padding: 0px !important; /* تصفير الإزاحة الداخلية الزائدة */
     }
+    
+    /* توسيع المساحة الداخلية لمحتوى الأكسباندر ليطابق الأطراف */
+    div[data-testid="stExpander"] > div {
+        padding: 15px 20px !important;
+    }
+
     div[data-testid="stExpander"] summary p {
-        font-size: 1.15rem !important;
+        font-size: 1.2rem !important;
         font-weight: 800 !important;
         color: #3b82f6 !important;
         font-family: 'Cairo', sans-serif !important;
+    }
+    
+    /* تصفير الهوامش الإضافية التي تفرضها استريملايت */
+    div[data-testid="stExpander"] summary {
+        padding: 12px 20px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -503,17 +517,24 @@ if submit_search and user_phone:
                             status_bg = "rgba(59, 130, 246, 0.15)"
                             status_text = "⏳ قيد الفحص والصيانة حالياً"
 
-                        # معالجة وعرض السعر بخط عريض وواضح جداً
+                        # 💰 معالجة وعرض السعر وحل مشكلة القراءة المعكوسة تماماً
                         raw_prix = dev.get('Prix', 0)
                         if status == "En Cours":
-                            prix_display = "⚙️ قيد التقييم الفني..."
+                            prix_html = '<span style="font-size: 1.15rem; color:#94a3b8;">⚙️ قيد التقييم الفني...</span>'
                         else:
                             if raw_prix is not None and str(raw_prix).replace('.', '', 1).isdigit() and float(raw_prix) > 0:
-                                prix_display = f"{int(float(raw_prix)):,} د.ج".replace(',', ' ')
+                                formatted_number = f"{int(float(raw_prix)):,}".replace(',', ' ')
+                                # حيلة الـ HTML والـ ltr لضمان عدم انعكاس الأرقام والعملة أبداً
+                                prix_html = f'''
+                                    <div style="display: inline-block; direction: rtl; color: #facc15; font-weight: 900;">
+                                        <span style="direction: ltr; display: inline-block; font-family: 'Orbitron', sans-serif; font-size: 1.6rem;">{formatted_number}</span>
+                                        <span style="font-size: 1.2rem; margin-right: 5px;">د.ج</span>
+                                    </div>
+                                '''
                             else:
-                                prix_display = "0 د.ج"
+                                prix_html = '<span style="font-family: \'Orbitron\'; font-size: 1.5rem; color: #facc15;">0 د.ج</span>'
 
-                        # 🛠️ عرض الحاوية العلوية للجهاز بتصميمها الفاخر المستقل
+                        # 🛠️ عرض الحاوية العلوية للجهاز (أصبح الاسم أبيض ناصع)
                         st.markdown(f"""
                             <div class="custom-device-card" style="border-right: 6px solid {status_color};">
                                 <div style="display: flex; justify-content: space-between; align-items: center; direction: rtl;">
@@ -528,13 +549,12 @@ if submit_search and user_phone:
                             </div>
                         """, unsafe_allow_html=True)
                         
-                        # 📄 تفاصيل الجهاز المدمجة بذكاء داخل الـ Expander
-                        with st.expander("📄 انقر هنا لعرض التقرير الفني والمستحقات الممالية"):
+                        # 📄 تفاصيل الجهاز المدمجة بمحاذاة تامة للأطراف بدون دخول زائد للداخل
+                        with st.expander("📄 انقر هنا لعرض التقرير الفني والمستحقات المالية"):
                             d_sortie = dev.get("Date_Sortie")
                             
                             # --- أشرطة مؤشرات الحالة التفاعلية العريضة ---
                             if is_delivered:
-                                # 🟡 نظام الضمان الذهبي المتطور المعتمد على الـ 30 يوماً المحلية
                                 if d_sortie and str(d_sortie).strip() not in ["", "---", "None"]:
                                     w = get_warranty_stats(d_sortie)
                                     if w:
@@ -545,7 +565,7 @@ if submit_search and user_phone:
                                         w_status_txt = "🛡️ الضمان ساري ومحمي حالياً" if not is_expired else "🛑 فترة الضمان الـ (30 يوماً) انتهت"
                                         
                                         st.markdown(f"""
-                                            <div style="margin-top: 10px; margin-bottom: 18px; border: 1px solid {w_color}; padding: 15px; border-radius: 12px; background: {w_bg}; direction: rtl;">
+                                            <div style="margin-top: 5px; margin-bottom: 18px; border: 1px solid {w_color}; padding: 15px; border-radius: 12px; background: {w_bg}; direction: rtl;">
                                                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
                                                     <span style="color: {w_color}; font-weight: 900; font-size: 1.1rem;">{w_status_txt}</span>
                                                     <span style="color: {w_color}; font-weight: 900; font-size: 1.6rem; font-family: 'Orbitron'; text-shadow: 0 0 10px rgba(234,179,8,0.3);">{int(val)}%</span>
@@ -562,13 +582,12 @@ if submit_search and user_phone:
 
                             elif status == "Non Réparable":
                                 st.markdown("""
-                                    <div style="text-align: center; padding: 18px; background: rgba(239, 68, 68, 0.06); border: 2px dashed #ef4444; border-radius: 12px; margin-top: 10px; margin-bottom: 15px;">
+                                    <div style="text-align: center; padding: 18px; background: rgba(239, 68, 68, 0.06); border: 2px dashed #ef4444; border-radius: 12px; margin-top: 5px; margin-bottom: 15px;">
                                         <b style="color: #ef4444; font-family: 'Cairo'; font-size: 1.1rem;">⚠️ عذراً، القطع التالفة بالبطاقة غير متوفرة أو المعالج متفحم (الجهاز غير قابل للتصليح).</b>
                                     </div>
                                 """, unsafe_allow_html=True)
 
                             elif status != "Annulé":
-                                # 🔵🟢 شريط سير العمليات (أزرق أثناء العمل و أخضر عند الاكتمال)
                                 prog_map = {
                                     "En attente": {"val": 15, "color": "#3b82f6"},
                                     "En Cours":   {"val": 50, "color": "#3b82f6"},
@@ -578,7 +597,7 @@ if submit_search and user_phone:
                                 p_data = prog_map.get(status, {"val": 30, "color": "#3b82f6"})
                                 
                                 st.markdown(f"""
-                                    <div style="margin-top: 10px; margin-bottom: 5px; display: flex; justify-content: space-between; direction: rtl;">
+                                    <div style="margin-top: 5px; margin-bottom: 5px; display: flex; justify-content: space-between; direction: rtl;">
                                         <span style="color:#cbd5e1; font-family: 'Cairo'; font-size: 1rem; font-weight: 700;">⚙️ مراحل فحص وتصليح اللوحة الأم ومكوناتها:</span>
                                         <span style="color:{p_data['color']}; font-weight: 900; font-size: 1.3rem; font-family: 'Orbitron';">{p_data['val']}%</span>
                                     </div>
@@ -587,7 +606,7 @@ if submit_search and user_phone:
                                     </div>
                                 """, unsafe_allow_html=True)
 
-                            # --- جدول تفاصيل التواريخ والتكاليف المالية الكبيرة والمقروءة ---
+                            # --- جدول التواريخ والتكاليف المالية المستقرة بصرياً ---
                             st.markdown(f"""
                                 <div style="background: rgba(30, 41, 59, 0.7); border-radius: 12px; padding: 15px; border: 1px solid #334155; box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);">
                                     <table style="width:100%; border-collapse: collapse; direction: rtl; text-align: right; font-family: 'Cairo', sans-serif;">
@@ -601,14 +620,14 @@ if submit_search and user_phone:
                                         </tr>
                                         <tr>
                                             <td style="padding: 16px 6px 4px 6px; color: #facc15; font-size: 1.15rem; font-weight: 900;">💰 المستحقات الصافية للتصليح</td>
-                                            <td style="text-align: left; color: #facc15; font-weight: 900; font-size: 1.6rem; padding-top: 12px; font-family: 'Cairo', sans-serif; text-shadow: 0 0 10px rgba(250,204,21,0.2);">
-                                                {prix_display}
+                                            <td style="text-align: left; padding-top: 12px; text-shadow: 0 0 10px rgba(250,204,21,0.2);">
+                                                {prix_html}
                                             </td>
                                         </tr>
                                     </table>
                                 </div>
                             """, unsafe_allow_html=True)
-                            st.write("") # فاصل مساحة مرن صغير بين الأجهزة
+                            st.write("")
 # ==============================================================================
 # 7. تشغيل بوت التلغرام الاحترافي (المطور لـ InfoDoc)
 # ==============================================================================
