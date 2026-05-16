@@ -163,7 +163,7 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Inter:wght@400;500;700;900&display=swap');
     
-    .stApp { background: #0d1117; color: white; font-family: 'Tajawal', 'Inter', sans-serif; }
+    .stApp { background: #0d1117; color: white; font-family: 'Cairo', 'Tajawal', sans-serif; }
     
     /* الحاوية الرئيسية */
     .hero-container {
@@ -205,34 +205,39 @@ st.markdown("""
         box-shadow: none !important;
     }
 
-    div[data-testid="stExpander"] summary {
+    div[data-testid="stExpander"] summary,
+    div[data-testid="stExpander"] summary p {
         color: #c9d1d9 !important;
-        font-family: 'Tajawal', sans-serif !important;
-        font-weight: 500 !important;
+        font-family: 'Cairo', sans-serif !important;
+        font-weight: 700 !important;
         font-size: 1rem !important;
         text-align: right !important;
         direction: rtl !important;
-    }
-
-    div[data-testid="stExpander"] summary p {
-        color: #c9d1d9 !important;
-        font-family: 'Tajawal', sans-serif !important;
-        font-weight: 500 !important;
-        font-size: 1rem !important;
         margin: 0 !important;
     }
 
-    div[data-testid="stExpander"]:first-of-type {
+    div[data-testid="stExpander"]:has(.expander-highlight) {
         border: 2px solid #ffcc00 !important;
         background: rgba(255, 204, 0, 0.12) !important;
-        box-shadow: 0 0 18px rgba(255, 204, 0, 0.16) !important;
+        box-shadow: 0 0 18px rgba(255,204,0,0.16) !important;
     }
 
-    div[data-testid="stExpander"]:first-of-type summary,
-    div[data-testid="stExpander"]:first-of-type summary p {
+    div[data-testid="stExpander"]:has(.expander-highlight) summary,
+    div[data-testid="stExpander"]:has(.expander-highlight) summary p {
         color: #ffcc00 !important;
         font-weight: 900 !important;
         font-size: 1.05rem !important;
+    }
+
+    div[data-testid="stExpander"]:has(.expander-normal) {
+        border: 1px solid #30363d !important;
+        background: #0d1117 !important;
+    }
+
+    div[data-testid="stExpander"]:has(.expander-normal) summary,
+    div[data-testid="stExpander"]:has(.expander-normal) summary p {
+        color: #c9d1d9 !important;
+        font-weight: 700 !important;
     }
 
     /* أنيميشن الإضاءة */
@@ -364,7 +369,7 @@ with c4:
 
 # قسم الشروط (المضيء فقط)
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
-    st.markdown('<div class="first-expander-marker" style="display:none;"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="expander-highlight" style="display:none;"></div>', unsafe_allow_html=True)
     st.markdown("""
         <div style="text-align: right; direction: rtl; font-family: 'Cairo'; line-height: 1.8; color: #f0f6fc;">
             1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<b>رفض الزبون ذلك</b>، يتم دفع <b>1000 دج</b> ثمن الجهد والفحص.<br>
@@ -445,7 +450,7 @@ st.markdown("""
     }
 
     /* تعديل الأكسباندر ليلتصق بالبطاقة */
-    div[data-testid="stExpander"]:not(:first-of-type) {
+    div[data-testid="stExpander"]:has(.expander-normal) {
         background: #0d1117 !important;
         border: 1px solid #30363d !important;
         border-radius: 0 0 12px 12px !important; /* تقويس من التحت فقط */
@@ -453,7 +458,7 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
 
-    div[data-testid="stExpander"]:first-of-type {
+    div[data-testid="stExpander"]:has(.expander-highlight) {
         background: rgba(255, 204, 0, 0.12) !important;
         border: 2px solid #ffcc00 !important;
         border-radius: 0 0 12px 12px !important;
@@ -461,21 +466,21 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
 
-    div[data-testid="stExpander"]:not(:first-of-type) summary,
-    div[data-testid="stExpander"]:not(:first-of-type) summary p {
+    div[data-testid="stExpander"]:has(.expander-normal) summary,
+    div[data-testid="stExpander"]:has(.expander-normal) summary p {
         color: #c9d1d9 !important;
-        font-family: 'Tajawal', sans-serif !important;
-        font-weight: 500 !important;
+        font-family: 'Cairo', sans-serif !important;
+        font-weight: 700 !important;
         font-size: 1rem !important;
         text-align: right !important;
         direction: rtl !important;
     }
 
-    div[data-testid="stExpander"]:first-of-type summary,
-    div[data-testid="stExpander"]:first-of-type summary p {
+    div[data-testid="stExpander"]:has(.expander-highlight) summary,
+    div[data-testid="stExpander"]:has(.expander-highlight) summary p {
         color: #ffcc00 !important;
         font-weight: 900 !important;
-        font-family: 'Tajawal', sans-serif !important;
+        font-family: 'Cairo', sans-serif !important;
         font-size: 1.05rem !important;
         text-align: right !important;
         direction: rtl !important;
@@ -574,6 +579,7 @@ if submit_search and user_phone:
                     
 # 2. تفاصيل الجهاز (داخل الـ expander)
                     with st.expander("📄 عرض التفاصيل والمستحقات"):
+                        st.markdown('<div class="expander-normal" style="display:none;"></div>', unsafe_allow_html=True)
                         d_sortie = dev.get("Date_Sortie")
                         
                         # --- القسم الأول: أشرطة الحالة الذكية ---
