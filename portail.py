@@ -477,13 +477,21 @@ st.markdown("""
     }
 
     div[data-testid="stExpander"]:has(.expander-normal) summary,
-    div[data-testid="stExpander"]:has(.expander-normal) summary p {
+    div[data-testid="stExpander"]:has(.expander-normal) summary p,
+    div[data-testid="stExpander"]:has(.expander-highlight) summary,
+    div[data-testid="stExpander"]:has(.expander-highlight) summary p {
         color: #c9d1d9 !important;
         font-family: 'Cairo', sans-serif !important;
         font-weight: 700 !important;
         font-size: 1.08rem !important;
         text-align: right !important;
         direction: rtl !important;
+        display: block !important;
+        width: 100% !important;
+        white-space: normal !important;
+        line-height: 1.6 !important;
+        padding: 0.9rem 1rem !important;
+        box-sizing: border-box !important;
     }
 
     div[data-testid="stExpander"]:has(.expander-highlight) summary,
@@ -491,9 +499,12 @@ st.markdown("""
         color: #ffcc00 !important;
         font-weight: 900 !important;
         font-family: 'Cairo', sans-serif !important;
-        font-size: 1.12rem !important;
-        text-align: right !important;
-        direction: rtl !important;
+        font-size: 1.16rem !important;
+    }
+
+    div[data-testid="stExpander"] .stMarkdownContainer {
+        width: 100% !important;
+        word-break: break-word !important;
     }
     
     /* جدول التفاصيل الداخلية */
@@ -608,20 +619,20 @@ if submit_search and user_phone:
                                     
                                     # تم إرجاع النص الأصلي (الأيام المتبقية + نظام 30 يوم) مع ضبط المسافات
                                     st.markdown(f"""
-<div style="margin-bottom: 15px; border: 1px solid #444c56; padding: 12px; border-radius: 10px; background: rgba(255, 215, 0, 0.05); direction: rtl;">
-    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
-        <div style="color: {b_color}; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
-            <span>🛡️</span>
+<div style="margin-bottom: 15px; border: 1px solid #444c56; padding: 14px; border-radius: 14px; background: rgba(255, 215, 0, 0.08); direction: rtl;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-bottom: 10px; align-items: center; gap: 10px;">
+        <div style="color: {b_color}; font-weight: bold; font-size: 1rem; display: flex; align-items: center; gap: 10px; flex: 1 1 300px; min-width: 220px;">
+            <span style="font-size: 1.3rem;">🛡️</span>
             <span>{'ضمان ساري المفعول' if not is_expired else 'ضمان منتهي'}</span>
         </div>
-        <span style="color: {b_color}; font-weight: 800; font-family: 'Courier New', monospace;">{int(val)}%</span>
+        <span style="color: {b_color}; font-weight: 900; font-family: 'Courier New', monospace; font-size: 1.55rem; min-width: 95px; text-align: right;">{int(val)}%</span>
     </div>
-    <div style="width: 100%; background: #30363d; border-radius: 20px; height: 12px; overflow: hidden; border: 1px solid #444c56; display: flex;">
+    <div style="width: 100%; background: #30363d; border-radius: 20px; height: 16px; overflow: hidden; border: 1px solid #444c56; display: flex;">
         <div style="width: {val}%; background: {b_color}; height: 100%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px {b_color if not is_expired else 'transparent'};"></div>
     </div>
-    <div style="display: flex; justify-content: space-between; margin-top: 8px;">
-        <span>الخروج: {w.get('actual_date')}</span>
-        <span>الأيام المتبقية على انتهاء مدة الضمان: {w.get('days_left')} يوم</span>
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; margin-top: 10px; gap: 10px;">
+        <span style="font-size: 0.95rem; color: #c9d1d9;">الخروج: {w.get('actual_date')}</span>
+        <span style="font-size: 0.95rem; color: #c9d1d9;">الأيام المتبقية على انتهاء مدة الضمان: {w.get('days_left')} يوم</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -644,11 +655,11 @@ if submit_search and user_phone:
                             p_data = prog_map.get(status, {"val": 20, "color": "#58a6ff"})
                             
                             st.markdown(f"""
-                                <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
-                                    <span style="color:#c9d1d9; font-size: 0.85rem;">🛠️ تقدم عملية الصيانة</span>
-                                    <span style="color:{p_data['color']}; font-weight: bold; font-size: 0.85rem;">{p_data['val']}%</span>
+                                <div style="margin-bottom: 5px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+                                    <span style="color:#c9d1d9; font-size: 0.95rem;">🛠️ تقدم عملية الصيانة</span>
+                                    <span style="color:{p_data['color']}; font-weight: 900; font-size: 1.25rem;">{p_data['val']}%</span>
                                 </div>
-                                <div style="width: 100%; background: #30363d; border-radius: 20px; height: 10px; overflow: hidden; border: 1px solid #444c56; margin-bottom: 15px;">
+                                <div style="width: 100%; background: #30363d; border-radius: 20px; height: 16px; overflow: hidden; border: 1px solid #444c56; margin-bottom: 15px;">
                                     <div style="width: {p_data['val']}%; background: {p_data['color']}; height: 100%; transition: width 1s;"></div>
                                 </div>
                             """, unsafe_allow_html=True)
