@@ -620,39 +620,37 @@ if submit_search and user_phone:
                                 """, unsafe_allow_html=True)
 
                             # --- جدول التواريخ والتكاليف المالية المستقرة بصرياً (داخل الأكسباندر فقط) ---
-                            # --- بداية الكود من السطر 29 (حاوية البيانات الفنية) ---
-                        
-                        # 1. تنظيف السعر من أي مسافات برمجية زائدة
-                        p_raw = str(dev.get('Prix', '0')).split('.')[0] # أخذ الجزء الصحيح فقط
-                        prix_clean = f"{p_raw} د.ج"
+                            st.markdown(f"""
+                                <div style="background: rgba(30, 41, 59, 0.7); border-radius: 12px; padding: 15px; border: 1px solid #334155; box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);">
+                                    <table style="width:100%; border-collapse: collapse; direction: rtl; text-align: right; font-family: 'Cairo', sans-serif;">
+                                        
+                                        <tr style="border-bottom: 1px solid #334155;">
+                                            <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold; width: 45%;">📅 تاريخ دخول الورشة</td>
+                                            <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace; direction: ltr !important;">
+                                                {dev.get('Date_Entree', '---')}
+                                            </td>
+                                        </tr>
 
-                        st.markdown(f"""
-                            <div style="background: rgba(30, 41, 59, 0.7); border-radius: 12px; padding: 15px; border: 1px solid #334155; box-shadow: inset 0 2px 8px rgba(0,0,0,0.3); direction: rtl;">
-                                <table style="width:100%; border-collapse: collapse; text-align: right; font-family: 'Cairo', sans-serif;">
-                                    <tr style="border-bottom: 1px solid #334155;">
-                                        <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold; width: 50%;">📅 تاريخ دخول الورشة</td>
-                                        <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace; direction: ltr !important; white-space: nowrap;">
-                                            {dev.get('Date_Entree', '---')}
-                                        </td>
-                                    </tr>
-                                    <tr style="border-bottom: 1px solid #334155;">
-                                        <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold;">📅 تاريخ الخروج والتسليم</td>
-                                        <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace; direction: ltr !important; white-space: nowrap;">
-                                            {d_sortie if d_sortie else '---'}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 16px 6px 4px 6px; color: #facc15; font-size: 1.15rem; font-weight: 900;">💰 المستحقات الصافية</td>
-                                        <td style="text-align: left; padding-top: 12px;">
-                                            <div style="direction: ltr !important; display: inline-block; font-family: 'Orbitron', sans-serif; font-size: 1.6rem; color: #facc15; font-weight: 900; letter-spacing: -1px; white-space: nowrap;">
-                                                {prix_clean}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                        """, unsafe_allow_html=True)
-                        st.write("")
+                                        <tr style="border-bottom: 1px solid #334155;">
+                                            <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold;">📅 تاريخ الخروج والتسليم</td>
+                                            <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace; direction: ltr !important;">
+                                                {d_sortie if d_sortie else '---'}
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style="padding: 16px 6px 4px 6px; color: #facc15; font-size: 1.15rem; font-weight: 900;">💰 المستحقات الصافية</td>
+                                            <td style="text-align: left; padding-top: 12px;">
+                                                <div style="direction: ltr !important; display: inline-block; font-family: 'Orbitron', sans-serif; font-size: 1.6rem; color: #facc15; font-weight: 900; white-space: nowrap; letter-spacing: -1px;">
+                                                    {prix_final}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                    </table>
+                                </div>
+                            """, unsafe_allow_html=True)
+                            st.write("")
 # ==============================================================================
 # 7. تشغيل بوت التلغرام الاحترافي (المطور لـ InfoDoc)
 # ==============================================================================
