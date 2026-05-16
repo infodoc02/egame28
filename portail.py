@@ -642,7 +642,7 @@ if submit_search and user_phone:
                                             <td style="padding: 16px 6px 4px 6px; color: #facc15; font-size: 1.15rem; font-weight: 900;">💰 المستحقات الصافية</td>
                                             <td style="text-align: left; padding-top: 12px;">
                                                 <div style="direction: ltr !important; display: inline-block; font-family: 'Orbitron', sans-serif; font-size: 1.6rem; color: #facc15; font-weight: 900; white-space: nowrap; letter-spacing: -1px;">
-                                                    {prix_final}
+                                                    {prix_html}
                                                 </div>
                                             </td>
                                         </tr>
