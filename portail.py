@@ -339,6 +339,19 @@ st.divider()
 # --- 1. CSS المعدل لضبط الخطوط، المحاذاة، ومنع تداخل الأكسباندر ---
 st.markdown("""
     <style>
+    /* فرض الاتجاه العربي من اليمين إلى اليسار على التطبيق بالكامل */
+    .stApp {
+        direction: rtl;
+        text-align: right;
+    }
+
+    /* 📱 إجبار خانة إدخال رقم الهاتف على المحاذاة لليمن والكتابة باللغة العربية */
+    div[data-testid="stTextInput"] input {
+        direction: rtl !important;
+        text-align: right !important;
+        font-family: 'Cairo', sans-serif !important;
+    }
+
     /* زر التلغرام العائم المتطور */
     .floating-tg-action {
         position: fixed;
@@ -525,22 +538,29 @@ if submit_search and user_phone:
                             if raw_prix is not None and str(raw_prix).replace('.', '', 1).isdigit() and float(raw_prix) > 0:
                                 formatted_number = f"{int(float(raw_prix)):,}".replace(',', ' ')
                                 # حيلة الـ HTML والـ ltr لضمان عدم انعكاس الأرقام والعملة أبداً
-                                prix_html = f'<div style="display: flex; justify-content: flex-end; align-items: center; gap: 6px; direction: ltr !important;"><span style="font-size: 1.2rem; color: #facc15; font-family: \'Cairo\';">د.ج</span><span style="font-family: \'Orbitron\', sans-serif; font-size: 1.6rem; color: #facc15; font-weight: 900;">{formatted_number}</span></div>'
+                                prix_html = f'<div style="direction: rtl; text-align: left; font-weight: 900;"><span style="font-family: \'Orbitron\', sans-serif; font-size: 1.6rem; color: #facc15;">{formatted_number}</span> <span style="font-size: 1.1rem; color: #facc15; font-family: \'Cairo\'; margin-right: 4px;">د.ج</span></div>'
                             else:
-                                prix_html = '<span style="font-family: \'Orbitron\'; font-size: 1.5rem; color: #facc15;">0 د.ج</span>'
+                                prix_html = '<span style="font-family: \'Orbitron\'; font-size: 1.5rem; color: #facc15; direction: rtl;">0 د.ج</span>'
 
                         # 🛠️ عرض الحاوية العلوية للجهاز (أصبح الاسم أبيض ناصع)
                         st.markdown(f"""
-                            <div class="custom-device-card" style="border-right: 6px solid {status_color};">
-                                <div style="display: flex; justify-content: space-between; align-items: center; direction: rtl;">
-                                    <div>
-                                        <h3 class="card-title-text">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
-                                        <div class="card-ticket-id">تذكرة رقم: #{dev.get('ID', '0000')}</div>
-                                    </div>
-                                    <div class="portal-badge" style="background: {status_bg}; border: 1px solid {status_color}; color: {status_color};">
-                                        {status_text}
-                                    </div>
-                                </div>
+                            <div style="background: rgba(30, 41, 59, 0.7); border-radius: 12px; padding: 15px; border: 1px solid #334155; box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);">
+                                <table style="width:100%; border-collapse: collapse; direction: rtl; text-align: right; font-family: 'Cairo', sans-serif;">
+                                    <tr style="border-bottom: 1px solid #334155;">
+                                        <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold; text-align: right;">📅 تاريخ دخول الورشة</td>
+                                        <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace;">{dev.get('Date_Entree', '---')}</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #334155;">
+                                        <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold; text-align: right;">📅 تاريخ الخروج والتسليم</td>
+                                        <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace;">{d_sortie if d_sortie else '---'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 16px 6px 4px 6px; color: #facc15; font-size: 1.15rem; font-weight: 900; text-align: right;">💰 المستحقات الصافية للتصليح</td>
+                                        <td style="text-align: left; padding-top: 12px; text-shadow: 0 0 10px rgba(250,204,21,0.2);">
+                                            {prix_html}
+                                        </td>
+                                    </tr>
+                                </table>
                             </div>
                         """, unsafe_allow_html=True)
                         
