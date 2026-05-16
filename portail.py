@@ -504,7 +504,7 @@ if submit_search and user_phone:
                         else:
                             try:
                                 formatted_p = f"{int(float(raw_prix)):,}".replace(',', ' ')
-                                prix_html = f'<div style="direction: ltr; text-align: left;"><span style="font-family: \'Orbitron\'; font-size: 1.6rem; color: #facc15;">د.ج</span> <span style="font-size: 1.1rem; color: #facc15; font-family: \'Cairo\'; margin-left: 4px;"{formatted_p}</span></div>'
+                                prix_html = f'<div style="direction: ltr; text-align: left;"><span style="font-family: \'Orbitron\'; font-size: 1.6rem; color: #facc15;">د.ج{formatted_p}</span> <span style="font-size: 1.1rem; color: #facc15; font-family: \'Cairo\'; margin-left: 4px;"</span></div>'
                             except: prix_html = '<span style="font-family: \'Orbitron\'; font-size: 1.5rem; color: #facc15;">0 د.ج</span>'
 
                         # 🛠️ الكرت العلوي
