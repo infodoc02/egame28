@@ -620,28 +620,31 @@ if submit_search and user_phone:
                                 """, unsafe_allow_html=True)
 
                             # --- جدول التواريخ والتكاليف المالية المستقرة بصرياً (داخل الأكسباندر فقط) ---
-                            st.markdown(f"""
+                            # 1. تجهيز النص بالكامل في متغير واحد قبل كتابة الـ HTML
+                        # ندمج الرقم مع العملة في نص واحد لضمان عدم التفكك
+                        full_price_text = f"{formatted_number} د.ج" if 'formatted_number' in locals() else "0 د.ج"
+
+                        st.markdown(f"""
                             <div style="background: rgba(30, 41, 59, 0.7); border-radius: 12px; padding: 15px; border: 1px solid #334155; box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);">
                                 <table style="width:100%; border-collapse: collapse; direction: rtl; text-align: right; font-family: 'Cairo', sans-serif;">
                                     <tr style="border-bottom: 1px solid #334155;">
-                                        <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold; width: 50%;">📅 تاريخ دخول الورشة</td>
-                                        <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace; direction: ltr !important; unicode-bidi: bidi-override;">
+                                        <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold; width: 45%;">📅 تاريخ دخول الورشة</td>
+                                        <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace; direction: ltr !important;">
                                             {dev.get('Date_Entree', '---')}
                                         </td>
                                     </tr>
                                     <tr style="border-bottom: 1px solid #334155;">
                                         <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold;">📅 تاريخ الخروج والتسليم</td>
-                                        <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace; direction: ltr !important; unicode-bidi: bidi-override;">
+                                        <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace; direction: ltr !important;">
                                             {d_sortie if d_sortie else '---'}
                                         </td>
                                     </tr>
                                     <tr>
                                         <td style="padding: 16px 6px 4px 6px; color: #facc15; font-size: 1.15rem; font-weight: 900;">💰 المستحقات الصافية</td>
                                         <td style="text-align: left; padding-top: 12px;">
-                                            <div style="display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: 8px; direction: ltr !important;">
-                                                <span style="font-size: 1.1rem; color: #facc15; font-family: 'Cairo';">د.ج</span>
-                                                <span style="font-family: 'Orbitron', sans-serif; font-size: 1.6rem; color: #facc15; font-weight: 900; unicode-bidi: bidi-override;">{formatted_number if 'formatted_number' in locals() else '0'}</span>
-                                            </div>
+                                            <span style="color: #facc15; font-family: 'Cairo', sans-serif; font-size: 1.6rem; font-weight: 900; white-space: nowrap; direction: ltr; display: inline-block;">
+                                                {full_price_text}
+                                            </span>
                                         </td>
                                     </tr>
                                 </table>
