@@ -2,12 +2,32 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, db
 import re
+import os
 from datetime import datetime
 import pandas as pd
 import threading
 import telebot
 import io
 import pytz
+
+
+def get_secret(name, default=None):
+    try:
+        return st.secrets.get(name, default)
+    except Exception:
+        return os.environ.get(name, default)
+
+
+def secret_exists(name):
+    try:
+        return name in st.secrets
+    except Exception:
+        return name in os.environ
+
+DB_URL = get_secret("DB_URL", "https://info-2b186-default-rtdb.europe-west1.firebasedatabase.app/")
+TELEGRAM_TOKEN = get_secret("TELEGRAM_TOKEN", "8323521886:AAHpn4-AW4AY9K891LHSC9PbWdHFCgD_q9U")
+BOT_USERNAME = get_secret("BOT_USERNAME", "InfoDocBot")
+MY_ADMIN_ID = get_secret("MY_ADMIN_ID", "2056755271")
 
 # ==============================================================================
 # 1. إعدادات الصفحة الأساسية (Configuration)
@@ -35,20 +55,23 @@ def init_db():
     """ربط التطبيق بـ Firebase مع معالجة الأخطاء."""
     if not firebase_admin._apps:
         try:
-            # التأكد من وجود الإعدادات في secrets
-            if "firebase" not in st.secrets or "DB_URL" not in st.secrets:
-                st.error("⚠️ ملف الإعدادات (secrets.toml) غير مكتمل!")
+            # التأكد من وجود الإعدادات في secrets أو البيئة
+            if not secret_exists("firebase") or not secret_exists("DB_URL"):
+                st.error("⚠️ ملف الإعدادات (secrets.toml) غير مكتمل أو غير موجود!")
                 return False
                 
-            cred_dict = dict(st.secrets["firebase"])
+            cred_dict = dict(get_secret("firebase", {}))
             
             # معالجة الرموز الخاصة بالمفتاح السري (مهمة جداً في الاستضافة)
             if "\\n" in cred_dict.get("private_key", ""):
                 cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
             
+            if not DB_URL:
+                st.error("⚠️ لا يوجد رابط Firebase (DB_URL) في secrets.")
+                return False
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred, {
-                'databaseURL': st.secrets["DB_URL"]
+                'databaseURL': DB_URL
             })
             return True
         except Exception as e:
@@ -175,15 +198,37 @@ st.markdown("""
 
     /* 1. الستايل العام لكل الأكسباندرز */
     div[data-testid="stExpander"] {
-        border: 1px solid #30363d !important;
-        background: rgba(13, 17, 23, 0.95) !important;
+        border: 1px solid #242933 !important;
+        background: rgba(8, 12, 20, 0.94) !important;
         border-radius: 12px !important;
         margin-bottom: 15px !important;
         box-shadow: none !important;
     }
 
-    div[data-testid="stExpander"] summary {
+    div[data-testid="stExpander"]:not(:has(.first-expander-marker)) {
+        background: rgba(13, 17, 23, 0.92) !important;
+        border-color: #30363d !important;
+    }
+
+    div[data-testid="stExpander"]:not(:has(.first-expander-marker)) summary,
+    div[data-testid="stExpander"]:not(:has(.first-expander-marker)) summary p {
         color: #c9d1d9 !important;
+        font-family: 'Tajawal', sans-serif !important;
+        font-weight: 500 !important;
+    }
+
+    div[data-testid="stExpander"]:has(.first-expander-marker) {
+        border: 2px solid #d29922 !important;
+        animation: yellow-glow 3s infinite ease-in-out !important;
+        background: rgba(210, 153, 34, 0.12) !important;
+        box-shadow: 0 0 20px rgba(255, 204, 0, 0.18) !important;
+        direction: rtl !important; /* لضمان الاتجاه من اليمين */
+    }
+
+    div[data-testid="stExpander"]:has(.first-expander-marker) summary,
+    div[data-testid="stExpander"]:has(.first-expander-marker) summary p {
+        color: #ffcc00 !important;
+        font-weight: 900 !important;
         font-family: 'Tajawal', sans-serif !important;
     }
 
@@ -193,16 +238,8 @@ st.markdown("""
         50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
     }
 
-    /* استهداف الأكسباندر الأول فقط في الصفحة (اللي هو تاع الشروط) */
-    div[data-testid="stExpander"]:first-of-type {
-        border: 2px solid #d29922 !important;
-        animation: yellow-glow 3s infinite ease-in-out !important;
-        background: rgba(210, 153, 34, 0.12) !important;
-        direction: rtl !important; /* لضمان الاتجاه من اليمين */
-    }
-
     /* تنسيق العنوان (اضغط هنا...) */
-    div[data-testid="stExpander"]:first-of-type summary {
+    div[data-testid="stExpander"]:has(.first-expander-marker) summary {
         direction: rtl !important;
         text-align: right !important;
         display: flex !important;
@@ -211,7 +248,7 @@ st.markdown("""
         gap: 15px !important;
     }
 
-    div[data-testid="stExpander"]:first-of-type summary p {
+    div[data-testid="stExpander"]:has(.first-expander-marker) summary p {
         font-family: 'Cairo', sans-serif !important;
         font-weight: 900 !important;
         color: #ffcc00 !important;
@@ -224,7 +261,7 @@ st.markdown("""
         flex-direction: row-reverse;
         justify-content: space-between;
     }
-    div[data-testid="stExpander"]:first-of-type summary {
+    div[data-testid="stExpander"]:has(.first-expander-marker) summary {
         color: #ffcc00 !important;
         font-weight: 900 !important;
     }
@@ -242,7 +279,8 @@ if 'tracked' not in st.session_state:
         res = requests.get('https://api.ipify.org', timeout=5)
         if res.status_code == 200:
             user_ip = res.text.replace('.', '_')
-            today = datetime.now().strftime('%Y-%m-%d')
+            algeria_tz = pytz.timezone('Africa/Algiers')
+            today = datetime.now(algeria_tz).strftime('%Y-%m-%d')
             
             # 2. المرجع المباشر للـ IP الخاص باليوم
             # نستعمل .get() ونتأكد من النتيجة بدقة
@@ -253,10 +291,8 @@ if 'tracked' not in st.session_state:
                 # نسجل الـ IP فوراً لمنع التكرار
                 db.reference(f"stats/daily_ips/{today}/{user_ip}").set(True)
                 
-                # نزيد عداد زوار اليوم
-                # استعملنا هنا التحديث المباشر بدل Transaction للتجربة
-                current_count = db.reference(f"stats/daily_visitors/{today}").get() or 0
-                db.reference(f"stats/daily_visitors/{today}").set(current_count + 1)
+                # نزيد عداد زوار اليوم بطريقة آمنة
+                db.reference(f"stats/daily_visitors/{today}").transaction(lambda c: (c or 0) + 1)
             
             # نمنع الكود من إعادة المحاولة في نفس الجلسة
             st.session_state['tracked'] = True
@@ -345,6 +381,7 @@ with c4:
 
 # قسم الشروط (المضيء فقط)
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
+    st.markdown('<div class="first-expander-marker" style="display:none;"></div>', unsafe_allow_html=True)
     st.markdown("""
         <div style="text-align: right; direction: rtl; font-family: 'Cairo'; line-height: 1.8; color: #f0f6fc;">
             1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<b>رفض الزبون ذلك</b>، يتم دفع <b>1000 دج</b> ثمن الجهد والفحص.<br>
@@ -425,13 +462,36 @@ st.markdown("""
     }
 
     /* تعديل الأكسباندر ليلتصق بالبطاقة */
-    div[data-testid="stExpander"] {
+    div[data-testid="stExpander"]:not(:first-of-type) {
         background: #0d1117 !important;
         border: 1px solid #30363d !important;
         border-top: 1px dashed #30363d !important; /* خط متقطع يفصل بين العنوان والتفاصيل */
         border-radius: 0 0 12px 12px !important; /* تقويس من التحت فقط */
         box-shadow: 0 10px 15px rgba(0,0,0,0.3) !important;
         margin-bottom: 0px !important;
+    }
+
+    div[data-testid="stExpander"]:first-of-type {
+        background: rgba(255, 204, 0, 0.16) !important;
+        border: 2px solid #ffcc00 !important;
+        border-top: 1px dashed #30363d !important;
+        border-radius: 0 0 12px 12px !important;
+        box-shadow: 0 0 20px rgba(255,204,0,0.18) !important;
+        margin-bottom: 0px !important;
+    }
+
+    div[data-testid="stExpander"]:not(:first-of-type) summary,
+    div[data-testid="stExpander"]:not(:first-of-type) summary p {
+        color: #c9d1d9 !important;
+        font-family: 'Tajawal', sans-serif !important;
+        font-weight: 500 !important;
+    }
+
+    div[data-testid="stExpander"]:first-of-type summary,
+    div[data-testid="stExpander"]:first-of-type summary p {
+        color: #ffcc00 !important;
+        font-weight: 900 !important;
+        font-family: 'Tajawal', sans-serif !important;
     }
     
     /* جدول التفاصيل الداخلية */
@@ -471,7 +531,7 @@ if submit_search and user_phone:
                     st.warning("⚠️ لم نجد أي جهاز مرتبط بهذا الرقم في قاعدة بياناتنا.")
                 else:
                     # 1. خيار ربط التلغرام (يظهر مرة واحدة في الأعلى)
-                    bot_user = st.secrets.get("BOT_USERNAME", "InfoDocBot")
+                    bot_user = BOT_USERNAME
                     st.markdown(f'''
                         <a href="https://t.me/{bot_user}?start={norm_phone}" target="_blank" class="floating-tg-btn">
                             🚀 تفعيل إشعارات التلغرام
@@ -614,7 +674,7 @@ if submit_search and user_phone:
 # ==============================================================================
 @st.cache_resource
 def start_telegram_bot():
-    token = st.secrets.get("TELEGRAM_TOKEN")
+    token = TELEGRAM_TOKEN
     if not token: return "Missing Token"
 
     try:
@@ -654,5 +714,5 @@ def start_telegram_bot():
         return f"Error: {e}"
 
 # تشغيل البوت
-if "TELEGRAM_TOKEN" in st.secrets:
+if TELEGRAM_TOKEN:
     start_telegram_bot()
