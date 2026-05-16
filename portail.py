@@ -138,9 +138,9 @@ def get_status_priority(status):
 # ==============================================================================
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Inter:wght@400;500;700;900&display=swap');
     
-    .stApp { background: #0d1117; color: white; font-family: 'Cairo', sans-serif; }
+    .stApp { background: #0d1117; color: white; font-family: 'Tajawal', 'Inter', sans-serif; }
     
     /* الحاوية الرئيسية */
     .hero-container {
@@ -173,12 +173,18 @@ st.markdown("""
     .status-closed { color: #f85149; border: 2px solid #f85149; animation: blink-red 2s infinite; }
 
 
-    /* 1. الستايل العام لكل الأكسباندرز (باش ما يبقاوش كحولة بزاف) */
+    /* 1. الستايل العام لكل الأكسباندرز */
     div[data-testid="stExpander"] {
         border: 1px solid #30363d !important;
-        background: rgba(22, 27, 34, 0.5) !important;
+        background: rgba(13, 17, 23, 0.95) !important;
         border-radius: 12px !important;
         margin-bottom: 15px !important;
+        box-shadow: none !important;
+    }
+
+    div[data-testid="stExpander"] summary {
+        color: #c9d1d9 !important;
+        font-family: 'Tajawal', sans-serif !important;
     }
 
     /* أنيميشن الإضاءة */
@@ -188,11 +194,10 @@ st.markdown("""
     }
 
     /* استهداف الأكسباندر الأول فقط في الصفحة (اللي هو تاع الشروط) */
-    /* أو استهداف الأكسباندر اللي يحتوي على نص معين */
     div[data-testid="stExpander"]:first-of-type {
         border: 2px solid #d29922 !important;
         animation: yellow-glow 3s infinite ease-in-out !important;
-        background: rgba(210, 153, 34, 0.05) !important;
+        background: rgba(210, 153, 34, 0.12) !important;
         direction: rtl !important; /* لضمان الاتجاه من اليمين */
     }
 
@@ -218,6 +223,10 @@ st.markdown("""
     div[data-testid="stExpander"] summary {
         flex-direction: row-reverse;
         justify-content: space-between;
+    }
+    div[data-testid="stExpander"]:first-of-type summary {
+        color: #ffcc00 !important;
+        font-weight: 900 !important;
     }
     </style>
 """, unsafe_allow_html=True)
