@@ -429,7 +429,7 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
-    /* 🛠️ إصلاح الأكسباندر ليكون على خط محاذاة واحد تماماً مع الكرت العلوى دون الدخول للداخل */
+    /* 🛠️ إصلاح الأكسباندر ليكون على خط محاذاة واحد تماماً مع الكرت العلوي ومحاذاة اليمين للسهم والنص */
     div[data-testid="stExpander"] {
         background: #0f172a !important;
         border: 2px solid #334155 !important;
@@ -440,11 +440,20 @@ st.markdown("""
         z-index: 1;
         margin-top: -2px !important; /* إلغاء الفراغات العمودية */
         padding: 0px !important; /* تصفير الإزاحة الداخلية الزائدة */
+        direction: rtl !important;
+        text-align: right !important;
     }
     
     /* توسيع المساحة الداخلية لمحتوى الأكسباندر ليطابق الأطراف */
     div[data-testid="stExpander"] > div {
         padding: 15px 20px !important;
+        direction: rtl !important;
+        text-align: right !important;
+    }
+
+    div[data-testid="stExpander"] summary {
+        padding: 12px 20px !important;
+        direction: rtl !important;
     }
 
     div[data-testid="stExpander"] summary p {
@@ -452,11 +461,7 @@ st.markdown("""
         font-weight: 800 !important;
         color: #3b82f6 !important;
         font-family: 'Cairo', sans-serif !important;
-    }
-    
-    /* تصفير الهوامش الإضافية التي تفرضها استريملايت */
-    div[data-testid="stExpander"] summary {
-        padding: 12px 20px !important;
+        text-align: right !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -510,61 +515,54 @@ if submit_search and user_phone:
                         
                         # 🎨 مصفوفة الألوان الكبيرة المضيئة المخصصة لكل حالة بدقة
                         if status == "Prêt":
-                            status_color = "#22c55e" # أخضر فاقع
+                            status_color = "#22c55e"
                             status_bg = "rgba(34, 197, 94, 0.15)"
                             status_text = "🟢 جاهز للتسليم - Prêt"
                         elif status == "Annulé":
-                            status_color = "#ef4444" # أحمر فاقع
+                            status_color = "#ef4444"
                             status_bg = "rgba(239, 68, 68, 0.15)"
                             status_text = "❌ ملغي - Annulé"
                         elif status == "Non Réparable":
-                            status_color = "#64748b" # رمادي غامق لشرف المحاولة
+                            status_color = "#64748b"
                             status_bg = "rgba(100, 116, 139, 0.15)"
                             status_text = "⚠️ غير قابل للإصلاح"
                         elif is_delivered:
-                            status_color = "#a855f7" # بنفسجي فخم للتسليم النهائي
+                            status_color = "#a855f7"
                             status_bg = "rgba(168, 85, 247, 0.15)"
                             status_text = "📦 تم تسليم الجهاز ودفعه"
                         else:
-                            status_color = "#3b82f6" # أزرق صيانة
+                            status_color = "#3b82f6"
                             status_bg = "rgba(59, 130, 246, 0.15)"
                             status_text = "⏳ قيد الفحص والصيانة حالياً"
 
                         # 💰 معالجة وعرض السعر وحل مشكلة القراءة المعكوسة تماماً
                         raw_prix = dev.get('Prix', 0)
                         if status == "En Cours":
-                            prix_html = '<span style="font-size: 1.15rem; color:#94a3b8;">⚙️ قيد التقييم الفني...</span>'
+                            prix_html = '<span style="font-size: 1.15rem; color:#94a3b8; font-family: \'Cairo\';">⚙️ قيد التقييم الفني...</span>'
                         else:
                             if raw_prix is not None and str(raw_prix).replace('.', '', 1).isdigit() and float(raw_prix) > 0:
                                 formatted_number = f"{int(float(raw_prix)):,}".replace(',', ' ')
-                                # حيلة الـ HTML والـ ltr لضمان عدم انعكاس الأرقام والعملة أبداً
+                                # تنسيق ثابت يحمي الأرقام من الانعكاس على شاشات الهواتف
                                 prix_html = f'<div style="direction: rtl; text-align: left; font-weight: 900;"><span style="font-family: \'Orbitron\', sans-serif; font-size: 1.6rem; color: #facc15;">{formatted_number}</span> <span style="font-size: 1.1rem; color: #facc15; font-family: \'Cairo\'; margin-right: 4px;">د.ج</span></div>'
                             else:
                                 prix_html = '<span style="font-family: \'Orbitron\'; font-size: 1.5rem; color: #facc15; direction: rtl;">0 د.ج</span>'
 
-                        # 🛠️ عرض الحاوية العلوية للجهاز (أصبح الاسم أبيض ناصع)
+                        # 🛠️ أولاً: عرض الحاوية العلوية للجهاز (أصبح الاسم أبيض ناصع)
                         st.markdown(f"""
-                            <div style="background: rgba(30, 41, 59, 0.7); border-radius: 12px; padding: 15px; border: 1px solid #334155; box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);">
-                                <table style="width:100%; border-collapse: collapse; direction: rtl; text-align: right; font-family: 'Cairo', sans-serif;">
-                                    <tr style="border-bottom: 1px solid #334155;">
-                                        <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold; text-align: right;">📅 تاريخ دخول الورشة</td>
-                                        <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace;">{dev.get('Date_Entree', '---')}</td>
-                                    </tr>
-                                    <tr style="border-bottom: 1px solid #334155;">
-                                        <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold; text-align: right;">📅 تاريخ الخروج والتسليم</td>
-                                        <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace;">{d_sortie if d_sortie else '---'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 16px 6px 4px 6px; color: #facc15; font-size: 1.15rem; font-weight: 900; text-align: right;">💰 المستحقات الصافية للتصليح</td>
-                                        <td style="text-align: left; padding-top: 12px; text-shadow: 0 0 10px rgba(250,204,21,0.2);">
-                                            {prix_html}
-                                        </td>
-                                    </tr>
-                                </table>
+                            <div class="custom-device-card" style="border-right: 6px solid {status_color};">
+                                <div style="display: flex; justify-content: space-between; align-items: center; direction: rtl;">
+                                    <div style="text-align: right;">
+                                        <h3 class="card-title-text">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
+                                        <div class="card-ticket-id">تذكرة رقم: #{dev.get('ID', '0000')}</div>
+                                    </div>
+                                    <div class="portal-badge" style="background: {status_bg}; border: 1px solid {status_color}; color: {status_color};">
+                                        {status_text}
+                                    </div>
+                                </div>
                             </div>
                         """, unsafe_allow_html=True)
                         
-                        # 📄 تفاصيل الجهاز المدمجة بمحاذاة تامة للأطراف بدون دخول زائد للداخل
+                        # 📄 ثانياً: تفاصيل الجهاز المدمجة بداخل الأكسباندر (موجّه كلياً لليمين)
                         with st.expander("📄 انقر هنا لعرض التقرير الفني والمستحقات المالية"):
                             d_sortie = dev.get("Date_Sortie")
                             
@@ -580,10 +578,10 @@ if submit_search and user_phone:
                                         w_status_txt = "🛡️ الضمان ساري ومحمي حالياً" if not is_expired else "🛑 فترة الضمان الـ (30 يوماً) انتهت"
                                         
                                         st.markdown(f"""
-                                            <div style="margin-top: 5px; margin-bottom: 18px; border: 1px solid {w_color}; padding: 15px; border-radius: 12px; background: {w_bg}; direction: rtl;">
+                                            <div style="margin-top: 5px; margin-bottom: 18px; border: 1px solid {w_color}; padding: 15px; border-radius: 12px; background: {w_bg}; direction: rtl; text-align: right;">
                                                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
                                                     <span style="color: {w_color}; font-weight: 900; font-size: 1.1rem;">{w_status_txt}</span>
-                                                    <span style="color: {w_color}; font-weight: 900; font-size: 1.6rem; font-family: 'Orbitron'; text-shadow: 0 0 10px rgba(234,179,8,0.3);">{int(val)}%</span>
+                                                    <span style="color: {w_color}; font-weight: 900; font-size: 1.6rem; font-family: 'Orbitron';">{int(val)}%</span>
                                                 </div>
                                                 <div style="width: 100%; background: #1e293b; border-radius: 20px; height: 16px; overflow: hidden; border: 1px solid #334155; display: flex;">
                                                     <div style="width: {val}%; background: {w_color}; height: 100%; transition: width 0.8s ease-in-out;"></div>
@@ -621,20 +619,20 @@ if submit_search and user_phone:
                                     </div>
                                 """, unsafe_allow_html=True)
 
-                            # --- جدول التواريخ والتكاليف المالية المستقرة بصرياً ---
+                            # --- جدول التواريخ والتكاليف المالية المستقرة بصرياً (داخل الأكسباندر فقط) ---
                             st.markdown(f"""
                                 <div style="background: rgba(30, 41, 59, 0.7); border-radius: 12px; padding: 15px; border: 1px solid #334155; box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);">
                                     <table style="width:100%; border-collapse: collapse; direction: rtl; text-align: right; font-family: 'Cairo', sans-serif;">
                                         <tr style="border-bottom: 1px solid #334155;">
-                                            <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold;">📅 تاريخ دخول الورشة</td>
+                                            <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold; text-align: right;">📅 تاريخ دخول الورشة</td>
                                             <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace;">{dev.get('Date_Entree', '---')}</td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid #334155;">
-                                            <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold;">📅 تاريخ الخروج والتسليم</td>
+                                            <td style="padding: 12px 6px; color: #94a3b8; font-size: 1.05rem; font-weight: bold; text-align: right;">📅 تاريخ الخروج والتسليم</td>
                                             <td style="text-align: left; color: #f1f5f9; font-size: 1.1rem; font-weight: bold; font-family: 'Courier New', monospace;">{d_sortie if d_sortie else '---'}</td>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 16px 6px 4px 6px; color: #facc15; font-size: 1.15rem; font-weight: 900;">💰 المستحقات الصافية للتصليح</td>
+                                            <td style="padding: 16px 6px 4px 6px; color: #facc15; font-size: 1.15rem; font-weight: 900; text-align: right;">💰 المستحقات الصافية للتصليح</td>
                                             <td style="text-align: left; padding-top: 12px; text-shadow: 0 0 10px rgba(250,204,21,0.2);">
                                                 {prix_html}
                                             </td>
