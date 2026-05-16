@@ -3,10 +3,9 @@ import firebase_admin
 from firebase_admin import credentials, db
 import re
 from datetime import datetime
-import pandas as pd # سيستخدم لاحقاً لعرض البيانات
+import pandas as pd
 import threading
 import telebot
-import pandas as pd
 import io
 import pytz
 
@@ -59,6 +58,8 @@ def init_db():
 
 # محاولة الاتصال
 db_status = init_db()
+if not db_status:
+    st.stop()
 
 # ==============================================================================
 # 3. الدوال البرمجية المساعدة (Helper Functions)
@@ -83,10 +84,9 @@ def normalize_phone(phone: str) -> str:
     return p
 
 def get_warranty_stats(date_sortie_str):
-    """
+    r"""
     حساب وضع الضمان.
-    الصيغة الرياضية المتبعة:
-    $$\text{percent} = \left( \frac{\text{remaining\_days}}{30} \right) \times 100$$
+    percent = (remaining_days / 30) * 100
     """
     if not date_sortie_str or str(date_sortie_str).strip() in ["", "---", "None"]:
         return None
@@ -282,6 +282,15 @@ st.markdown(f'''
     </div>
 ''', unsafe_allow_html=True)
 
+st.markdown('''
+    <div style="display:grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 25px;">
+        <div style="background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.22); border-radius: 16px; padding: 18px; color: #c9d1d9;">
+            <div style="font-weight: 700; font-size: 1rem; margin-bottom: 8px;">كيفية استخدام البوابة</div>
+            <div style="font-size:0.95rem; line-height:1.7;">ادخل رقم هاتفك الجزائري في الحقل ثم اضغط على "ابحث عن أجهزتي". ستظهر لك حالة الجهاز والتاريخ والمبلغ المستحق بشكل واضح.</div>
+        </div>
+    </div>
+''', unsafe_allow_html=True)
+
 # أزرار التواصل (بداية من العمود الأول)
 st.markdown("""
     <style>
@@ -425,8 +434,13 @@ st.markdown("""
 
 # استخدام st.form لمنع البحث المتكرر مع كل حرف
 with st.form("search_form", clear_on_submit=False):
-    user_phone = st.text_input("", placeholder="0XXXXXXXXX", label_visibility="collapsed")
+    user_phone = st.text_input("رقم الهاتف", placeholder="0XXXXXXXXX", label_visibility="visible")
     submit_search = st.form_submit_button("🔍 ابحث عن أجهزتي")
+
+if submit_search:
+    if not user_phone:
+        st.error("⚠️ الرجاء إدخال رقم هاتف صالح للبحث.")
+        submit_search = False
 
 if submit_search and user_phone:
     norm_phone = normalize_phone(user_phone)
