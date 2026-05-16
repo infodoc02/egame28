@@ -198,72 +198,47 @@ st.markdown("""
 
     /* 1. الستايل العام لكل الأكسباندرز */
     div[data-testid="stExpander"] {
-        border: 1px solid #242933 !important;
-        background: rgba(8, 12, 20, 0.94) !important;
+        border: 1px solid #30363d !important;
+        background: #0d1117 !important;
         border-radius: 12px !important;
         margin-bottom: 15px !important;
         box-shadow: none !important;
     }
 
-    div[data-testid="stExpander"]:not(:has(.first-expander-marker)) {
-        background: rgba(13, 17, 23, 0.92) !important;
-        border-color: #30363d !important;
-    }
-
-    div[data-testid="stExpander"]:not(:has(.first-expander-marker)) summary,
-    div[data-testid="stExpander"]:not(:has(.first-expander-marker)) summary p {
+    div[data-testid="stExpander"] summary {
         color: #c9d1d9 !important;
         font-family: 'Tajawal', sans-serif !important;
         font-weight: 500 !important;
+        font-size: 1rem !important;
+        text-align: right !important;
+        direction: rtl !important;
     }
 
-    div[data-testid="stExpander"]:has(.first-expander-marker) {
-        border: 2px solid #d29922 !important;
-        animation: yellow-glow 3s infinite ease-in-out !important;
-        background: rgba(210, 153, 34, 0.12) !important;
-        box-shadow: 0 0 20px rgba(255, 204, 0, 0.18) !important;
-        direction: rtl !important; /* لضمان الاتجاه من اليمين */
+    div[data-testid="stExpander"] summary p {
+        color: #c9d1d9 !important;
+        font-family: 'Tajawal', sans-serif !important;
+        font-weight: 500 !important;
+        font-size: 1rem !important;
+        margin: 0 !important;
     }
 
-    div[data-testid="stExpander"]:has(.first-expander-marker) summary,
-    div[data-testid="stExpander"]:has(.first-expander-marker) summary p {
+    div[data-testid="stExpander"]:first-of-type {
+        border: 2px solid #ffcc00 !important;
+        background: rgba(255, 204, 0, 0.12) !important;
+        box-shadow: 0 0 18px rgba(255, 204, 0, 0.16) !important;
+    }
+
+    div[data-testid="stExpander"]:first-of-type summary,
+    div[data-testid="stExpander"]:first-of-type summary p {
         color: #ffcc00 !important;
         font-weight: 900 !important;
-        font-family: 'Tajawal', sans-serif !important;
+        font-size: 1.05rem !important;
     }
 
     /* أنيميشن الإضاءة */
     @keyframes yellow-glow {
         0%, 100% { border-color: #d29922; box-shadow: 0 0 5px #d29922; }
         50% { border-color: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
-    }
-
-    /* تنسيق العنوان (اضغط هنا...) */
-    div[data-testid="stExpander"]:has(.first-expander-marker) summary {
-        direction: rtl !important;
-        text-align: right !important;
-        display: flex !important;
-        flex-direction: row !important; /* ترتيب العناصر داخله */
-        justify-content: flex-start !important;
-        gap: 15px !important;
-    }
-
-    div[data-testid="stExpander"]:has(.first-expander-marker) summary p {
-        font-family: 'Cairo', sans-serif !important;
-        font-weight: 900 !important;
-        color: #ffcc00 !important;
-        font-size: 1.1rem !important;
-        margin: 0 !important;
-    }
-    
-    /* إذا حبيت تنحي السهم كامل وتقلبو جهة اليسار */
-    div[data-testid="stExpander"] summary {
-        flex-direction: row-reverse;
-        justify-content: space-between;
-    }
-    div[data-testid="stExpander"]:has(.first-expander-marker) summary {
-        color: #ffcc00 !important;
-        font-weight: 900 !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -272,6 +247,9 @@ st.markdown("""
 # 4. واجهة المستخدم (UI)
 # ==============================================================================
 # منطق التحقق الصارم بالـ IP لضمان الدقة 100%
+algeria_tz = pytz.timezone('Africa/Algiers')
+today = datetime.now(algeria_tz).strftime('%Y-%m-%d')
+
 if 'tracked' not in st.session_state:
     try:
         import requests
@@ -279,8 +257,6 @@ if 'tracked' not in st.session_state:
         res = requests.get('https://api.ipify.org', timeout=5)
         if res.status_code == 200:
             user_ip = res.text.replace('.', '_')
-            algeria_tz = pytz.timezone('Africa/Algiers')
-            today = datetime.now(algeria_tz).strftime('%Y-%m-%d')
             
             # 2. المرجع المباشر للـ IP الخاص باليوم
             # نستعمل .get() ونتأكد من النتيجة بدقة
@@ -300,8 +276,14 @@ if 'tracked' not in st.session_state:
         # يمكنك تفعيل السطر التالي مؤقتاً لتصحيح الأخطاء إذا لم يشتغل
         # st.error(f"خطأ في جلب الـ IP: {e}")
         pass
+
+visitor_count = 0
+try:
+    visitor_count = int(db.reference(f"stats/daily_visitors/{today}").get() or 0)
+except Exception:
+    visitor_count = 0
+
 # الهيدر
-algeria_tz = pytz.timezone('Africa/Algiers')
 now = datetime.now(algeria_tz)
 greeting = "عزيزي الزبون صباح الخير" if 5 <= now.hour < 12 else "عزيزي الزبون مساء الخير"
 
@@ -320,7 +302,8 @@ st.markdown(f'''
     <div class="hero-container">
         <div style="color: #8b949e; font-size: 0.9rem;">{greeting} | {now.strftime("%Y-%m-%d %H:%M")}</div>
         <div class="main-title">INFODOC</div>
-        <div class="sub-title" style="color: #8b949e; margin-bottom: 20px;">Vente & Réparation Informatique</div>
+        <div class="sub-title" style="color: #8b949e; margin-bottom: 10px;">Vente & Réparation Informatique</div>
+        <div style="color: #adbac7; font-size: 0.95rem; margin-bottom: 18px;">زوار اليوم: <b style="color: #58a6ff;">{visitor_count:,}</b></div>
         <span class="status-badge {'status-open' if shop_status else 'status-closed'}">
             {'● OPEN - مـفـتـوح' if shop_status else '● CLOSED - مـغـلـق'}
         </span>
@@ -465,19 +448,17 @@ st.markdown("""
     div[data-testid="stExpander"]:not(:first-of-type) {
         background: #0d1117 !important;
         border: 1px solid #30363d !important;
-        border-top: 1px dashed #30363d !important; /* خط متقطع يفصل بين العنوان والتفاصيل */
         border-radius: 0 0 12px 12px !important; /* تقويس من التحت فقط */
-        box-shadow: 0 10px 15px rgba(0,0,0,0.3) !important;
-        margin-bottom: 0px !important;
+        box-shadow: none !important;
+        margin-bottom: 15px !important;
     }
 
     div[data-testid="stExpander"]:first-of-type {
-        background: rgba(255, 204, 0, 0.16) !important;
+        background: rgba(255, 204, 0, 0.12) !important;
         border: 2px solid #ffcc00 !important;
-        border-top: 1px dashed #30363d !important;
         border-radius: 0 0 12px 12px !important;
-        box-shadow: 0 0 20px rgba(255,204,0,0.18) !important;
-        margin-bottom: 0px !important;
+        box-shadow: 0 0 18px rgba(255,204,0,0.16) !important;
+        margin-bottom: 15px !important;
     }
 
     div[data-testid="stExpander"]:not(:first-of-type) summary,
@@ -485,6 +466,9 @@ st.markdown("""
         color: #c9d1d9 !important;
         font-family: 'Tajawal', sans-serif !important;
         font-weight: 500 !important;
+        font-size: 1rem !important;
+        text-align: right !important;
+        direction: rtl !important;
     }
 
     div[data-testid="stExpander"]:first-of-type summary,
@@ -492,6 +476,9 @@ st.markdown("""
         color: #ffcc00 !important;
         font-weight: 900 !important;
         font-family: 'Tajawal', sans-serif !important;
+        font-size: 1.05rem !important;
+        text-align: right !important;
+        direction: rtl !important;
     }
     
     /* جدول التفاصيل الداخلية */
@@ -574,13 +561,13 @@ if submit_search and user_phone:
                             prix_display = "0 د.ج" # أو أي قيمة افتراضية تختارها للأجهزة المنتهية
                     # 1. تصميم رأس البطاقة (Header)
                     st.markdown(f"""
-                        <div style="border-right: 6px solid {status_color}; padding: 12px; background: #161b22; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d;">
+                        <div style="border-right: 6px solid {status_color}; padding: 16px; background: #161b22; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d;">
                             <div>
-                                <h3 style="margin: 0; color: #f0f6fc; font-size: 1.1rem;">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
-                                <div style="color: #8b949e; font-size: 0.8rem; font-family: monospace;">Ticket #{dev.get('ID', '0000')}</div>
+                                <h3 style="margin: 0; color: #f0f6fc; font-size: 1.25rem;">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
+                                <div style="color: #8b949e; font-size: 0.95rem; font-family: monospace;">Ticket #{dev.get('ID', '0000')}</div>
                             </div>
-                            <div style="background-color: {status_color}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 5px;">
-                                {status_icon} {status}
+                            <div style="background-color: {status_color}; color: white; padding: 6px 14px; border-radius: 22px; font-size: 0.95rem; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 1.2rem; line-height: 1;">{status_icon}</span> {status}
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
@@ -654,16 +641,16 @@ if submit_search and user_phone:
                             <div style="background: rgba(48, 54, 61, 0.2); border-radius: 8px; padding: 10px; border: 1px solid #30363d;">
                                 <table style="width:100%; border-collapse: collapse; direction: rtl; text-align: right;">
                                     <tr style="border-bottom: 1px solid #30363d;">
-                                        <td style="padding: 6px; color: #8b949e; font-size: 0.85rem;">📅 تاريخ الدخول</td>
-                                        <td style="text-align: left; color: #f0f6fc; font-size: 0.85rem;">{dev.get('Date_Entree', '---')}</td>
+                                        <td style="padding: 10px; color: #8b949e; font-size: 1rem;">📅 تاريخ الدخول</td>
+                                        <td style="text-align: left; color: #f0f6fc; font-size: 1rem;">{dev.get('Date_Entree', '---')}</td>
                                     </tr>
                                     <tr style="border-bottom: 1px solid #30363d;">
-                                        <td style="padding: 6px; color: #8b949e; font-size: 0.85rem;">📅 تاريخ الخروج</td>
-                                        <td style="text-align: left; color: #f0f6fc; font-size: 0.85rem;">{d_sortie if d_sortie else '---'}</td>
+                                        <td style="padding: 10px; color: #8b949e; font-size: 1rem;">📅 تاريخ الخروج</td>
+                                        <td style="text-align: left; color: #f0f6fc; font-size: 1rem;">{d_sortie if d_sortie else '---'}</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 8px 6px 0 6px; color: #8b949e; font-size: 0.85rem;">💰 المستحقات</td>
-                                        <td style="text-align: left; color: #58a6ff; font-weight: 800; font-size: 1.1rem; padding-top: 8px;">{prix_display}</td>
+                                        <td style="padding: 10px 6px 0 6px; color: #8b949e; font-size: 1rem;">💰 المستحقات</td>
+                                        <td style="text-align: left; color: #58a6ff; font-weight: 800; font-size: 1.2rem; padding-top: 10px;">{prix_display}</td>
                                     </tr>
                                 </table>
                             </div>
