@@ -525,12 +525,7 @@ if submit_search and user_phone:
                             if raw_prix is not None and str(raw_prix).replace('.', '', 1).isdigit() and float(raw_prix) > 0:
                                 formatted_number = f"{int(float(raw_prix)):,}".replace(',', ' ')
                                 # حيلة الـ HTML والـ ltr لضمان عدم انعكاس الأرقام والعملة أبداً
-                                prix_html = f'''
-                                    <div style="display: inline-block; direction: rtl; color: #facc15; font-weight: 900;">
-                                        <span style="direction: ltr; display: inline-block; font-family: 'Orbitron', sans-serif; font-size: 1.6rem;">{formatted_number}</span>
-                                        <span style="font-size: 1.2rem; margin-right: 5px;">د.ج</span>
-                                    </div>
-                                '''
+                                prix_html = f'<div style="display: flex; justify-content: flex-end; align-items: center; gap: 6px; direction: ltr !important;"><span style="font-size: 1.2rem; color: #facc15; font-family: \'Cairo\';">د.ج</span><span style="font-family: \'Orbitron\', sans-serif; font-size: 1.6rem; color: #facc15; font-weight: 900;">{formatted_number}</span></div>'
                             else:
                                 prix_html = '<span style="font-family: \'Orbitron\'; font-size: 1.5rem; color: #facc15;">0 د.ج</span>'
 
