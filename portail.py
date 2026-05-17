@@ -403,63 +403,93 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 7. قسم الشروط والملاحظات الهامة (Light Theme Glow Expander)
+# 7. قسم الشروط والملاحظات الهامة (Glow Expander)
 # ==============================================================================
-
 st.markdown("""
-    <div dir="rtl" style="margin-bottom: 25px; font-family: 'Cairo', sans-serif;">
-        <details style="
-            background: #f8fafc !important; /* خلفية فاتحة ونظيفة */
-            border: 1px solid #eab308 !important;
-            border-radius: 14px !important;
-            padding: 15px;
-            box-shadow: 0 4px 15px rgba(234, 179, 8, 0.1);
-            transition: all 0.3s ease;
-        ">
-            <!-- عنوان الأكسباندر (واضح وداكن فوق الخلفية الفاتحة) -->
-            <summary style="
-                color: #1e293b !important; /* لون داكن للعنوان ليتناسق مع الخلفية الفاتحة */
-                font-weight: bold;
-                font-size: 1.1rem;
-                cursor: pointer;
-                outline: none;
-                list-style: none;
-                padding: 5px 10px;
-                text-align: right;
-                direction: rtl;
-            ">
-                ⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة
-            </summary>
-            
-            <!-- محتوى الأكسباندر الداخلي -->
-            <div style="margin-top: 15px; text-align: right; direction: rtl;">
-                
-                <div style="background: #ffffff; border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #334155; line-height: 1.6; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                    1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span style="color: #b45309; font-weight: bold;">رفض الزبون ذلك</span>، يتم دفع <span style="color: #b45309; font-weight: bold;">1000 دج</span> ثمن الفحص والقياسات.
-                </div>
-                
-                <div style="background: #ffffff; border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #334155; line-height: 1.6; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                    2️⃣ أسعار العمل على <span style="color: #b45309; font-weight: bold;">البطاقة الأم (Carte Mère)</span> والمكونات الإلكترونية المجهرية تبدأ من <span style="color: #b45309; font-weight: bold;">3000 دج</span>.
-                </div>
-                
-                <div style="background: #ffffff; border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #334155; line-height: 1.6; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                    3️⃣ أسعار <span style="color: #b45309; font-weight: bold;">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span> تبدأ من <span style="color: #b45309; font-weight: bold;">1500 دج</span>.
-                </div>
-                
-                <div style="background: #ffffff; border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #334155; line-height: 1.6; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                    4️⃣ <span style="color: #b45309; font-weight: bold;">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون الاتصال بك إذا كانت التكلفة الإجمالية بين <span style="color: #b45309; font-weight: bold;">3000 دج و 4000 دج</span>.
-                </div>
-                
-                <div style="background: #ffffff; border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 5px; border-radius: 6px; color: #334155; line-height: 1.6; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                    5️⃣ <span style="color: #b45309; font-weight: bold;">شروط الضمان المتقدم:</span> الضمان الممنوح (<span style="color: #b45309; font-weight: bold;">30 يوماً</span>) صالح حصراً على العيب الإلكتروني الذي تم إصلاحه.
-                </div>
-                
-            </div>
-        </details>
-    </div>
+    <style>
+    @keyframes gold-glow {
+        0%, 100% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 10px rgba(234, 179, 8, 0.1); }
+        50%       { border-color: rgba(250, 204, 21, 0.9); box-shadow: 0 0 25px rgba(250, 204, 21, 0.3); }
+    }
+
+    /* ─── إخفاء خلفية الـ expander وتوهيجه ─── */
+    div[data-testid="stExpander"] {
+        background: transparent !important;
+        border: 1.5px solid rgba(234, 179, 8, 0.4) !important;
+        border-radius: 10px !important;
+        animation: gold-glow 2.5s ease-in-out infinite !important;
+    }
+
+    /* ─── عنوان الـ expander ─── */
+    div[data-testid="stExpander"] summary {
+        background: transparent !important;
+        color: #facc15 !important;
+        font-family: 'Cairo', sans-serif !important;
+        font-weight: 700 !important;
+        direction: rtl !important;
+    }
+
+    /* ─── محتوى الـ expander ─── */
+    div[data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+        background: transparent !important;
+    }
+
+    /* ─── بطاقة كل بند ─── */
+    .rule-item {
+        background: rgba(255, 255, 255, 0.04) !important;
+        border-right: 4px solid #eab308;
+        padding: 12px 18px;
+        margin-bottom: 12px;
+        border-radius: 4px;
+        text-align: right !important;
+        direction: rtl !important;
+        color: #e2e8f0 !important;
+        font-family: 'Cairo', sans-serif;
+        line-height: 1.8;
+    }
+
+    .highlight-gold {
+        color: #facc15 !important;
+        font-weight: bold;
+    }
+    </style>
 """, unsafe_allow_html=True)
 
+with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
+    st.markdown("""
+        <div style="direction: rtl; text-align: right;" dir="rtl">
+
+            <div class="rule-item">
+                1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span class="highlight-gold">رفض الزبون ذلك</span>،
+                يتم دفع <span class="highlight-gold">1000 دج</span> ثمن الفحص والقياسات.
+            </div>
+
+            <div class="rule-item">
+                2️⃣ أسعار العمل على <span class="highlight-gold">البطاقة الأم (Carte Mère)</span>
+                والمكونات الإلكترونية المجهرية تبدأ من <span class="highlight-gold">3000 دج</span>.
+            </div>
+
+            <div class="rule-item">
+                3️⃣ أسعار <span class="highlight-gold">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span>
+                تبدأ من <span class="highlight-gold">1500 دج</span>.
+            </div>
+
+            <div class="rule-item">
+                4️⃣ <span class="highlight-gold">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون
+                الاتصال بك إذا كانت التكلفة الإجمالية بين
+                <span class="highlight-gold">3000 دج و 4000 دج</span>.
+            </div>
+
+            <div class="rule-item">
+                5️⃣ <span class="highlight-gold">شروط الضمان المتقدم:</span> الضمان الممنوح
+                (<span class="highlight-gold">30 يوماً</span>) صالح حصراً على العيب الإلكتروني الذي تم إصلاحه.
+            </div>
+
+        </div>
+    """, unsafe_allow_html=True)
+
 st.divider()
+
 # ==============================================================================
 # 8. نظام البحث والتتبع المتقدم والملتحم هندسياً (Search Engine)
 # ==============================================================================
