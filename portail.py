@@ -121,10 +121,10 @@ def get_warranty_stats(date_sortie_str):
     if date_s:
         diff_days = (now - date_s).days
         remaining_days = 30 - diff_days
-        percent = w_stats['percent']  # الدالة ترجع رقم من 0-100 مباشرة
+        percent = max(0, min((remaining_days / 30) * 100, 100))
         
         return {
-            "percent": int(percent), 
+            "percent": int(percent),  # ✅ هنا percent معرّف صحيح
             "is_expired": diff_days > 30, 
             "days_left": remaining_days, 
             "actual_date": date_s.strftime("%d/%m/%Y")
