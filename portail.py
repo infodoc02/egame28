@@ -464,60 +464,67 @@ st.divider()
 # 8. نظام البحث والتتبع المتقدم والملتحم هندسياً (Search Engine)
 # ==============================================================================
 st.markdown("""
-    <style>
-    /* تنسيقات الإدخال والفورم */
-    div[data-testid="stTextInput"] input {
-        direction: rtl !important;
-        text-align: right !important;
-        font-family: 'Cairo', sans-serif !important;
-        color: #f1f5f9 !important;
-        background-color: rgba(15, 23, 42, 0.6) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 10px !important;
-    }
-    
-    /* التنسيق المتطور لكرت الجهاز العلوي المتلاحم */
-    .device-top-card {
-        background: rgba(30, 41, 59, 0.7) !important;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 14px 14px 0 0 !important; /* دائرية من فوق فقط */
-        padding: 16px !important;
-        margin-top: 15px !important;
-        margin-bottom: 0px !important;
-    }
-    .card-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-    }
-
-       
-    /* الزر العائم للتلغرام */
-    .floating-tg-button {
-        position: fixed;
-        bottom: 30px;
-        left: 30px;
-        background: linear-gradient(135deg, #24A1DE 0%, #1d80b0 100%);
-        color: white !important;
-        padding: 14px 24px;
-        border-radius: 50px;
-        box-shadow: 0 8px 25px rgba(36, 161, 222, 0.4);
-        font-family: 'Cairo', sans-serif;
-        font-weight: 900;
-        text-decoration: none !important;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        animation: tg-bounce 2.5s infinite ease-in-out;
-    }
-    @keyframes tg-bounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-8px); }
-    }
-    </style>
+<style>
+div[data-testid="stTextInput"] input {
+    direction: rtl !important;
+    text-align: right !important;
+    font-family: 'Cairo', sans-serif !important;
+    color: #f1f5f9 !important;
+    background-color: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+}
+.device-top-card {
+    background: rgba(30, 41, 59, 0.7) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 14px 14px 0 0 !important;
+    padding: 16px !important;
+    margin-top: 15px !important;
+    margin-bottom: 0px !important;
+}
+.card-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+.custom-expander div[data-testid="stExpander"] {
+    background: rgba(30, 41, 59, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 0 0 14px 14px !important;
+    border-top: none !important;
+    margin-top: 0px !important;
+}
+.custom-expander div[data-testid="stExpander"] summary {
+    color: #e2e8f0 !important;
+    font-family: 'Cairo', sans-serif !important;
+    text-align: right !important;
+    direction: rtl !important;
+}
+.floating-tg-button {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+    background: linear-gradient(135deg, #24A1DE 0%, #1d80b0 100%);
+    color: white !important;
+    padding: 14px 24px;
+    border-radius: 50px;
+    box-shadow: 0 8px 25px rgba(36, 161, 222, 0.4);
+    font-family: 'Cairo', sans-serif;
+    font-weight: 900;
+    text-decoration: none !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: tg-bounce 2.5s infinite ease-in-out;
+}
+@keyframes tg-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+</style>
 """, unsafe_allow_html=True)
 
 st.markdown('<h3 style="text-align: right; font-family: \'Cairo\'; color: #e2e8f0; font-size: 1.25rem; font-weight:700;">🔍 تتبع حالة أجهزتك الآن:</h3>', unsafe_allow_html=True)
@@ -534,43 +541,40 @@ if submit_search and user_phone:
         with st.spinner("⏳ جاري فحص قاعدة البيانات ..."):
             db_ref = db.reference("atelier")
             all_data = db_ref.get()
-            
+
             my_devices = []
             if all_data:
-                # الفلترة الذكية المرنة بآخر 9 أرقام لتفادي مشاكل الـ 00213 والـ +213 والـ 0
                 for k, v in all_data.items():
                     db_phone = normalize_phone(v.get("Telephone", ""))
                     if db_phone.endswith(norm_phone[-9:]):
                         my_devices.append(dict(v, _id=k))
-            
+
             if my_devices:
-                # ترتيب الأجهزة لظهور الجاهز Prêt أولاً
                 my_devices.sort(key=lambda x: get_status_priority(x.get("Statut", "")))
-                
+
                 for dev in my_devices:
                     dev_id = dev.get("ID", "0000")
                     brand = dev.get("Marque", "")
                     model = dev.get("Appareil", "جهاز غير معروف")
                     status = dev.get("Statut", "En attente")
-                    
+
                     status_colors = {"prêt": "#2ecc71", "en cours": "#f1c40f", "en attente": "#e67e22", "annulé": "#e74c3c"}
                     col_status = status_colors.get(status.lower(), "#3498db")
-                    
-                    # الكرت العلوي
+
                     st.markdown(f"""
-                        <div class="device-top-card" dir="rtl">
-                            <div class="card-container">
-                                <div style="text-align: right;">
-                                    <span style="color: #cbd5e1; font-size: 0.85rem; font-family: 'Cairo';">تذكرة #{dev_id}</span>
-                                    <h4 style="margin: 4px 0; color: #ffffff; font-family: 'Cairo'; font-weight:700;">{brand} - {model}</h4>
-                                </div>
-                                <div class="status-badge" style="background: {col_status}20; border: 1px solid {col_status}; color: {col_status}; padding: 6px 16px; border-radius: 8px; font-weight: bold; font-family: 'Cairo'; font-size: 0.9rem; text-align: center;">
-                                    {status}
-                                </div>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
+<div class="device-top-card" dir="rtl">
+<div class="card-container">
+<div style="text-align: right;">
+<span style="color: #cbd5e1; font-size: 0.85rem; font-family: 'Cairo';">تذكرة #{dev_id}</span>
+<h4 style="margin: 4px 0; color: #ffffff; font-family: 'Cairo'; font-weight:700;">{brand} - {model}</h4>
+</div>
+<div style="background: {col_status}20; border: 1px solid {col_status}; color: {col_status}; padding: 6px 16px; border-radius: 8px; font-weight: bold; font-family: 'Cairo'; font-size: 0.9rem; text-align: center;">
+{status}
+</div>
+</div>
+</div>
+""", unsafe_allow_html=True)
+
                     st.markdown('<div class="custom-expander">', unsafe_allow_html=True)
                     with st.expander("📄 عرض تفاصيل العطل والضمان المتقدم لهذا الجهاز"):
                         panne = dev.get("Panne", "غير محدد")
@@ -580,16 +584,16 @@ if submit_search and user_phone:
                         w_stats = get_warranty_stats(date_s)
 
                         st.markdown(f"""
-<div style="text-align: right; direction: rtl; font-family: 'Cairo'; color: #ffffff;" dir="rtl">
-📌 <b style="color: #cbd5e1;">العطل المشخص:</b> {panne}<br>
-💰 <b style="color: #cbd5e1;">تكلفة الإصلاح:</b> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span><br>
-📅 <b style="color: #cbd5e1;">تاريخ دخول الجهاز:</b> {date_e}<br>
-📅 <b style="color: #cbd5e1;">تاريخ خروج الجهاز:</b> {date_s}<br>
+<div style="text-align: right; direction: rtl; font-family: 'Cairo'; color: #e2e8f0;" dir="rtl">
+📌 <b style="color: #94a3b8;">العطل المشخص:</b> {panne}<br>
+💰 <b style="color: #94a3b8;">تكلفة الإصلاح:</b> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span><br>
+📅 <b style="color: #94a3b8;">تاريخ دخول الجهاز:</b> {date_e}<br>
+📅 <b style="color: #94a3b8;">تاريخ خروج الجهاز:</b> {date_s}<br>
 </div>
 """, unsafe_allow_html=True)
-                        
+
                         if w_stats:
-                            st.markdown('<div style="text-align: right; direction: rtl; color: #ffffff; font-family: \'Cairo\';">🛡️ <b>حالة الضمان الفني للقطعة (30 يوم):</b></div>', unsafe_allow_html=True)
+                            st.markdown('<div style="text-align: right; direction: rtl; color: #e2e8f0; font-family: \'Cairo\';">🛡️ <b>حالة الضمان الفني للقطعة (30 يوم):</b></div>', unsafe_allow_html=True)
                             if w_stats["is_expired"]:
                                 st.error(f"🔴 انتهى الضمان منذ {abs(w_stats['days_left'])} أيام (تاريخ الصلاحية: {w_stats['actual_date']})")
                             else:
