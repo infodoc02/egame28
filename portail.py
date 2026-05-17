@@ -371,7 +371,7 @@ st.markdown(f'''
         </div>
         <div class="hero-brand">INFODOC</div>
         <div class="hero-subtitle" style="margin-bottom: 25px;">
-            🛠️ الـمـنـصـة الإلـكـتـرونـيـة الـمـتـقـدمـة لـخـدمـات الـصـيـانـة والـضـمـان
+            🛠️ الـمـنـصـة الإلـكـتـرونـيـة لـخـدمـات الـصـيـانـة 
         </div>
         <span class="{"badge-open" if shop_status else "badge-closed"}" 
               style="padding: 12px 30px; border-radius: 14px; font-weight: 900; display: inline-block; font-family: 'Cairo'; font-size: 1.05rem;">
@@ -403,54 +403,72 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 7. قسم الشروط والملاحظات الهامة (Glow Expander)
+# 7. قسم الشروط والملاحظات الهامة (Glow Expander - معزول بالكامل)
 # ==============================================================================
+
+# حقن ستايل محلي خاص فقط بـ warning-expander لضمان عدم تداخله مع بقية التطبيق
 st.markdown("""
     <style>
-    @keyframes gold-glow {
-        0%, 100% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 10px rgba(234, 179, 8, 0.1); }
-        50% { border-color: rgba(250, 204, 21, 0.9); box-shadow: 0 0 25px rgba(250, 204, 21, 0.3); }
-    
+    @keyframes gold-glow-local {
+        0%, 100% { border-color: rgba(234, 179, 8, 0.3); box-shadow: 0 0 12px rgba(234, 179, 8, 0.1); }
+        50% { border-color: rgba(250, 204, 21, 0.8); box-shadow: 0 0 20px rgba(250, 204, 21, 0.25); }
     }
     
-    .rule-item {
-        background: rgba(255, 255, 255, 0.02) !important;
-        border-right: 4px solid #eab308;
-        padding: 12px 18px;
-        margin-bottom: 12px;
-        border-radius: 4px;
+    /* استهداف عناصر الاكسباندر الداخلي بدقة لفرض اليمين واللون الأبيض الناصع */
+    .local-glow-zone div[data-testid="stExpander"] {
+        border: 1px solid #eab308 !important;
+        animation: gold-glow-local 4s infinite ease-in-out !important;
+        background: rgba(30, 41, 59, 0.4) !important;
+        border-radius: 14px !important;
+    }
+    
+    /* إجبار النص، السهم، والعنوان على التموضع لليمين بلون واضح جداً */
+    .local-glow-zone div[data-testid="stExpander"] summary,
+    .local-glow-zone div[data-testid="stExpander"] p,
+    .local-glow-zone div[data-testid="stExpander"] span,
+    .local-glow-zone div[data-testid="stExpander"] svg {
         text-align: right !important;
         direction: rtl !important;
+        color: #ffffff !important; /* لون أبيض ناصع للعنوان والنصوص الأساسية */
+        font-family: 'Cairo', sans-serif !important;
     }
-    .highlight-gold { color: #facc15 !important; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="warning-expander">', unsafe_allow_html=True)
+# فتح الحاوية المحلية المعزولة
+st.markdown('<div class="local-glow-zone">', unsafe_allow_html=True)
+
 with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
     st.markdown("""
-        <div style="text-align: right; direction: rtl; font-family: 'Cairo'; color: #e2e8f0;" dir="rtl">
-            <div class="rule-item">
-                1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span class="highlight-gold">رفض الزبون ذلك</span>، يتم دفع <span class="highlight-gold">1000 دج</span> ثمن الفحص والقياسات.
+        <div style="text-align: right; direction: rtl; font-family: 'Cairo', sans-serif; width: 100%;" dir="rtl">
+            
+            <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; text-align: right; direction: rtl; color: #f1f5f9; line-height: 1.6;">
+                1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span style="color: #facc15; font-weight: bold;">رفض الزبون ذلك</span>، يتم دفع <span style="color: #facc15; font-weight: bold;">1000 دج</span> ثمن الفحص والقياسات.
             </div>
-            <div class="rule-item">
-                2️⃣ أسعار العمل على <span class="highlight-gold">البطاقة الأم (Carte Mère)</span> والمكونات الإلكترونية المجهرية تبدأ من <span class="highlight-gold">3000 دج</span>.
+            
+            <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; text-align: right; direction: rtl; color: #f1f5f9; line-height: 1.6;">
+                2️⃣ أسعار العمل على <span style="color: #facc15; font-weight: bold;">البطاقة الأم (Carte Mère)</span> والمكونات الإلكترونية المجهرية تبدأ من <span style="color: #facc15; font-weight: bold;">3000 دج</span>.
             </div>
-            <div class="rule-item">
-                3️⃣ أسعار <span class="highlight-gold">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span> تبدأ من <span class="highlight-gold">1500 دج</span>.
+            
+            <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; text-align: right; direction: rtl; color: #f1f5f9; line-height: 1.6;">
+                3️⃣ أسعار <span style="color: #facc15; font-weight: bold;">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span> تبدأ من <span style="color: #facc15; font-weight: bold;">1500 دج</span>.
             </div>
-            <div class="rule-item">
-                4️⃣ <span class="highlight-gold">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون الاتصال بك إذا كانت التكلفة الإجمالية بين <span class="highlight-gold">3000 دج و 4000 دج</span>.
+            
+            <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; text-align: right; direction: rtl; color: #f1f5f9; line-height: 1.6;">
+                4️⃣ <span style="color: #facc15; font-weight: bold;">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون الاتصال بك إذا كانت التكلفة الإجمالية بين <span style="color: #facc15; font-weight: bold;">3000 دج و 4000 دج</span>.
             </div>
-            <div class="rule-item">
-                5️⃣ <span class="highlight-gold">شروط الضمان المتقدم:</span> الضمان الممنوح (<span class="highlight-gold">30 يوماً</span>) صالح حصراً على العيب الإلكتروني الذي تم إصلاحه.
+            
+            <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 4px; border-radius: 6px; text-align: right; direction: rtl; color: #f1f5f9; line-height: 1.6;">
+                5️⃣ <span style="color: #facc15; font-weight: bold;">شروط الضمان المتقدم:</span> الضمان الممنوح (<span style="color: #facc15; font-weight: bold;">30 يوماً</span>) صالح حصراً على العيب الإلكتروني الذي تم إصلاحه.
             </div>
+            
         </div>
     """, unsafe_allow_html=True)
+
+# إغلاق الحاوية المعزولة
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
-
 # ==============================================================================
 # 8. نظام البحث والتتبع المتقدم والملتحم هندسياً (Search Engine)
 # ==============================================================================
