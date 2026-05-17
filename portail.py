@@ -420,12 +420,24 @@ st.markdown("""
         border-radius: 16px !important;
     }
     
+    /* تصحيح النص وعنوان الأكسباندر التحذيري ليصبح أبيض ناصع وعلى اليمين */
+    .warning-expander div[data-testid="stExpander"] p, 
+    .warning-expander div[data-testid="stExpander"] summary,
+    .warning-expander div[data-testid="stExpander"] span {
+        text-align: right !important;
+        direction: rtl !important;
+        color: #ffffff !important;
+        font-family: 'Cairo', sans-serif !important;
+    }
+    
     .rule-item {
         background: rgba(255, 255, 255, 0.02) !important;
         border-right: 4px solid #eab308;
         padding: 12px 18px;
         margin-bottom: 12px;
         border-radius: 4px;
+        text-align: right !important;
+        direction: rtl !important;
     }
     .highlight-gold { color: #facc15 !important; font-weight: bold; }
     </style>
@@ -500,6 +512,16 @@ st.markdown("""
         margin-bottom: 15px !important;
     }
     
+    /* تصحيح النص وعنوان أكسباندر تفاصيل الجهاز ليصبح أبيض ناصع وعلى اليمين */
+    .custom-expander div[data-testid="stExpander"] p, 
+    .custom-expander div[data-testid="stExpander"] summary,
+    .custom-expander div[data-testid="stExpander"] span {
+        text-align: right !important;
+        direction: rtl !important;
+        color: #ffffff !important;
+        font-family: 'Cairo', sans-serif !important;
+    }
+       
     /* الزر العائم للتلغرام */
     .floating-tg-button {
         position: fixed;
