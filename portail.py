@@ -136,19 +136,19 @@ def get_status_priority(status):
     s = str(status).strip()
     status_lower = s.lower()
     
-    if "Prêt" in status_lower: 
+    if "prêt" in status_lower: 
         return 1
-    elif "Réparable" in status_lower: 
+    elif "réparable" in status_lower: 
         return 2
-    elif "En Cours" in status_lower: 
+    elif "en cours" in status_lower: 
         return 3
-    elif "En Attente" in status_lower: 
+    elif "en attente" in status_lower: 
         return 4
-    elif "Annulé" in status_lower: 
+    elif "annulé" in status_lower: 
         return 5
-    elif "Non Réparable" in status_lower: 
+    elif "non réparable" in status_lower: 
         return 6
-    elif "Livré & Payé" in status_lower or "Livré (Dette)" in status_lower:
+    elif "livré & payé" in status_lower or "livré (dette)" in status_lower:
         return 7
     else: 
         return 99
@@ -618,12 +618,12 @@ if submit_search and user_phone:
                     date_e = dev.get("Date_Entree", "---")
                     w_stats = get_warranty_stats(date_s)
 
-                    status_colors = {"Prêt": "#2ecc71", "En Cours": "#f1c40f", "En Attente": "#e67e22", "Annulé": "#e74c3c"}
+                    status_colors = {"prêt": "#2ecc71", "en cours": "#f1c40f", "en attente": "#e67e22", "annulé": "#e74c3c"}
                     col_status = status_colors.get(status.lower(), "#3498db")
                     
                     # ═══ منطق الشريط الديناميكي ═══
                     status_lower = status.lower().strip()
-                    livred_statuses = ["Livré & Payé", "Livré (Dette)"]
+                    livred_statuses = ["livré & payé", "livré (dette)"]
                     dynamic_bar_html = ""
 
                     if status_lower in livred_statuses:
@@ -639,17 +639,17 @@ if submit_search and user_phone:
                     else:
                         # ─── شريط سير الصيانة ───
                         repair_steps = {
-                            "En Attente": (0, "#e67e22", "⏳ في الانتظار"),
-                            "En Cours": (33, "#f1c40f", "🔧 جارٍ الإصلاح"),
-                            "Réparable": (66, "#3498db", "✅ قابل للإصلاح"),
-                            "Prêt": (100, "#2ecc71", "🎉 جاهز للاستلام"),
-                            "Annulé": (66, "#e74c3c", "❌ ملغى"),
+                            "en attente": (0, "#e67e22", "⏳ في الانتظار"),
+                            "en cours": (33, "#f1c40f", "🔧 جارٍ الإصلاح"),
+                            "réparable": (66, "#3498db", "✅ قابل للإصلاح"),
+                            "prêt": (100, "#2ecc71", "🎉 جاهز للاستلام"),
+                            "annulé": (66, "#e74c3c", "❌ ملغى"),
                         }
 
                         if status_lower in repair_steps:
                             pct, color, label = repair_steps[status_lower]
                             
-                            fee_text = " — فشل الإصلاح، تكلفة الفحص: <b>1000 دج</b>" if status_lower in ["Annulé"] else f" — {pct}%"
+                            fee_text = " — فشل الإصلاح، تكلفة الفحص: <b>1000 دج</b>" if status_lower in ["annulé"] else f" — {pct}%"
                             
                             dynamic_bar_html = f'''<div style="color:#94a3b8; font-family:'Cairo'; font-size:0.9rem; margin-bottom:6px;">📊 شريط سير الصيانة</div>
 <div style="text-align:right; direction:rtl; font-family:'Cairo'; color:{color}; font-weight:bold; margin-bottom:6px;">{label}{fee_text}</div>
