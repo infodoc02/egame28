@@ -531,7 +531,7 @@ if submit_search and user_phone:
     if len(norm_phone) < 9:
         st.error("⚠️ يرجى إدخال رقم هاتف صحيح يتكون من 9 أرقام على الأقل.")
     else:
-        with st.spinner("⏳ جاري فحص قاعدة البيانات بسرعة النيون..."):
+        with st.spinner("⏳ جاري فحص قاعدة البيانات ..."):
             db_ref = db.reference("atelier")
             all_data = db_ref.get()
             
@@ -571,21 +571,22 @@ if submit_search and user_phone:
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    # الأكسباندر الملتحم
                     st.markdown('<div class="custom-expander">', unsafe_allow_html=True)
                     with st.expander("📄 عرض تفاصيل العطل والضمان المتقدم لهذا الجهاز"):
                         panne = dev.get("Panne", "غير محدد")
                         prix = dev.get("Prix", "0")
                         date_s = dev.get("Date_Sortie", "---")
+                        date_e = dev.get("Date_Entree", "---")
                         w_stats = get_warranty_stats(date_s)
-                        
+
                         st.markdown(f"""
-                            <div style="text-align: right; direction: rtl; font-family: 'Cairo'; color: #ffffff;" dir="rtl">
-                                📌 <b style="color: #cbd5e1;">العطل المشخص:</b> {panne}<br>
-                                💰 <b style="color: #cbd5e1;">تكلفة الإصلاح:</b> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span><br>
-                                📅 <b style="color: #cbd5e1;">تاريخ خروج الجهاز:</b> {date_s}<br>
-                            </div>
-                        """, unsafe_allow_html=True)
+<div style="text-align: right; direction: rtl; font-family: 'Cairo'; color: #ffffff;" dir="rtl">
+📌 <b style="color: #cbd5e1;">العطل المشخص:</b> {panne}<br>
+💰 <b style="color: #cbd5e1;">تكلفة الإصلاح:</b> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span><br>
+📅 <b style="color: #cbd5e1;">تاريخ دخول الجهاز:</b> {date_e}<br>
+📅 <b style="color: #cbd5e1;">تاريخ خروج الجهاز:</b> {date_s}<br>
+</div>
+""", unsafe_allow_html=True)
                         
                         if w_stats:
                             st.markdown('<div style="text-align: right; direction: rtl; color: #ffffff; font-family: \'Cairo\';">🛡️ <b>حالة الضمان الفني للقطعة (30 يوم):</b></div>', unsafe_allow_html=True)
