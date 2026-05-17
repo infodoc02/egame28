@@ -619,7 +619,55 @@ if submit_search and user_phone:
 
                     status_colors = {"prêt": "#2ecc71", "en cours": "#f1c40f", "en attente": "#e67e22", "annulé": "#e74c3c"}
                     col_status = status_colors.get(status.lower(), "#3498db")
+                    
+                    # ═══ منطق الشريط الديناميكي ═══
+                    status_lower = status.lower().strip()
+                    livred_statuses = ["livré & payé", "livré (dette)"]
 
+                    if status_lower in livred_statuses:
+                        # ─── شريط الضمان (30 يوم) ───
+                        if w_stats:
+                            if w_stats["is_expired"]:
+                                dynamic_bar_html = f"""
+<div class="warranty-expired">🔴 انتهى الضمان منذ {abs(w_stats['days_left'])} أيام (تاريخ الصلاحية: {w_stats['actual_date']})</div>"""
+                            else:
+                                percent = int(w_stats['percent'] * 100)
+                                dynamic_bar_html = f"""
+<div class="warranty-ok">🟢 الضمان ساري المفعول! متبقي {w_stats['days_left']} يوم (تنتهي الصلاحية: {w_stats['actual_date']})</div>
+<div class="warranty-progress-wrap"><div class="warranty-progress-bar" style="width:{percent}%"></div></div>"""
+                        else:
+                            dynamic_bar_html = ""
+                    else:
+                        # ─── شريط سير الصيانة ───
+                        repair_steps = {
+                            "en attente":           (0,   "#e67e22", "⏳ في الانتظار"),
+                            "en cours":             (33,  "#f1c40f", "🔧 جارٍ الإصلاح"),
+                            "réparable":            (66,  "#3498db", "✅ قابل للإصلاح"),
+                            "prêt":                 (100, "#2ecc71", "🎉 جاهز للاستلام"),
+                            "annulé": (33, "#e74c3c", "❌ ملغى — Echec de la réparation"),
+                        }
+
+                        step = repair_steps.get(status_lower)
+
+                        if step:
+                            pct, color, label = step
+                            dynamic_bar_html = f"""
+<div style="text-align:right; direction:rtl; font-family:'Cairo'; color:{color}; font-weight:bold; margin-bottom:6px;">{label} — فشل الإصلاح، تكلفة الفحص: <b style="color:#e74c3c;">1000 دج</b></div>
+<div class="warranty-progress-wrap">
+<div class="warranty-progress-bar" style="width:{pct}%; background:{color};"></div>
+</div>
+<div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#64748b; font-family:'Cairo'; margin-top:4px;">
+<span>En Attente</span><span>En Cours</span><span>Réparable</span><span>Prêt ✓</span>
+</div>""" if color == "#e74c3c" and pct == 33 and status_lower in ["annulé", "echec de la réparation"] else f"""
+<div style="text-align:right; direction:rtl; font-family:'Cairo'; color:{color}; font-weight:bold; margin-bottom:6px;">{label} — {pct}%</div>
+<div class="warranty-progress-wrap">
+<div class="warranty-progress-bar" style="width:{pct}%; background:{color};"></div>
+</div>
+<div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#64748b; font-family:'Cairo'; margin-top:4px;">
+<span>En Attente</span><span>En Cours</span><span>Réparable</span><span>Prêt ✓</span>
+</div>"""
+                        else:
+                            dynamic_bar_html = ""
                     # بناء قسم الضمان كـ HTML
                     warranty_html = ""
                     if w_stats:
@@ -649,8 +697,8 @@ if submit_search and user_phone:
 <div class="detail-row">💰 <span class="detail-label">تكلفة الإصلاح:</span> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span></div>
 <div class="detail-row">📅 <span class="detail-label">تاريخ دخول الجهاز:</span> {date_e}</div>
 <div class="detail-row">📅 <span class="detail-label">تاريخ خروج الجهاز:</span> {date_s}</div>
-<div class="detail-row">🛡️ <span class="detail-label">حالة الضمان الفني (30 يوم):</span></div>
-{warranty_html}
+<div class="detail-row">🛡️ <span class="detail-label">حالة الجهاز:</span></div>
+{dynamic_bar_html}
 </div>
 </details>
 """, unsafe_allow_html=True)
