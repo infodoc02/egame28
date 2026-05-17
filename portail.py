@@ -121,7 +121,7 @@ def get_warranty_stats(date_sortie_str):
     if date_s:
         diff_days = (now - date_s).days
         remaining_days = 30 - diff_days
-        percent = max(0, min((remaining_days / 30) * 100, 100))
+        percent = w_stats['percent']  # ✅ صحيح — بالفعل من 0 إلى 100
         
         return {
             "percent": int(percent), 
@@ -629,10 +629,10 @@ if submit_search and user_phone:
                         # ─── شريط الضمان (30 يوم) ───
                         if w_stats:
                             if w_stats["is_expired"]:
-                                dynamic_bar_html = f'<div class="warranty-expired">🔴 انتهى الضمان منذ {abs(w_stats["days_left"])} أيام (تاريخ الصلاحية: {w_stats["actual_date"]})</div>'
+                                dynamic_bar_html = f'<div style="color:#94a3b8; font-family:\'Cairo\'; font-size:0.9rem; margin-bottom:6px;">🛡️ شريط الضمان الفني (30 يوم)</div><div class="warranty-expired">🔴 انتهى الضمان منذ {abs(w_stats["days_left"])} أيام (تاريخ الصلاحية: {w_stats["actual_date"]})</div>'
                             else:
-                                percent = int(w_stats['percent'] * 100)
-                                dynamic_bar_html = f'<div class="warranty-ok">🟢 الضمان ساري المفعول! متبقي {w_stats["days_left"]} يوم (تنتهي الصلاحية: {w_stats["actual_date"]})</div><div class="warranty-progress-wrap"><div class="warranty-progress-bar" style="width:{percent}%"></div></div>'
+                                percent = w_stats['percent']  # ✅ بدون الضرب في 100
+                                dynamic_bar_html = f'<div style="color:#94a3b8; font-family:\'Cairo\'; font-size:0.9rem; margin-bottom:6px;">🛡️ شريط الضمان الفني (30 يوم)</div><div class="warranty-ok">🟢 الضمان ساري المفعول! متبقي {w_stats["days_left"]} يوم (تنتهي الصلاحية: {w_stats["actual_date"]})</div><div class="warranty-progress-wrap"><div class="warranty-progress-bar" style="width:{percent}%"></div></div>'
                     else:
                         # ─── شريط سير الصيانة ───
                         repair_steps = {
