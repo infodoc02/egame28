@@ -588,7 +588,7 @@ if submit_search and user_phone:
                         <div class="device-top-card" dir="rtl">
                             <div class="card-container">
                                 <div style="text-align: right;">
-                                    <span style="color: #64748b; font-size: 0.85rem; font-family: 'Cairo';">تذكرة #{dev_id}</span>
+                                    <span style="color: #cbd5e1; font-size: 0.85rem; font-family: 'Cairo';">تذكرة #{dev_id}</span>
                                     <h4 style="margin: 4px 0; color: #ffffff; font-family: 'Cairo'; font-weight:700;">{brand} - {model}</h4>
                                 </div>
                                 <div class="status-badge" style="background: {col_status}20; border: 1px solid {col_status}; color: {col_status}; padding: 6px 16px; border-radius: 8px; font-weight: bold; font-family: 'Cairo'; font-size: 0.9rem; text-align: center;">
@@ -607,22 +607,21 @@ if submit_search and user_phone:
                         w_stats = get_warranty_stats(date_s)
                         
                         st.markdown(f"""
-                            <div style="text-align: right; direction: rtl; font-family: 'Cairo'; color: #cbd5e1;" dir="rtl">
-                                📌 <b>العطل المشخص:</b> {panne}<br>
-                                💰 <b>تكلفة الإصلاح:</b> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span><br>
-                                📅 <b>تاريخ خروج الجهاز:</b> {date_s}<br>
+                            <div style="text-align: right; direction: rtl; font-family: 'Cairo'; color: #ffffff;" dir="rtl">
+                                📌 <b style="color: #cbd5e1;">العطل المشخص:</b> {panne}<br>
+                                💰 <b style="color: #cbd5e1;">تكلفة الإصلاح:</b> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span><br>
+                                📅 <b style="color: #cbd5e1;">تاريخ خروج الجهاز:</b> {date_s}<br>
                             </div>
                         """, unsafe_allow_html=True)
                         
                         if w_stats:
-                            st.write("🛡️ **حالة الضمان الفني للقطعة (30 يوم):**")
+                            st.markdown('<div style="text-align: right; direction: rtl; color: #ffffff; font-family: \'Cairo\';">🛡️ <b>حالة الضمان الفني للقطعة (30 يوم):</b></div>', unsafe_allow_html=True)
                             if w_stats["is_expired"]:
                                 st.error(f"🔴 انتهى الضمان منذ {abs(w_stats['days_left'])} أيام (تاريخ الصلاحية: {w_stats['actual_date']})")
                             else:
                                 st.success(f"🟢 الضمان ساري المفعول! متبقي {w_stats['days_left']} يوم (تنتهي الصلاحية: {w_stats['actual_date']})")
                                 st.progress(w_stats["percent"])
                     st.markdown('</div>', unsafe_allow_html=True)
-                
                 # حقن زر التلغرام العائم بـ Z-index حماية قصوى
                 bot_username = st.secrets.get("BOT_USERNAME", "InfoDocBot")
                 tg_link = f"https://t.me/{bot_username}?start={norm_phone}"
