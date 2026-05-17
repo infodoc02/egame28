@@ -490,18 +490,72 @@ div[data-testid="stTextInput"] input {
     align-items: center;
     width: 100%;
 }
-.custom-expander div[data-testid="stExpander"] {
-    background: rgba(30, 41, 59, 0.7) !important;
+.device-expander {
+    background: rgba(30, 41, 59, 0.85) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 0 0 14px 14px !important;
     border-top: none !important;
-    margin-top: 0px !important;
+    border-radius: 0 0 14px 14px !important;
+    padding: 0 16px;
+    margin-bottom: 8px;
+    font-family: 'Cairo', sans-serif;
 }
-.custom-expander div[data-testid="stExpander"] summary {
+.device-expander summary {
     color: #e2e8f0 !important;
-    font-family: 'Cairo', sans-serif !important;
-    text-align: right !important;
-    direction: rtl !important;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    outline: none;
+    list-style: none;
+    padding: 12px 4px;
+    text-align: right;
+    direction: rtl;
+}
+.device-expander summary::-webkit-details-marker { display: none; }
+.detail-row {
+    color: #e2e8f0;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.95rem;
+    line-height: 2;
+    text-align: right;
+    direction: rtl;
+    padding: 4px 0;
+}
+.detail-label { color: #94a3b8; font-weight: bold; }
+.warranty-ok {
+    background: rgba(46, 204, 113, 0.1);
+    border: 1px solid #2ecc71;
+    border-radius: 8px;
+    color: #2ecc71;
+    padding: 10px 14px;
+    text-align: right;
+    direction: rtl;
+    font-family: 'Cairo', sans-serif;
+    margin-top: 8px;
+}
+.warranty-expired {
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid #e74c3c;
+    border-radius: 8px;
+    color: #e74c3c;
+    padding: 10px 14px;
+    text-align: right;
+    direction: rtl;
+    font-family: 'Cairo', sans-serif;
+    margin-top: 8px;
+}
+.warranty-progress-wrap {
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    height: 8px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+.warranty-progress-bar {
+    background: #2ecc71;
+    height: 8px;
+    border-radius: 6px;
+    transition: width 0.5s ease;
 }
 .floating-tg-button {
     position: fixed;
@@ -557,9 +611,26 @@ if submit_search and user_phone:
                     brand = dev.get("Marque", "")
                     model = dev.get("Appareil", "جهاز غير معروف")
                     status = dev.get("Statut", "En attente")
+                    panne = dev.get("Panne", "غير محدد")
+                    prix = dev.get("Prix", "0")
+                    date_s = dev.get("Date_Sortie", "---")
+                    date_e = dev.get("Date_Entree", "---")
+                    w_stats = get_warranty_stats(date_s)
 
                     status_colors = {"prêt": "#2ecc71", "en cours": "#f1c40f", "en attente": "#e67e22", "annulé": "#e74c3c"}
                     col_status = status_colors.get(status.lower(), "#3498db")
+
+                    # بناء قسم الضمان كـ HTML
+                    warranty_html = ""
+                    if w_stats:
+                        if w_stats["is_expired"]:
+                            warranty_html = f"""
+<div class="warranty-expired">🔴 انتهى الضمان منذ {abs(w_stats['days_left'])} أيام (تاريخ الصلاحية: {w_stats['actual_date']})</div>"""
+                        else:
+                            percent = int(w_stats['percent'] * 100)
+                            warranty_html = f"""
+<div class="warranty-ok">🟢 الضمان ساري المفعول! متبقي {w_stats['days_left']} يوم (تنتهي الصلاحية: {w_stats['actual_date']})</div>
+<div class="warranty-progress-wrap"><div class="warranty-progress-bar" style="width:{percent}%"></div></div>"""
 
                     st.markdown(f"""
 <div class="device-top-card" dir="rtl">
@@ -568,46 +639,29 @@ if submit_search and user_phone:
 <span style="color: #cbd5e1; font-size: 0.85rem; font-family: 'Cairo';">تذكرة #{dev_id}</span>
 <h4 style="margin: 4px 0; color: #ffffff; font-family: 'Cairo'; font-weight:700;">{brand} - {model}</h4>
 </div>
-<div style="background: {col_status}20; border: 1px solid {col_status}; color: {col_status}; padding: 6px 16px; border-radius: 8px; font-weight: bold; font-family: 'Cairo'; font-size: 0.9rem; text-align: center;">
-{status}
+<div style="background: {col_status}20; border: 1px solid {col_status}; color: {col_status}; padding: 6px 16px; border-radius: 8px; font-weight: bold; font-family: 'Cairo'; font-size: 0.9rem; text-align: center;">{status}</div>
 </div>
 </div>
+<details class="device-expander">
+<summary>📄 عرض تفاصيل العطل والضمان المتقدم لهذا الجهاز</summary>
+<div style="padding-bottom: 14px;">
+<div class="detail-row">📌 <span class="detail-label">العطل المشخص:</span> {panne}</div>
+<div class="detail-row">💰 <span class="detail-label">تكلفة الإصلاح:</span> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span></div>
+<div class="detail-row">📅 <span class="detail-label">تاريخ دخول الجهاز:</span> {date_e}</div>
+<div class="detail-row">📅 <span class="detail-label">تاريخ خروج الجهاز:</span> {date_s}</div>
+<div class="detail-row">🛡️ <span class="detail-label">حالة الضمان الفني (30 يوم):</span></div>
+{warranty_html}
 </div>
+</details>
 """, unsafe_allow_html=True)
 
-                    st.markdown('<div class="custom-expander">', unsafe_allow_html=True)
-                    with st.expander("📄 عرض تفاصيل العطل والضمان المتقدم لهذا الجهاز"):
-                        panne = dev.get("Panne", "غير محدد")
-                        prix = dev.get("Prix", "0")
-                        date_s = dev.get("Date_Sortie", "---")
-                        date_e = dev.get("Date_Entree", "---")
-                        w_stats = get_warranty_stats(date_s)
-
-                        st.markdown(f"""
-<div style="text-align: right; direction: rtl; font-family: 'Cairo'; color: #e2e8f0;" dir="rtl">
-📌 <b style="color: #94a3b8;">العطل المشخص:</b> {panne}<br>
-💰 <b style="color: #94a3b8;">تكلفة الإصلاح:</b> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span><br>
-📅 <b style="color: #94a3b8;">تاريخ دخول الجهاز:</b> {date_e}<br>
-📅 <b style="color: #94a3b8;">تاريخ خروج الجهاز:</b> {date_s}<br>
-</div>
-""", unsafe_allow_html=True)
-
-                        if w_stats:
-                            st.markdown('<div style="text-align: right; direction: rtl; color: #e2e8f0; font-family: \'Cairo\';">🛡️ <b>حالة الضمان الفني للقطعة (30 يوم):</b></div>', unsafe_allow_html=True)
-                            if w_stats["is_expired"]:
-                                st.error(f"🔴 انتهى الضمان منذ {abs(w_stats['days_left'])} أيام (تاريخ الصلاحية: {w_stats['actual_date']})")
-                            else:
-                                st.success(f"🟢 الضمان ساري المفعول! متبقي {w_stats['days_left']} يوم (تنتهي الصلاحية: {w_stats['actual_date']})")
-                                st.progress(w_stats["percent"])
-                    st.markdown('</div>', unsafe_allow_html=True)
-                # حقن زر التلغرام العائم بـ Z-index حماية قصوى
                 bot_username = st.secrets.get("BOT_USERNAME", "InfoDocBot")
                 tg_link = f"https://t.me/{bot_username}?start={norm_phone}"
                 st.markdown(f"""
-                    <a href="{tg_link}" target="_blank" class="floating-tg-button" style="z-index: 999999 !important;">
-                        <i class="fa-brands fa-telegram" style="font-size: 1.4rem;"></i>
-                        <span>🚀 تفعيل إشعارات التلغرام</span>
-                    </a>
-                """, unsafe_allow_html=True)
+<a href="{tg_link}" target="_blank" class="floating-tg-button" style="z-index: 999999 !important;">
+<i class="fa-brands fa-telegram" style="font-size: 1.4rem;"></i>
+<span>🚀 تفعيل إشعارات التلغرام</span>
+</a>
+""", unsafe_allow_html=True)
             else:
                 st.error("❌ عذراً، لم نجد أي جهاز مرتبط برقم الهاتف هذا حالياً في قاعدة البيانات.")
