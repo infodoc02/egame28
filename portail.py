@@ -403,70 +403,61 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 7. قسم الشروط والملاحظات الهامة (Glow Expander - معزول بالكامل)
+# 7. قسم الشروط والملاحظات الهامة (Pure HTML/CSS Glow Expander)
 # ==============================================================================
 
-# حقن ستايل محلي خاص فقط بـ warning-expander لضمان عدم تداخله مع بقية التطبيق
 st.markdown("""
-    <style>
-    @keyframes gold-glow-local {
-        0%, 100% { border-color: rgba(234, 179, 8, 0.3); box-shadow: 0 0 12px rgba(234, 179, 8, 0.1); }
-        50% { border-color: rgba(250, 204, 21, 0.8); box-shadow: 0 0 20px rgba(250, 204, 21, 0.25); }
-    }
-    
-    /* استهداف عناصر الاكسباندر الداخلي بدقة لفرض اليمين واللون الأبيض الناصع */
-    .local-glow-zone div[data-testid="stExpander"] {
-        border: 1px solid #eab308 !important;
-        animation: gold-glow-local 4s infinite ease-in-out !important;
-        background: rgba(30, 41, 59, 0.4) !important;
-        border-radius: 14px !important;
-    }
-    
-    /* إجبار النص، السهم، والعنوان على التموضع لليمين بلون واضح جداً */
-    .local-glow-zone div[data-testid="stExpander"] summary,
-    .local-glow-zone div[data-testid="stExpander"] p,
-    .local-glow-zone div[data-testid="stExpander"] span,
-    .local-glow-zone div[data-testid="stExpander"] svg {
-        text-align: right !important;
-        direction: rtl !important;
-        color: #ffffff !important; /* لون أبيض ناصع للعنوان والنصوص الأساسية */
-        font-family: 'Cairo', sans-serif !important;
-    }
-    </style>
+    <div dir="rtl" style="margin-bottom: 25px; font-family: 'Cairo', sans-serif;">
+        <details style="
+            background: rgba(30, 41, 59, 0.4) !important;
+            border: 1px solid #eab308 !important;
+            border-radius: 14px !important;
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.15);
+            transition: all 0.3s ease;
+        ">
+            <!-- عنوان الأكسباندر (يظهر دائماً في الأعلى وعلى اليمين) -->
+            <summary style="
+                color: #ffffff !important;
+                font-weight: bold;
+                font-size: 1.1rem;
+                cursor: pointer;
+                outline: none;
+                list-style: none; /* إخفاء السهم الافتراضي المتأرجح */
+                padding: 5px 10px;
+                text-align: right;
+                direction: rtl;
+            ">
+                ⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة
+            </summary>
+            
+            <!-- محتوى الأكسباندر (يظهر عند الضغط) -->
+            <div style="margin-top: 15px; text-align: right; direction: rtl;">
+                
+                <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #f1f5f9; line-height: 1.6;">
+                    1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span style="color: #facc15; font-weight: bold;">رفض الزبون ذلك</span>، يتم دفع <span style="color: #facc15; font-weight: bold;">1000 دج</span> ثمن الفحص والقياسات.
+                </div>
+                
+                <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #f1f5f9; line-height: 1.6;">
+                    2️⃣ أسعار العمل على <span style="color: #facc15; font-weight: bold;">البطاقة الأم (Carte Mère)</span> والمكونات الإلكترونية المجهرية تبدأ من <span style="color: #facc15; font-weight: bold;">3000 دج</span>.
+                </div>
+                
+                <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #f1f5f9; line-height: 1.6;">
+                    3️⃣ أسعار <span style="color: #facc15; font-weight: bold;">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span> تبدأ من <span style="color: #facc15; font-weight: bold;">1500 دج</span>.
+                </div>
+                
+                <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #f1f5f9; line-height: 1.6;">
+                    4️⃣ <span style="color: #facc15; font-weight: bold;">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون الاتصال بك إذا كانت التكلفة الإجمالية بين <span style="color: #facc15; font-weight: bold;">3000 دج و 4000 دج</span>.
+                </div>
+                
+                <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 5px; border-radius: 6px; color: #f1f5f9; line-height: 1.6;">
+                    5️⃣ <span style="color: #facc15; font-weight: bold;">شروط الضمان المتقدم:</span> الضمان الممنوح (<span style="color: #facc15; font-weight: bold;">30 يوماً</span>) صالح حصراً على العيب الإلكتروني الذي تم إصلاحه.
+                </div>
+                
+            </div>
+        </details>
+    </div>
 """, unsafe_allow_html=True)
-
-# فتح الحاوية المحلية المعزولة
-st.markdown('<div class="local-glow-zone">', unsafe_allow_html=True)
-
-with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
-    st.markdown("""
-        <div style="text-align: right; direction: rtl; font-family: 'Cairo', sans-serif; width: 100%;" dir="rtl">
-            
-            <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; text-align: right; direction: rtl; color: #f1f5f9; line-height: 1.6;">
-                1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span style="color: #facc15; font-weight: bold;">رفض الزبون ذلك</span>، يتم دفع <span style="color: #facc15; font-weight: bold;">1000 دج</span> ثمن الفحص والقياسات.
-            </div>
-            
-            <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; text-align: right; direction: rtl; color: #f1f5f9; line-height: 1.6;">
-                2️⃣ أسعار العمل على <span style="color: #facc15; font-weight: bold;">البطاقة الأم (Carte Mère)</span> والمكونات الإلكترونية المجهرية تبدأ من <span style="color: #facc15; font-weight: bold;">3000 دج</span>.
-            </div>
-            
-            <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; text-align: right; direction: rtl; color: #f1f5f9; line-height: 1.6;">
-                3️⃣ أسعار <span style="color: #facc15; font-weight: bold;">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span> تبدأ من <span style="color: #facc15; font-weight: bold;">1500 دج</span>.
-            </div>
-            
-            <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; text-align: right; direction: rtl; color: #f1f5f9; line-height: 1.6;">
-                4️⃣ <span style="color: #facc15; font-weight: bold;">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون الاتصال بك إذا كانت التكلفة الإجمالية بين <span style="color: #facc15; font-weight: bold;">3000 دج و 4000 دج</span>.
-            </div>
-            
-            <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 4px; border-radius: 6px; text-align: right; direction: rtl; color: #f1f5f9; line-height: 1.6;">
-                5️⃣ <span style="color: #facc15; font-weight: bold;">شروط الضمان المتقدم:</span> الضمان الممنوح (<span style="color: #facc15; font-weight: bold;">30 يوماً</span>) صالح حصراً على العيب الإلكتروني الذي تم إصلاحه.
-            </div>
-            
-        </div>
-    """, unsafe_allow_html=True)
-
-# إغلاق الحاوية المعزولة
-st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
 # ==============================================================================
