@@ -443,42 +443,30 @@ st.markdown("""
     .rule-card:last-child { margin-bottom: 5px; }
     .hl { color: #facc15; font-weight: bold; }
     </style>
-
-    <div dir="rtl">
-        <details class="glow-expander">
-            <summary>⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة</summary>
-
-            <div style="margin-top: 15px;">
-
-                <div class="rule-card">
-                    1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span class="hl">رفض الزبون ذلك</span>،
-                    يتم دفع <span class="hl">1000 دج</span> ثمن الفحص والقياسات.
-                </div>
-
-                <div class="rule-card">
-                    2️⃣ أسعار العمل على <span class="hl">البطاقة الأم (Carte Mère)</span>
-                    والمكونات الإلكترونية المجهرية تبدأ من <span class="hl">3000 دج</span>.
-                </div>
-
-                <div class="rule-card">
-                    3️⃣ أسعار <span class="hl">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span>
-                    تبدأ من <span class="hl">1500 دج</span>.
-                </div>
-
-                <div class="rule-card">
-                    4️⃣ <span class="hl">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون
-                    الاتصال بك إذا كانت التكلفة الإجمالية بين <span class="hl">3000 دج و 4000 دج</span>.
-                </div>
-
-                <div class="rule-card">
-                    5️⃣ <span class="hl">شروط الضمان المتقدم:</span> الضمان الممنوح
-                    (<span class="hl">30 يوماً</span>) صالح حصراً على العيب الإلكتروني الذي تم إصلاحه.
-                </div>
-
-            </div>
-        </details>
-    </div>
 """, unsafe_allow_html=True)
+
+st.markdown('<div class="warning-expander">', unsafe_allow_html=True)
+with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
+    st.markdown("""
+        <div style="text-align: right; direction: rtl; font-family: 'Cairo'; color: #e2e8f0;" dir="rtl">
+            <div class="rule-item">
+                1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span class="highlight-gold">رفض الزبون ذلك</span>، يتم دفع <span class="highlight-gold">1000 دج</span> ثمن الفحص والقياسات.
+            </div>
+            <div class="rule-item">
+                2️⃣ أسعار العمل على <span class="highlight-gold">البطاقة الأم (Carte Mère)</span> والمكونات الإلكترونية المجهرية تبدأ من <span class="highlight-gold">3000 دج</span>.
+            </div>
+            <div class="rule-item">
+                3️⃣ أسعار <span class="highlight-gold">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span> تبدأ من <span class="highlight-gold">1500 دج</span>.
+            </div>
+            <div class="rule-item">
+                4️⃣ <span class="highlight-gold">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون الاتصال بك إذا كانت التكلفة الإجمالية بين <span class="highlight-gold">3000 دج و 4000 دج</span>.
+            </div>
+            <div class="rule-item">
+                5️⃣ <span class="highlight-gold">شروط الضمان المتقدم:</span> الضمان الممنوح (<span class="highlight-gold">30 يوماً</span>) صالح حصراً على العيب الإلكتروني الذي تم إصلاحه.
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
 
