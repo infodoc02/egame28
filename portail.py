@@ -333,231 +333,145 @@ with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط 
 st.markdown('</div>', unsafe_allow_html=True)
 st.divider()
 # ==============================================================================
-# 5. نظام البحث والتتبع (النسخة المتناسقة والمعدلة بالكامل)
+# 5. بوابة تتبع الأجهزة (النسخة النهائية - مع دالة الأولوية والضمان والأشرطة)
 # ==============================================================================
 
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
     
-    /* فرض اليمين على حقل إدخال الهاتف */
-    div[data-testid="stTextInput"] input {
+    /* ضبط اتجاه النصوص في الأكسباندر للجهة اليمنى */
+    div[data-testid="stExpander"] {
         direction: rtl !important;
         text-align: right !important;
-        font-family: 'Cairo', sans-serif !important;
     }
     
-    /* ضبط الأكسباندر: شفاف تماماً ومتناسق الحواف لليمين */
-    div[data-testid="stExpander"] {
-        background: transparent !important;
-        border: 1px solid #334155 !important;
-        border-top: none !important;
-        border-radius: 0 0 12px 12px !important;
-        margin-top: -2px !important;
-        padding: 0px !important;
-    }
-    div[data-testid="stExpander"] summary {
-        direction: rtl !important;
+    /* منع تداخل النصوص في الأكسباندر */
+    .stExpander p, .stExpander span, .stExpander div {
         text-align: right !important;
-    }
-    div[data-testid="stExpander"] summary p {
-        font-family: 'Cairo', sans-serif !important;
-        font-weight: 700 !important;
-        color: #3b82f6 !important;
-        margin: 0 !important;
-    }
-
-    /* زر التلغرام العائم */
-    .floating-tg-button {
-        position: fixed;
-        bottom: 30px;
-        left: 30px;
-        background: linear-gradient(135deg, #24A1DE 0%, #1d80b0 100%);
-        color: white !important;
-        padding: 12px 22px;
-        border-radius: 50px;
-        box-shadow: 0 8px 20px rgba(36, 161, 222, 0.4);
-        z-index: 99999;
-        font-family: 'Cairo', sans-serif;
-        font-weight: bold;
-        font-size: 0.95rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        animation: tg-bounce 2.5s infinite ease-in-out;
-        border: 1px solid rgba(255,255,255,0.2);
-    }
-    @keyframes tg-bounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-8px); }
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<h3 style="text-align: right; font-family: \'Cairo\', sans-serif; color: #cbd5e1; font-size: 1.2rem; margin-bottom: 5px;">🔍 تتبع حالة أجهزتك الآن:</h3>', unsafe_allow_html=True)
+st.markdown('<h3 style="font-family:\'Cairo\'; color:#f8fafc; text-align:right;">🔍 تتبع حالة أجهزتك</h3>', unsafe_allow_html=True)
 
-with st.form("search_form", clear_on_submit=False):
-    user_phone = st.text_input("", placeholder="أدخل رقم هاتفك هنا (مثال: 0798661900)", label_visibility="collapsed")
-    submit_search = st.form_submit_button("⚡ ابحث عن أجهزتي في الورشة")
+with st.form("search_form"):
+    user_phone = st.text_input("", placeholder="أدخل رقم هاتفك هنا...", label_visibility="collapsed")
+    submit_search = st.form_submit_button("⚡ بـحـث")
 
 if submit_search and user_phone:
     norm_phone = normalize_phone(user_phone)
-    if len(norm_phone) < 9:
-        st.error("⚠️ يرجى إدخال رقم هاتف صحيح.")
-    else:
-        with st.spinner("⏳ جاري فحص السيرفر..."):
-            db_ref = db.reference("atelier")
-            raw_data = db_ref.get()
-            
-            if raw_data:
-                my_devices = [
-                    dict(v, _id=k) for k, v in raw_data.items() 
-                    if normalize_phone(v.get("Telephone", "")).endswith(norm_phone[-9:])
-                ]
+    raw_data = db.reference("atelier").get()
+    
+    if raw_data:
+        my_devices = [dict(v, _id=k) for k, v in raw_data.items() if normalize_phone(v.get("Telephone", "")).endswith(norm_phone[-9:])]
+        
+        if not my_devices:
+            st.warning("⚠️ لم يتم العثور على أجهزة لهذا الرقم.")
+        else:
+            # --- استعمال دالة الأولوية للترتيب (كما طلبت فقط) ---
+            my_devices.sort(key=lambda x: get_status_priority(x.get("Statut", "En Attente")))
+
+            for dev in my_devices:
+                status = str(dev.get("Statut", "En Attente")).strip()
                 
-                if not my_devices:
-                    st.warning("⚠️ لم نجد أي جهاز مسجل بهذا الرقم.")
+                # --- تحديد الألوان حسب الحالة (نفس التنسيق المطلوب) ---
+                if status == "En Attente":
+                    s_color, s_bg = "#EAB308", "rgba(234, 179, 8, 0.1)" # أصفر
+                elif status in ["En Cours", "Réparable"]:
+                    s_color, s_bg = "#3B82F6", "rgba(59, 130, 246, 0.1)" # أزرق
+                elif status in ["Non Réparable", "Annulé"]:
+                    s_color, s_bg = "#EF4444", "rgba(239, 68, 68, 0.1)" # أحمر
+                elif status == "Prêt":
+                    s_color, s_bg = "#10B981", "rgba(16, 185, 129, 0.1)" # أخضر
                 else:
-                    # 1. زر التلغرام العائم المتناسق
-                    bot_user = st.secrets.get("BOT_USERNAME", "InfoDoc_Workshop_Bot")
-                    st.markdown(f'''
-                        <a href="https://t.me/{bot_user}?start={norm_phone}" target="_blank" class="floating-tg-button">
-                            <span>📢 تفعيل الإشعارات (Telegram)</span>
-                        </a>
-                    ''', unsafe_allow_html=True)
-                
-                    # 2. ترتيب التذاكر تنازلياً
-                    my_devices.sort(key=lambda x: -int(x.get("ID", 0)) if str(x.get("ID", 0)).isdigit() else 0)
-                
-                    for dev in my_devices:
-                        status_raw = str(dev.get("Statut", "En Attente")).strip()
-                        status_lower = status_raw.lower()
-                        
-                        # --- تنظيم وفرز الحالات بدقة مع توحيد الألوان ---
-                        if "prêt" in status_lower or "pret" in status_lower:
-                            s_color, s_bg, s_text = "#22c55e", "rgba(34, 197, 94, 0.15)", "🟢 Prêt"
-                        elif "réparable" in status_lower or "reparable" in status_lower:
-                            s_color, s_bg, s_text = "#0ea5e9", "rgba(14, 165, 233, 0.15)", "🔧 Réparable"
-                        elif "annulé" in status_lower or "annule" in status_lower:
-                            s_color, s_bg, s_text = "#ef4444", "rgba(239, 68, 68, 0.15)", "❌ Annulé"
-                        elif "non réparable" in status_lower or "non reparable" in status_lower:
-                            s_color, s_bg, s_text = "#dc2626", "rgba(220, 38, 38, 0.15)", "⚠️ Non Réparable"
-                        elif "en cours" in status_lower:
-                            s_color, s_bg, s_text = "#3b82f6", "rgba(59, 130, 246, 0.15)", "⚙️ En Cours"
-                        elif "en attente" in status_lower:
-                            s_color, s_bg, s_text = "#facc15", "rgba(250, 204, 21, 0.15)", "🟡 En Attente"
-                        elif "livré" in status_lower or "livre" in status_lower or "payé" in status_lower or "paye" in status_lower:
-                            if "dette" in status_lower or "credit" in status_lower:
-                                s_color, s_bg, s_text = "#a855f7", "rgba(168, 85, 247, 0.15)", "📦 Livré (Dette)"
-                            else:
-                                s_color, s_bg, s_text = "#a855f7", "rgba(168, 85, 247, 0.15)", "✅ Livré & Payé"
-                        else:
-                            s_color, s_bg, s_text = "#94a3b8", "rgba(148, 163, 184, 0.15)", status_raw
+                    s_color, s_bg = "#A855F7", "rgba(168, 85, 247, 0.1)" # بنفسجي للمسلم
 
-                        # --- تنسيق السعر (بخط Orbitron وحل مشكلة الانعكاس) ---
-                        raw_prix = dev.get('Prix', 0)
-                        if "en cours" in status_lower or "en attente" in status_lower:
-                            prix_html = '<span style="color: #94a3b8; font-size: 0.95rem; font-family: \'Cairo\';">⚙️ قيد الفحص...</span>'
-                        else:
-                            try:
-                                formatted_p = f"{int(float(raw_prix)):,}".replace(',', ' ')
-                                prix_html = f'<div style="display: inline-block; direction: ltr;"><span style="font-family: \'Orbitron\', sans-serif; font-size: 1.35rem; color: #facc15; font-weight: 900;">{formatted_p}</span> <span style="font-family: \'Cairo\', sans-serif; font-size: 0.95rem; color: #facc15; font-weight: bold;">DA</span></div>'
-                            except: 
-                                prix_html = '<div style="display: inline-block; direction: ltr;"><span style="font-family: \'Orbitron\', sans-serif; font-size: 1.35rem; color: #facc15;">0</span> <span style="font-family: \'Cairo\', sans-serif; font-size: 0.95rem; color: #facc15;">DA</span></div>'
+                # --- كرت الجهاز الرئيسي ---
+                st.markdown(f"""
+                    <div style="background:#1e293b; border-right:6px solid {s_color}; border-radius:12px; padding:20px; margin-top:20px; border:1px solid #334155; direction:rtl; text-align:right; font-family:'Cairo';">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="color:#94a3b8; font-size:0.85rem;">تذكرة رقم: #{dev.get('ID')}</div>
+                                <div style="color:#ffffff; font-size:1.3rem; font-weight:900;">{dev.get('Appareil')}</div>
+                            </div>
+                            <div style="background:{s_bg}; color:{s_color}; padding:8px 16px; border-radius:8px; font-weight:bold; border:1px solid {s_color}44;">
+                                {status}
+                            </div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
 
-                        # --- الكرت العلوي للجهاز (متناسق الحجم ومحاذي لليمين تماماً) ---
+                # --- الأكسباندر مع محاذاة لليمين ---
+                with st.expander("📄 التقرير التقني والضمان"):
+                    
+                    # 1. نظام الضمان
+                    d_sortie = dev.get("Date_Sortie")
+                    is_delivered = any(word in status for word in ["Livré", "Livre", "payé"])
+                    
+                    if is_delivered and d_sortie and str(d_sortie).strip() not in ["", "---", "None"]:
+                        w = get_warranty_stats(d_sortie)
+                        if w:
+                            w_val = int(w.get('percent', 0))
+                            w_c = "#eab308" if not w.get('is_expired', False) else "#64748b"
+                            st.markdown(f"""
+                                <div style="background:{w_c}11; border:1px solid {w_c}; padding:15px; border-radius:10px; margin-bottom:15px; text-align:right;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                        <span style="color:{w_c}; font-weight:900;">🛡️ حالة الضمان:</span>
+                                        <span style="color:{w_c}; font-family:'Orbitron'; font-size:1.2rem;">{w_val}%</span>
+                                    </div>
+                                    <div style="width:100%; background:#0f172a; height:10px; border-radius:10px; overflow:hidden;">
+                                        <div style="width:{w_val}%; background:{w_c}; height:100%;"></div>
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.85rem; color:#94a3b8; direction:rtl;">
+                                        <span>📅 الاستلام: {w.get('actual_date')}</span>
+                                        <span>⏳ المتبقي: {w.get('days_left')} يوم</span>
+                                    </div>
+                                </div>
+                            """, unsafe_allow_html=True)
+
+                    # 2. أشرطة التقدم (للحالات غير النهائية)
+                    elif status not in ["Annulé", "Non Réparable", "Prêt"]:
+                        prog_map = {"En Attente": 20, "En Cours": 50, "Réparable": 80}
+                        p_val = prog_map.get(status, 15)
                         st.markdown(f"""
-                            <div style="background: #1e293b; border: 1px solid #334155; border-right: 5px solid {s_color}; 
-                                        border-radius: 12px 12px 0 0; padding: 12px 16px; margin-top: 10px; 
-                                        font-family: 'Cairo', sans-serif; direction: rtl; text-align: right;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; flex-direction: row-reverse; gap: 10px;">
-                                    <!-- حقل الحالة ثابت الحجم تماماً لمنع التشوه -->
-                                    <div style="background: {s_bg}; border: 1px solid {s_color}; color: {s_color}; 
-                                                padding: 6px 0px; border-radius: 8px; font-weight: 900; font-size: 0.9rem;
-                                                min-width: 145px; text-align: center; flex-shrink: 0; box-sizing: border-box;">
-                                        {s_text}
-                                    </div>
-                                    <div style="text-align: right; width: 100%;">
-                                        <h3 style="margin: 0; color: #ffffff; font-size: 1.3rem; font-weight: 900;">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
-                                        <div style="color: #94a3b8; font-size: 0.9rem; font-family: monospace; margin-top: 1px;">تذكرة رقم: #{dev.get('ID', '0000')}</div>
-                                    </div>
+                            <div style="margin-bottom:20px; text-align:right;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:8px; align-items:center;">
+                                    <span style="color:#cbd5e1;">⚙️ تقدم الصيانة:</span>
+                                    <span style="color:#3b82f6; font-family:'Orbitron'; font-size:1.2rem; font-weight:900;">{p_val}%</span>
+                                </div>
+                                <div style="width:100%; background:#1e293b; height:12px; border-radius:10px; overflow:hidden; border:1px solid #334155;">
+                                    <div style="width:{p_val}%; background:#3b82f6; height:100%;"></div>
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
-                        
-                        # --- الأكسباندر الشفاف المدمج بدون فراغات ميتة ---
-                        with st.expander("📄 عرض تفاصيل التقرير والمستحقات الفنية"):
-                            
-                            d_sortie = dev.get("Date_Sortie")
-                            panne_text = dev.get('Panne', dev.get('Defaut', 'غير محدد'))
-                            
-                            st.markdown(f'<div style="background: transparent; padding: 8px 12px; font-family: \'Cairo\', sans-serif; direction: rtl; text-align: right;">', unsafe_allow_html=True)
 
-                            # --- 1. نظام الضمان (النسبة المئوية المشعة بخط Orbitron) ---
-                            if ("livré" in status_lower or "livre" in status_lower or "payé" in status_lower) and d_sortie and str(d_sortie).strip() not in ["", "---", "None"]:
-                                w = get_warranty_stats(d_sortie)
-                                if w:
-                                    val = float(w.get('percent', 0)) 
-                                    is_expired = w.get('is_expired', False)
-                                    w_color = "#eab308" if not is_expired else "#64748b"
-                                    w_status_txt = "🛡️ الضمان ساري" if not is_expired else "🛑 الضمان انتهى"
-                                    
-                                    st.markdown(f"""
-                                        <div style="margin-bottom: 12px; border: 1px solid {w_color}; padding: 10px; border-radius: 8px; background: {w_color}0A; direction: rtl; text-align: right;">
-                                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: center; flex-direction: row-reverse;">
-                                                <div style="color: {w_color}; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.35rem; display: inline-block; direction: ltr;">{int(val)}%</div>
-                                                <span style="color: {w_color}; font-weight: bold; font-size: 0.95rem;">{w_status_txt}</span>
-                                            </div>
-                                            <div style="width: 100%; background: #1e293b; border-radius: 10px; height: 8px; overflow: hidden;">
-                                                <div style="width: {val}%; background: {w_color}; height: 100%;"></div>
-                                            </div>
-                                            <div style="display: flex; justify-content: space-between; margin-top: 6px; color: #94a3b8; font-size: 0.85rem; flex-direction: row-reverse;">
-                                                <span>⏳ المتبقي: {w.get('days_left')} يوم</span>
-                                                <span>📅 الاستلام: {w.get('actual_date')}</span>
-                                            </div>
-                                        </div>
-                                    """, unsafe_allow_html=True)
+                    # 3. جدول البيانات المالي والتاريخي
+                    try:
+                        p_format = f"{int(float(dev.get('Prix', 0))):,}".replace(",", " ")
+                        prix_display = f'<span style="font-family:\'Orbitron\'; color:{s_color}; font-size:1.5rem; font-weight:900;">{p_format}</span> <span style="font-family:\'Cairo\'; color:{s_color};">DA</span>'
+                    except: prix_display = "---"
 
-                            # --- 2. نظام أشرطة التقدم (النسبة المئوية بخط Orbitron) ---
-                            elif not any(x in status_lower for x in ["annulé", "annule", "non réparable", "non reparable", "prêt", "pret"]):
-                                prog_map = {"en attente": 20, "en cours": 50, "réparable": 80}
-                                p_val = prog_map.get(status_lower, 30)
-                                st.markdown(f"""
-                                    <div style="margin-bottom: 12px;">
-                                        <div style="display: flex; justify-content: space-between; direction: rtl; margin-bottom: 4px; align-items: center; flex-direction: row-reverse;">
-                                            <div style="color:#3b82f6; font-weight: 900; font-family: 'Orbitron', sans-serif; font-size: 1.35rem; display: inline-block; direction: ltr;">{p_val}%</div>
-                                            <span style="color:#cbd5e1; font-size: 0.9rem;">⚙️ تقدم الصيانة:</span>
-                                        </div>
-                                        <div style="width: 100%; background: #1e293b; border-radius: 10px; height: 8px; overflow: hidden;">
-                                            <div style="width: {p_val}%; background: #3b82f6; height: 100%;"></div>
-                                        </div>
-                                    </div>
-                                """, unsafe_allow_html=True)
-
-                            # --- 3. جدول البيانات المبسط النظيف والمحاذاة كاملة لليمين ---
-                            st.markdown(f"""
-                                <table style="width:100%; direction: rtl; text-align: right; border-collapse: collapse; font-size: 0.95rem;">
-                                    <tr style="border-bottom: 1px solid #1e293b;">
-                                        <td style="padding: 6px 0; color: #94a3b8;">📅 تاريخ الدخول:</td>
-                                        <td style="text-align: left; color: #f1f5f9; font-family: sans-serif; font-weight: bold;">{dev.get('Date_Entree', '---')}</td>
-                                    </tr>
-                                    <tr style="border-bottom: 1px solid #1e293b;">
-                                        <td style="padding: 6px 0; color: #94a3b8;">📅 تاريخ الخروج:</td>
-                                        <td style="text-align: left; color: #f1f5f9; font-family: sans-serif; font-weight: bold;">{dev.get('Date_Sortie', '---')}</td>
-                                    </tr>
-                                    <tr style="border-bottom: 1px solid #1e293b;">
-                                        <td style="padding: 6px 0; color: #94a3b8;">🛠️ العطل المسجل:</td>
-                                        <td style="text-align: left; color: #ef4444; font-weight: bold;">{panne_text}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 10px 0 0 0; color: #facc15; font-weight: bold;">💰 المستحقات:</td>
-                                        <td style="text-align: left; padding-top: 10px;">{prix_html}</td>
-                                    </tr>
-                                </table>
-                            """, unsafe_allow_html=True)
-                            
-                            st.markdown('</div>', unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div style="background:#0f172a; padding:15px; border-radius:10px; border:1px solid #334155; direction:rtl; text-align:right;">
+                            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #1e293b;">
+                                <span style="color:#94a3b8;">📅 تاريخ الدخول:</span>
+                                <span style="color:#f1f5f9; direction:ltr; font-family:'monospace';">{dev.get('Date_Entree', '---')}</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #1e293b;">
+                                <span style="color:#94a3b8;">📅 تاريخ الخروج:</span>
+                                <span style="color:#f1f5f9; direction:ltr; font-family:'monospace';">{dev.get('Date_Sortie', '---')}</span>
+                            </div>
+                            <div style="padding:10px 0; border-bottom:1px solid #1e293b;">
+                                <span style="color:#94a3b8; display:block; margin-bottom:5px;">🛠️ التقرير الفني:</span>
+                                <span style="color:#3b82f6; font-weight:bold;">{dev.get('Panne_Finale', dev.get('Panne', 'جاري الفحص...'))}</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:15px;">
+                                <span style="color:#ffffff; font-weight:900;">💰 المبلغ الإجمالي:</span>
+                                <div style="direction:ltr;">{prix_display}</div>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
 # ==============================================================================
 # 7. تشغيل بوت التلغرام الاحترافي (المطور لـ InfoDoc)
 # ==============================================================================
