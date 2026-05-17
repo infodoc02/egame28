@@ -410,24 +410,7 @@ st.markdown("""
     @keyframes gold-glow {
         0%, 100% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 10px rgba(234, 179, 8, 0.1); }
         50% { border-color: rgba(250, 204, 21, 0.9); box-shadow: 0 0 25px rgba(250, 204, 21, 0.3); }
-    }
     
-    /* استهداف الأكسباندر التحذيري فقط بإعطائه ستايل مخصص */
-    .warning-expander div[data-testid="stExpander"] {
-        border: 2px solid #eab308 !important;
-        animation: gold-glow 3.5s infinite ease-in-out !important;
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(234, 179, 8, 0.04) 100%) !important;
-        border-radius: 16px !important;
-    }
-    
-    /* تصحيح النص وعنوان الأكسباندر التحذيري ليصبح أبيض ناصع وعلى اليمين */
-    .warning-expander div[data-testid="stExpander"] p, 
-    .warning-expander div[data-testid="stExpander"] summary,
-    .warning-expander div[data-testid="stExpander"] span {
-        text-align: right !important;
-        direction: rtl !important;
-        color: #ffffff !important;
-        font-family: 'Cairo', sans-serif !important;
     }
     
     .rule-item {
@@ -502,25 +485,6 @@ st.markdown("""
         width: 100%;
     }
 
-    /* إلغاء الفجوة للأكسباندر ليلتحم بالكرت العلوي */
-    .custom-expander div[data-testid="stExpander"] {
-        background: rgba(30, 41, 59, 0.4) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-top: none !important; /* إلغاء الحد العلوي */
-        border-radius: 0 0 14px 14px !important; /* دائرية من أسفل فقط */
-        margin-top: 0px !important;
-        margin-bottom: 15px !important;
-    }
-    
-    /* تصحيح النص وعنوان أكسباندر تفاصيل الجهاز ليصبح أبيض ناصع وعلى اليمين */
-    .custom-expander div[data-testid="stExpander"] p, 
-    .custom-expander div[data-testid="stExpander"] summary,
-    .custom-expander div[data-testid="stExpander"] span {
-        text-align: right !important;
-        direction: rtl !important;
-        color: #ffffff !important;
-        font-family: 'Cairo', sans-serif !important;
-    }
        
     /* الزر العائم للتلغرام */
     .floating-tg-button {
