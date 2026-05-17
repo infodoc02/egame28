@@ -333,10 +333,9 @@ with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط 
 st.markdown('</div>', unsafe_allow_html=True)
 st.divider()
 # ==============================================================================
-# 5. نظام البحث والتتبع (النسخة المضغوطة بالزر العائم والتفاصيل الأنيقة)
+# 5. نظام البحث والتتبع (النسخة المتناسقة والمعدلة بالكامل)
 # ==============================================================================
 
-# الأكواد الأساسية للخطوط، الزر العائم، وضبط محاذاة الأكسبندر لليمين بدون فراغات
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
@@ -348,7 +347,7 @@ st.markdown("""
         font-family: 'Cairo', sans-serif !important;
     }
     
-    /* ضبط الأكسبندر: شفاف، بدون مساحات ضائعة، ومحاذاته لليمين */
+    /* ضبط الأكسباندر: شفاف تماماً ومتناسق الحواف لليمين */
     div[data-testid="stExpander"] {
         background: transparent !important;
         border: 1px solid #334155 !important;
@@ -368,7 +367,7 @@ st.markdown("""
         margin: 0 !important;
     }
 
-    /* زر التلغرام العائم المتطور */
+    /* زر التلغرام العائم */
     .floating-tg-button {
         position: fixed;
         bottom: 30px;
@@ -420,7 +419,7 @@ if submit_search and user_phone:
                 if not my_devices:
                     st.warning("⚠️ لم نجد أي جهاز مسجل بهذا الرقم.")
                 else:
-                    # 1. تفعيل زر التلغرام العائم (أسفل اليسار)
+                    # 1. زر التلغرام العائم المتناسق
                     bot_user = st.secrets.get("BOT_USERNAME", "InfoDoc_Workshop_Bot")
                     st.markdown(f'''
                         <a href="https://t.me/{bot_user}?start={norm_phone}" target="_blank" class="floating-tg-button">
@@ -428,67 +427,75 @@ if submit_search and user_phone:
                         </a>
                     ''', unsafe_allow_html=True)
                 
-                    # 2. ترتيب الأجهزة
+                    # 2. ترتيب التذاكر تنازلياً
                     my_devices.sort(key=lambda x: -int(x.get("ID", 0)) if str(x.get("ID", 0)).isdigit() else 0)
                 
                     for dev in my_devices:
-                        status = str(dev.get("Statut", "En Attente")).strip()
-                        is_delivered = any(word.lower() in status.lower() for word in ["livré", "livre", "payé"])
+                        status_raw = str(dev.get("Statut", "En Attente")).strip()
+                        status_lower = status_raw.lower()
                         
-                        # --- مصفوفة الحالات والألوان المطلوبة ---
-                        if is_delivered:
-                            s_color, s_bg, s_text = "#a855f7", "rgba(168, 85, 247, 0.15)", f"📦 تم تسليم الجهاز"
-                        elif status == "Prêt":
-                            s_color, s_bg, s_text = "#22c55e", "rgba(34, 197, 94, 0.15)", f"🟢 {status}"
-                        elif status in ["Non Réparable", "Annulé"]:
-                            s_color, s_bg, s_text = "#ef4444", "rgba(239, 68, 68, 0.15)", f"❌ {status}"
-                        elif status in ["En Cours", "Réparable"]:
-                            s_color, s_bg, s_text = "#3b82f6", "rgba(59, 130, 246, 0.15)", f"🔧 {status}"
-                        elif status == "En Attente":
-                            s_color, s_bg, s_text = "#facc15", "rgba(250, 204, 21, 0.15)", f"🟡 {status}"
+                        # --- تنظيم وفرز الحالات بدقة مع توحيد الألوان ---
+                        if "prêt" in status_lower or "pret" in status_lower:
+                            s_color, s_bg, s_text = "#22c55e", "rgba(34, 197, 94, 0.15)", "🟢 Prêt"
+                        elif "réparable" in status_lower or "reparable" in status_lower:
+                            s_color, s_bg, s_text = "#0ea5e9", "rgba(14, 165, 233, 0.15)", "🔧 Réparable"
+                        elif "annulé" in status_lower or "annule" in status_lower:
+                            s_color, s_bg, s_text = "#ef4444", "rgba(239, 68, 68, 0.15)", "❌ Annulé"
+                        elif "non réparable" in status_lower or "non reparable" in status_lower:
+                            s_color, s_bg, s_text = "#dc2626", "rgba(220, 38, 38, 0.15)", "⚠️ Non Réparable"
+                        elif "en cours" in status_lower:
+                            s_color, s_bg, s_text = "#3b82f6", "rgba(59, 130, 246, 0.15)", "⚙️ En Cours"
+                        elif "en attente" in status_lower:
+                            s_color, s_bg, s_text = "#facc15", "rgba(250, 204, 21, 0.15)", "🟡 En Attente"
+                        elif "livré" in status_lower or "livre" in status_lower or "payé" in status_lower or "paye" in status_lower:
+                            if "dette" in status_lower or "credit" in status_lower:
+                                s_color, s_bg, s_text = "#a855f7", "rgba(168, 85, 247, 0.15)", "📦 Livré (Dette)"
+                            else:
+                                s_color, s_bg, s_text = "#a855f7", "rgba(168, 85, 247, 0.15)", "✅ Livré & Payé"
                         else:
-                            s_color, s_bg, s_text = "#94a3b8", "rgba(148, 163, 184, 0.15)", f"❔ {status}"
+                            s_color, s_bg, s_text = "#94a3b8", "rgba(148, 163, 184, 0.15)", status_raw
 
-                        # --- تنسيق السعر بخط Orbitron ومنع الانعكاس ---
+                        # --- تنسيق السعر (بخط Orbitron وحل مشكلة الانعكاس) ---
                         raw_prix = dev.get('Prix', 0)
-                        if status in ["En Cours", "En Attente"]:
-                            prix_html = '<span style="color: #94a3b8; font-size: 1rem; font-family: \'Cairo\';">⚙️ قيد الفحص...</span>'
+                        if "en cours" in status_lower or "en attente" in status_lower:
+                            prix_html = '<span style="color: #94a3b8; font-size: 0.95rem; font-family: \'Cairo\';">⚙️ قيد الفحص...</span>'
                         else:
                             try:
                                 formatted_p = f"{int(float(raw_prix)):,}".replace(',', ' ')
-                                prix_html = f'<div style="display: inline-block; direction: ltr;"><span style="font-family: \'Orbitron\', sans-serif; font-size: 1.4rem; color: #facc15; font-weight: 900;">{formatted_p}</span> <span style="font-family: \'Cairo\', sans-serif; font-size: 1rem; color: #facc15; font-weight: bold;">DA</span></div>'
+                                prix_html = f'<div style="display: inline-block; direction: ltr;"><span style="font-family: \'Orbitron\', sans-serif; font-size: 1.35rem; color: #facc15; font-weight: 900;">{formatted_p}</span> <span style="font-family: \'Cairo\', sans-serif; font-size: 0.95rem; color: #facc15; font-weight: bold;">DA</span></div>'
                             except: 
-                                prix_html = '<div style="display: inline-block; direction: ltr;"><span style="font-family: \'Orbitron\', sans-serif; font-size: 1.4rem; color: #facc15;">0</span> <span style="font-family: \'Cairo\', sans-serif; font-size: 1rem; color: #facc15;">DA</span></div>'
+                                prix_html = '<div style="display: inline-block; direction: ltr;"><span style="font-family: \'Orbitron\', sans-serif; font-size: 1.35rem; color: #facc15;">0</span> <span style="font-family: \'Cairo\', sans-serif; font-size: 0.95rem; color: #facc15;">DA</span></div>'
 
-                        # --- الكرت العلوي للجهاز (حجم ملموم ومحاذاة لليمين) ---
+                        # --- الكرت العلوي للجهاز (متناسق الحجم ومحاذي لليمين تماماً) ---
                         st.markdown(f"""
                             <div style="background: #1e293b; border: 1px solid #334155; border-right: 5px solid {s_color}; 
-                                        border-radius: 12px 12px 0 0; padding: 12px 18px; margin-top: 12px; 
+                                        border-radius: 12px 12px 0 0; padding: 12px 16px; margin-top: 10px; 
                                         font-family: 'Cairo', sans-serif; direction: rtl; text-align: right;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; flex-direction: row-reverse;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; flex-direction: row-reverse; gap: 10px;">
+                                    <!-- حقل الحالة ثابت الحجم تماماً لمنع التشوه -->
                                     <div style="background: {s_bg}; border: 1px solid {s_color}; color: {s_color}; 
-                                                padding: 6px 14px; border-radius: 8px; font-weight: 900; font-size: 0.95rem;">
+                                                padding: 6px 0px; border-radius: 8px; font-weight: 900; font-size: 0.9rem;
+                                                min-width: 145px; text-align: center; flex-shrink: 0; box-sizing: border-box;">
                                         {s_text}
                                     </div>
                                     <div style="text-align: right; width: 100%;">
-                                        <h3 style="margin: 0; color: #ffffff; font-size: 1.35rem; font-weight: 900;">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
-                                        <div style="color: #94a3b8; font-size: 0.95rem; font-family: monospace; margin-top: 2px;">تذكرة رقم: #{dev.get('ID', '0000')}</div>
+                                        <h3 style="margin: 0; color: #ffffff; font-size: 1.3rem; font-weight: 900;">{dev.get('Appareil', 'جهاز غير معروف')}</h3>
+                                        <div style="color: #94a3b8; font-size: 0.9rem; font-family: monospace; margin-top: 1px;">تذكرة رقم: #{dev.get('ID', '0000')}</div>
                                     </div>
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
                         
-                        # --- الأكسباندر الشفاف بدون مساحات ميتة ---
+                        # --- الأكسباندر الشفاف المدمج بدون فراغات ميتة ---
                         with st.expander("📄 عرض تفاصيل التقرير والمستحقات الفنية"):
                             
                             d_sortie = dev.get("Date_Sortie")
                             panne_text = dev.get('Panne', dev.get('Defaut', 'غير محدد'))
                             
-                            # حاوية داخلية شفافة ومضغوطة
-                            st.markdown(f'<div style="background: transparent; padding: 10px; font-family: \'Cairo\', sans-serif; direction: rtl; text-align: right;">', unsafe_allow_html=True)
+                            st.markdown(f'<div style="background: transparent; padding: 8px 12px; font-family: \'Cairo\', sans-serif; direction: rtl; text-align: right;">', unsafe_allow_html=True)
 
-                            # --- 1. نظام الضمان (النسبة بخط Orbitron) ---
-                            if is_delivered and d_sortie and str(d_sortie).strip() not in ["", "---", "None"]:
+                            # --- 1. نظام الضمان (النسبة المئوية المشعة بخط Orbitron) ---
+                            if ("livré" in status_lower or "livre" in status_lower or "payé" in status_lower) and d_sortie and str(d_sortie).strip() not in ["", "---", "None"]:
                                 w = get_warranty_stats(d_sortie)
                                 if w:
                                     val = float(w.get('percent', 0)) 
@@ -499,7 +506,7 @@ if submit_search and user_phone:
                                     st.markdown(f"""
                                         <div style="margin-bottom: 12px; border: 1px solid {w_color}; padding: 10px; border-radius: 8px; background: {w_color}0A; direction: rtl; text-align: right;">
                                             <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: center; flex-direction: row-reverse;">
-                                                <div style="color: {w_color}; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.3rem; display: inline-block; direction: ltr;">{int(val)}%</div>
+                                                <div style="color: {w_color}; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.35rem; display: inline-block; direction: ltr;">{int(val)}%</div>
                                                 <span style="color: {w_color}; font-weight: bold; font-size: 0.95rem;">{w_status_txt}</span>
                                             </div>
                                             <div style="width: 100%; background: #1e293b; border-radius: 10px; height: 8px; overflow: hidden;">
@@ -512,15 +519,15 @@ if submit_search and user_phone:
                                         </div>
                                     """, unsafe_allow_html=True)
 
-                            # --- 2. نظام أشرطة التقدم (النسبة بخط Orbitron) ---
-                            elif status not in ["Annulé", "Non Réparable", "Prêt"]:
-                                prog_map = {"En Attente": 20, "En Cours": 50, "Réparable": 80}
-                                p_val = prog_map.get(status, 30)
+                            # --- 2. نظام أشرطة التقدم (النسبة المئوية بخط Orbitron) ---
+                            elif not any(x in status_lower for x in ["annulé", "annule", "non réparable", "non reparable", "prêt", "pret"]):
+                                prog_map = {"en attente": 20, "en cours": 50, "réparable": 80}
+                                p_val = prog_map.get(status_lower, 30)
                                 st.markdown(f"""
-                                    <div style="margin-bottom: 14px;">
+                                    <div style="margin-bottom: 12px;">
                                         <div style="display: flex; justify-content: space-between; direction: rtl; margin-bottom: 4px; align-items: center; flex-direction: row-reverse;">
-                                            <div style="color:#3b82f6; font-weight: 900; font-family: 'Orbitron', sans-serif; font-size: 1.3rem; display: inline-block; direction: ltr;">{p_val}%</div>
-                                            <span style="color:#cbd5e1; font-size: 0.95rem;">⚙️ تقدم الصيانة:</span>
+                                            <div style="color:#3b82f6; font-weight: 900; font-family: 'Orbitron', sans-serif; font-size: 1.35rem; display: inline-block; direction: ltr;">{p_val}%</div>
+                                            <span style="color:#cbd5e1; font-size: 0.9rem;">⚙️ تقدم الصيانة:</span>
                                         </div>
                                         <div style="width: 100%; background: #1e293b; border-radius: 10px; height: 8px; overflow: hidden;">
                                             <div style="width: {p_val}%; background: #3b82f6; height: 100%;"></div>
