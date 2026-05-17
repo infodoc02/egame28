@@ -403,27 +403,27 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 7. قسم الشروط والملاحظات الهامة (Pure HTML/CSS Glow Expander)
+# 7. قسم الشروط والملاحظات الهامة (Light Theme Glow Expander)
 # ==============================================================================
 
 st.markdown("""
     <div dir="rtl" style="margin-bottom: 25px; font-family: 'Cairo', sans-serif;">
         <details style="
-            background: rgba(30, 41, 59, 0.4) !important;
+            background: #f8fafc !important; /* خلفية فاتحة ونظيفة */
             border: 1px solid #eab308 !important;
             border-radius: 14px !important;
             padding: 15px;
-            box-shadow: 0 0 15px rgba(234, 179, 8, 0.15);
+            box-shadow: 0 4px 15px rgba(234, 179, 8, 0.1);
             transition: all 0.3s ease;
         ">
-            <!-- عنوان الأكسباندر (يظهر دائماً في الأعلى وعلى اليمين) -->
+            <!-- عنوان الأكسباندر (واضح وداكن فوق الخلفية الفاتحة) -->
             <summary style="
-                color: #ffffff !important;
+                color: #1e293b !important; /* لون داكن للعنوان ليتناسق مع الخلفية الفاتحة */
                 font-weight: bold;
                 font-size: 1.1rem;
                 cursor: pointer;
                 outline: none;
-                list-style: none; /* إخفاء السهم الافتراضي المتأرجح */
+                list-style: none;
                 padding: 5px 10px;
                 text-align: right;
                 direction: rtl;
@@ -431,27 +431,27 @@ st.markdown("""
                 ⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة
             </summary>
             
-            <!-- محتوى الأكسباندر (يظهر عند الضغط) -->
+            <!-- محتوى الأكسباندر الداخلي -->
             <div style="margin-top: 15px; text-align: right; direction: rtl;">
                 
-                <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #f1f5f9; line-height: 1.6;">
-                    1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span style="color: #facc15; font-weight: bold;">رفض الزبون ذلك</span>، يتم دفع <span style="color: #facc15; font-weight: bold;">1000 دج</span> ثمن الفحص والقياسات.
+                <div style="background: #ffffff; border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #334155; line-height: 1.6; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span style="color: #b45309; font-weight: bold;">رفض الزبون ذلك</span>، يتم دفع <span style="color: #b45309; font-weight: bold;">1000 دج</span> ثمن الفحص والقياسات.
                 </div>
                 
-                <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #f1f5f9; line-height: 1.6;">
-                    2️⃣ أسعار العمل على <span style="color: #facc15; font-weight: bold;">البطاقة الأم (Carte Mère)</span> والمكونات الإلكترونية المجهرية تبدأ من <span style="color: #facc15; font-weight: bold;">3000 دج</span>.
+                <div style="background: #ffffff; border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #334155; line-height: 1.6; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    2️⃣ أسعار العمل على <span style="color: #b45309; font-weight: bold;">البطاقة الأم (Carte Mère)</span> والمكونات الإلكترونية المجهرية تبدأ من <span style="color: #b45309; font-weight: bold;">3000 دج</span>.
                 </div>
                 
-                <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #f1f5f9; line-height: 1.6;">
-                    3️⃣ أسعار <span style="color: #facc15; font-weight: bold;">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span> تبدأ من <span style="color: #facc15; font-weight: bold;">1500 دج</span>.
+                <div style="background: #ffffff; border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #334155; line-height: 1.6; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    3️⃣ أسعار <span style="color: #b45309; font-weight: bold;">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span> تبدأ من <span style="color: #b45309; font-weight: bold;">1500 دج</span>.
                 </div>
                 
-                <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #f1f5f9; line-height: 1.6;">
-                    4️⃣ <span style="color: #facc15; font-weight: bold;">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون الاتصال بك إذا كانت التكلفة الإجمالية بين <span style="color: #facc15; font-weight: bold;">3000 دج و 4000 دج</span>.
+                <div style="background: #ffffff; border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 12px; border-radius: 6px; color: #334155; line-height: 1.6; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    4️⃣ <span style="color: #b45309; font-weight: bold;">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون الاتصال بك إذا كانت التكلفة الإجمالية بين <span style="color: #b45309; font-weight: bold;">3000 دج و 4000 دج</span>.
                 </div>
                 
-                <div style="background: rgba(255, 255, 255, 0.04); border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 5px; border-radius: 6px; color: #f1f5f9; line-height: 1.6;">
-                    5️⃣ <span style="color: #facc15; font-weight: bold;">شروط الضمان المتقدم:</span> الضمان الممنوح (<span style="color: #facc15; font-weight: bold;">30 يوماً</span>) صالح حصراً على العيب الإلكتروني الذي تم إصلاحه.
+                <div style="background: #ffffff; border-right: 4px solid #eab308; padding: 14px 18px; margin-bottom: 5px; border-radius: 6px; color: #334155; line-height: 1.6; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    5️⃣ <span style="color: #b45309; font-weight: bold;">شروط الضمان المتقدم:</span> الضمان الممنوح (<span style="color: #b45309; font-weight: bold;">30 يوماً</span>) صالح حصراً على العيب الإلكتروني الذي تم إصلاحه.
                 </div>
                 
             </div>
