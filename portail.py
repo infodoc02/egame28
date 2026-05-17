@@ -402,14 +402,18 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# ==============================================================================
+# 7. قسم الشروط والملاحظات الهامة (Light Theme Glow Expander - المصحح)
+# ==============================================================================
+
 st.markdown("""
     <style>
     @keyframes gold-glow {
-        0%, 100% { box-shadow: 0 0 10px rgba(234, 179, 8, 0.15); border-color: rgba(234, 179, 8, 0.5); }
-        50%       { box-shadow: 0 0 25px rgba(250, 204, 21, 0.4); border-color: rgba(250, 204, 21, 0.95); }
+        0%, 100% { box-shadow: 0 4px 10px rgba(234, 179, 8, 0.15); border-color: rgba(234, 179, 8, 0.6); }
+        50%       { box-shadow: 0 4px 20px rgba(250, 204, 21, 0.3); border-color: rgba(250, 204, 21, 0.95); }
     }
     .glow-expander {
-        background: rgba(30, 41, 59, 0.4);
+        background: #f8fafc !important; /* خلفية فاتحة ونظيفة مائلة للبياض */
         border: 1px solid #eab308;
         border-radius: 14px;
         padding: 15px;
@@ -418,7 +422,7 @@ st.markdown("""
         animation: gold-glow 2.5s ease-in-out infinite;
     }
     .glow-expander summary {
-        color: #ffffff;
+        color: #1e293b !important; /* لون داكن للعنوان ليتناسق مع الخلفية الفاتحة */
         font-weight: bold;
         font-size: 1.1rem;
         cursor: pointer;
@@ -429,44 +433,47 @@ st.markdown("""
         direction: rtl;
     }
     .glow-expander summary::-webkit-details-marker { display: none; }
+    
     .rule-card {
-        background: rgba(255, 255, 255, 0.04);
+        background: #ffffff !important; /* بطاقات داخلية بيضاء ناصعة */
         border-right: 4px solid #eab308;
         padding: 14px 18px;
         margin-bottom: 12px;
         border-radius: 6px;
-        color: #f1f5f9;
+        color: #334155 !important; /* نصوص داكنة واضحة جداً للقراءة */
         line-height: 1.6;
         text-align: right;
         direction: rtl;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
     .rule-card:last-child { margin-bottom: 5px; }
-    .hl { color: #facc15; font-weight: bold; }
+    .hl { color: #b45309 !important; font-weight: bold; } /* لون ذهبي داكن غني مخصص للمظهر الفاتح */
     </style>
-""", unsafe_allow_html=True)
 
-st.markdown('<div class="warning-expander">', unsafe_allow_html=True)
-with st.expander("⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة"):
-    st.markdown("""
-        <div style="text-align: right; direction: rtl; font-family: 'Cairo'; color: #e2e8f0;" dir="rtl">
-            <div class="rule-item">
-                1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span class="highlight-gold">رفض الزبون ذلك</span>، يتم دفع <span class="highlight-gold">1000 دج</span> ثمن الفحص والقياسات.
+    <div dir="rtl">
+        <details class="glow-expander">
+            <summary>⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة</summary>
+            
+            <div style="margin-top: 15px;">
+                <div class="rule-card">
+                    1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span class="hl">رفض الزبون ذلك</span>، يتم دفع <span class="hl">1000 دج</span> ثمن الفحص والقياسات.
+                </div>
+                <div class="rule-card">
+                    2️⃣ أسعار العمل على <span class="hl">البطاقة الأم (Carte Mère)</span> والمكونات الإلكترونية المجهرية تبدأ من <span class="hl">3000 دج</span>.
+                </div>
+                <div class="rule-card">
+                    3️⃣ أسعار <span class="hl">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span> تبدأ من <span class="hl">1500 دج</span>.
+                </div>
+                <div class="rule-card">
+                    4️⃣ <span class="hl">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون الاتصال بك إذا كانت التكلفة الإجمالية بين <span class="hl">3000 دج و 4000 دج</span>.
+                </div>
+                <div class="rule-card">
+                    5️⃣ <span class="hl">شروط الضمان المتقدم:</span> الضمان الممنوح (<span class="hl">30 يوماً</span>) صالح حصراً على العيب الإلكتروني الذي تم إصلاحه.
+                </div>
             </div>
-            <div class="rule-item">
-                2️⃣ أسعار العمل على <span class="highlight-gold">البطاقة الأم (Carte Mère)</span> والمكونات الإلكترونية المجهرية تبدأ من <span class="highlight-gold">3000 دج</span>.
-            </div>
-            <div class="rule-item">
-                3️⃣ أسعار <span class="highlight-gold">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span> تبدأ من <span class="highlight-gold">1500 دج</span>.
-            </div>
-            <div class="rule-item">
-                4️⃣ <span class="highlight-gold">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون الاتصال بك إذا كانت التكلفة الإجمالية بين <span class="highlight-gold">3000 دج و 4000 دج</span>.
-            </div>
-            <div class="rule-item">
-                5️⃣ <span class="highlight-gold">شروط الضمان المتقدم:</span> الضمان الممنوح (<span class="highlight-gold">30 يوماً</span>) صالح حصراً على العيب الإلكتروني الذي تم إصلاحه.
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+        </details>
+    </div>
+""", unsafe_allow_html=True)
 
 st.divider()
 
