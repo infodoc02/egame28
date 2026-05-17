@@ -632,8 +632,10 @@ if submit_search and user_phone:
                             if w_stats["is_expired"]:
                                 dynamic_bar_html = f'<div style="color:#94a3b8; font-family:\'Cairo\'; font-size:0.9rem; margin-bottom:6px;">🛡️ شريط الضمان الفني (30 يوم)</div><div class="warranty-expired">🔴 انتهى الضمان منذ {abs(w_stats["days_left"])} أيام (تاريخ الصلاحية: {w_stats["actual_date"]})</div>'
                             else:
-                                percent = w_stats['percent']  # ✅ بدون الضرب في 100
-                                dynamic_bar_html = f'<div style="color:#94a3b8; font-family:\'Cairo\'; font-size:0.9rem; margin-bottom:6px;">🛡️ شريط الضمان الفني (30 يوم)</div><div class="warranty-ok">🟢 الضمان ساري المفعول! متبقي {w_stats["days_left"]} يوم (تنتهي الصلاحية: {w_stats["actual_date"]})</div><div class="warranty-progress-wrap"><div class="warranty-progress-bar" style="width:{percent}%"></div></div>'
+                                warranty_percent = w_stats['percent']
+                                dynamic_bar_html = f'<div style="color:#94a3b8; font-family:\'Cairo\'; font-size:0.9rem; margin-bottom:6px;">🛡️ شريط الضمان الفني (30 يوم)</div><div class="warranty-ok">🟢 الضمان ساري المفعول! متبقي {w_stats["days_left"]} يوم (تنتهي الصلاحية: {w_stats["actual_date"]})</div><div class="warranty-progress-wrap" style="direction:rtl;"><div class="warranty-progress-bar" style="width:{warranty_percent}%; background:#2ecc71;"></div></div>'
+                        else:
+                            dynamic_bar_html = ""
                     else:
                         # ─── شريط سير الصيانة ───
                         repair_steps = {
@@ -648,11 +650,16 @@ if submit_search and user_phone:
                         if status_lower in repair_steps:
                             pct, color, label = repair_steps[status_lower]
                             
-                            # إضافة نص الفحص 1000 دج للحالات الفاشلة
                             fee_text = " — فشل الإصلاح، تكلفة الفحص: <b>1000 دج</b>" if status_lower in ["annulé", "echec de la réparation"] else f" — {pct}%"
                             
-                            dynamic_bar_html = f'...<div class="warranty-progress-wrap" style="direction:rtl;"><div class="warranty-progress-bar" style="width:{percent}%; background:{color};"></div></div>...'
-
+                            dynamic_bar_html = f'''<div style="color:#94a3b8; font-family:'Cairo'; font-size:0.9rem; margin-bottom:6px;">📊 شريط سير الصيانة</div>
+<div style="text-align:right; direction:rtl; font-family:'Cairo'; color:{color}; font-weight:bold; margin-bottom:6px;">{label}{fee_text}</div>
+<div class="warranty-progress-wrap" style="direction:rtl;">
+<div class="warranty-progress-bar" style="width:{pct}%; background:{color};"></div>
+</div>
+<div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#64748b; font-family:'Cairo'; margin-top:4px; text-align:right; direction:rtl;">
+<span>En Attente</span><span>En Cours</span><span>Réparable</span><span>Prêt ✓</span>
+</div>'''
                         else:
                             dynamic_bar_html = ""
                     # بناء قسم الضمان كـ HTML
