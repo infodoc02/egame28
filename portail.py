@@ -138,16 +138,16 @@ def get_status_priority(status):
     
     if "prêt" in status_lower: 
         return 1
-    elif "réparable" in status_lower: 
-        return 2
-    elif "en cours" in status_lower: 
-        return 3
-    elif "en attente" in status_lower: 
-        return 4
     elif "annulé" in status_lower: 
-        return 5
+        return 2
     elif "non réparable" in status_lower: 
-        return 6
+        return 3
+    elif "réparable" in status_lower: 
+        return 4
+    elif "en cours" in status_lower: 
+        return 5
+    elif "en attente" in status_lower: 
+        return 6   
     elif "livré & payé" in status_lower or "livré (dette)" in status_lower:
         return 7
     else: 
@@ -644,6 +644,7 @@ if submit_search and user_phone:
                             "réparable": (66, "#3498db", "✅ قابل للإصلاح"),
                             "prêt": (100, "#2ecc71", "🎉 جاهز للاستلام"),
                             "annulé": (66, "#e74c3c", "❌ ملغى"),
+                            "non réparable": (100, "#e74c3c", "❌ جاهز للاستلام"),
                         }
 
                         if status_lower in repair_steps:
