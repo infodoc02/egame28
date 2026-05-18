@@ -602,6 +602,19 @@ if submit_search and user_phone:
                 for k, v in all_data.items():
                     db_phone = normalize_phone(v.get("Telephone", ""))
                     if db_phone.endswith(norm_phone[-9:]):
+                        
+                        # --- التعديل الجديد: فلترة الأجهزة منتهية الضمان ---
+                        status_lower = str(v.get("Statut", "")).strip().lower()
+                        date_s = v.get("Date_Sortie", "---")
+                        
+                        # التحقق مما إذا كان الجهاز قد تم تسليمه
+                        if status_lower in ["livré & payé", "livré (dette)"]:
+                            w_stats = get_warranty_stats(date_s)
+                            # إذا انتهت مدة الضمان (أكثر من 30 يوم)، نتخطى الجهاز تماماً
+                            if w_stats and w_stats.get("is_expired"):
+                                continue 
+                        # --------------------------------------------------
+                        
                         my_devices.append(dict(v, _id=k))
 
             if my_devices:
