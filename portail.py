@@ -640,11 +640,11 @@ if submit_search and user_phone:
                         # ─── شريط سير الصيانة ───
                         repair_steps = {
                             "en attente": (0, "#e67e22", "⏳ في الانتظار"),
-                            "en cours": (33, "#f1c40f", "🔧 جارٍ الإصلاح"),
+                            "en cours": (33, "#f1c40f", "🔧 جارٍ الفحص"),
                             "réparable": (66, "#3498db", "✅ قابل للإصلاح"),
                             "prêt": (100, "#2ecc71", "🎉 جاهز للاستلام"),
                             "annulé": (66, "#e74c3c", "❌ ملغى"),
-                            "non réparable": (100, "#e74c3c", "❌ جاهز للاستلام"),
+                            "non réparable": (100, "#e74c3c", "❌ غير قابل للإصلاح وجاهز للاستلام"),
                         }
 
                         if status_lower in repair_steps:
@@ -689,7 +689,7 @@ if submit_search and user_phone:
 <div class="detail-row">💰 <span class="detail-label">تكلفة الإصلاح:</span> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span></div>
 <div class="detail-row">📅 <span class="detail-label">تاريخ دخول الجهاز:</span> {date_e}</div>
 <div class="detail-row">📅 <span class="detail-label">تاريخ خروج الجهاز:</span> {date_s}</div>
-<div class="detail-row">🛡️ <span class="detail-label">حالة الجهاز:</span></div>
+
 {dynamic_bar_html}
 </div>
 </details>
