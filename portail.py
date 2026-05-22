@@ -718,3 +718,4 @@ if submit_search and user_phone:
 """, unsafe_allow_html=True)
             else:
                 st.error("❌ عذراً، لم نجد أي جهاز مرتبط برقم الهاتف هذا حالياً في قاعدة البيانات.")
+st.empty() 
