@@ -126,18 +126,26 @@ def get_status_priority(status):
         return 99
 
 def render_hero_logo():
-    """تحويل الشعار الشخصي (ico) إلى صيغة متوافقة مع الـ HTML أو عرض أيقونة بديلة."""
-    logo_path = "ico.ico"  # التعديل هنا ليطابق إسم ملفك بالظبط
+    """جلب اللوغو باستعمال المسار الحقيقي للسكريبت لتفادي مشكلة المجلدات في Streamlit"""
+    import os
+    import base64
+    
+    # تحديد مسار المجلد الحالي للسكريبت بالظبط (fail-safe path)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(current_dir, "ico.ico")
+    
     if os.path.exists(logo_path):
         try:
             with open(logo_path, "rb") as f:
                 data = f.read()
                 encoded = base64.b64encode(data).decode()
-            # استخدام x-icon لضمان قراءة المتصفح لملفات الـ ico داخل الـ HTML
+            # قراءة ملف الـ .ico وحقنه مباشرة كـ صورة متحركة
             return f'<img src="data:image/x-icon;base64,{encoded}" class="hero-logo-animated">'
         except:
             pass
-    return '<div class="hero-logo-animated" style="font-size: 4.5rem; color: #3b82f6;"><i class="fa-solid fa-microchip"></i></div>'
+            
+    # الفولباك الآمن: إيموجي تقني يشتغل بدون إنترنت وبدون أن ينكسر أو يظهر كمربع
+    return '<div class="hero-logo-animated" style="font-size: 4rem; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">🛠️</div>'
 # ==============================================================================
 # 4. تشغيل بوت التلغرام الاحترافي (المطور لـ InfoDoc)
 # ==============================================================================
