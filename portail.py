@@ -370,7 +370,7 @@ st.markdown(f'''
             ✨ {greeting} | 📅 {now.strftime("%d/%m/%Y - %H:%M")}
         </div>
         <div class="hero-brand">INFODOC</div>
-        <div class="hero-subtitle" style="margin-bottom: 25px;">
+        <div class="hero-subtitle" style="margin-bottom: 15px;">
             🛠️ الـمـنـصـة الإلـكـتـرونـيـة لـخـدمـات الـصـيـانـة 
         </div>
         <span class="{"badge-open" if shop_status else "badge-closed"}" 
