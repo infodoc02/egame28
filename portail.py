@@ -590,7 +590,7 @@ div[data-testid="stTextInput"] input {
 </style>
 """, unsafe_allow_html=True)
 
-# تهيئة متغيرات التحكم في مراحل التحقق من الهوية داخل الـ Session State
+# تهيئة متغيرات التحكم في الـ Session State
 if "auth_step" not in st.session_state:
     st.session_state["auth_step"] = "input_phone"
 if "generated_otp" not in st.session_state:
@@ -601,6 +601,8 @@ if "target_tg_id" not in st.session_state:
     st.session_state["target_tg_id"] = None
 if "verified_phone" not in st.session_state:
     st.session_state["verified_phone"] = ""
+if "hide_tg_button" not in st.session_state:
+    st.session_state["hide_tg_button"] = False  # المتغير المسؤول عن إخفاء الزر ذكياً
 
 # --- المرحلة 1: إدخال رقم الهاتف وفحص ربط التلغرام ---
 if st.session_state["auth_step"] == "input_phone":
@@ -628,79 +630,78 @@ if st.session_state["auth_step"] == "input_phone":
                             status_lower = str(v.get("Statut", "")).strip().lower()
                             date_s = v.get("Date_Sortie", "---")
                             
-                            # تخطي الأجهزة منتهية الضمان لحماية نظافة الواجهة
                             if status_lower in ["livré & payé", "livré (dette)"]:
                                 w_stats = get_warranty_stats(date_s)
                                 if w_stats and w_stats.get("is_expired"):
                                     continue 
                             
                             my_devices.append(dict(v, _id=k))
-                            # التقاط معرّف التلغرام إذا كان مربوطاً
                             if v.get("Telegram_ID"):
                                 telegram_id = str(v.get("Telegram_ID"))
 
                 if not my_devices:
                     st.error("❌ عذراً، لم نجد أي جهاز نشط مرتبط برقم الهاتف هذا حالياً.")
+                    st.session_state["hide_tg_button"] = False
                 elif not telegram_id:
                     st.warning("⚠️ رقم الهاتف موجود، لكن حسابك غير مرتبط ببوت التلغرام لإرسال الكود السري.")
-                    st.info("💡 يرجى الضغط على زر **🚀 تفعيل إشعارات التلغرام** الأزرق أسفل الشاشة لربط حسابك بالبوت أولاً، ثم أعد المحاولة لتتمكن من الدخول.")
+                    st.info("💡 يرجى الضغط على زر **🚀 تفعيل إشعارات التلغرام** الأزرق أسفل الشاشة لربط حسابك بالبوت أولاً.")
+                    st.session_state["hide_tg_button"] = False  # نخلوا الزر يبان باش يربط حسابو
                 else:
-                    # توليد كود OTP عشوائي من 4 أرقام
+                    # 💥 هنا السحر: لقينا الـ ID يعني التلغرام مفعل! نخفو الزر فوراً
+                    st.session_state["hide_tg_button"] = True
+                    
+                    import random 
                     otp_code = str(random.randint(1000, 9999))
                     st.session_state["generated_otp"] = otp_code
                     st.session_state["secured_devices"] = my_devices
                     st.session_state["target_tg_id"] = telegram_id
                     st.session_state["verified_phone"] = norm_phone
                     
-                    # إرسال الكود عبر البوت
                     bot = st.session_state.get("bot_instance")
                     if bot:
                         try:
                             msg_text = (
                                 f"🔐 *كود تأكيد الهوية لـ بورطاي InfoDoc:*\n\n"
                                 f"كود الدخول الخاص بك هو: `{otp_code}`\n\n"
-                                f"⏱️ _هذا الكود صالح للاستعمال لمرة واحدة فقط في المتصفح، لا تشاركه مع أحد._"
+                                f"⏱️ _هذا الكود صالح للاستعمال لمرة واحدة فقط في المتصفح._"
                             )
                             bot.send_message(telegram_id, msg_text)
                             st.session_state["auth_step"] = "verify_otp"
                             st.rerun()
                         except Exception as e:
-                            st.error(f"❌ فشل السيرفر في إرسال الرسالة إلى حساب التلغرام الخاص بك: {e}")
+                            st.error(f"❌ فشل السيرفر في إرسال الرسالة إلى تلغرام: {e}")
                     else:
-                        st.error("❌ نظام البوت غير متصل حالياً بالسيرفر، يرجى مراجعة الإعدادات.")
+                        st.error("❌ نظام البوت غير متصل حالياً بالسيرفر.")
 
-# --- المرحلة 2: واجهة إدخال كود الـ OTP والتحقق منه ---
+# --- المرحلة 2: واجهة إدخال كود الـ OTP ---
 elif st.session_state["auth_step"] == "verify_otp":
     st.markdown(f"""
     <div class="otp-container" dir="rtl">
         <h4 style="color: #3b82f6; font-family: 'Cairo'; margin-top:0;">🔐 نظام التحقق ثنائي الخطوات (2FA)</h4>
         <p style="color: #94a3b8; font-family: 'Cairo'; font-size:0.95rem;">
-            تم إرسال كود سري متكون من 4 أرقام إلى حساب التلغرام المرتبط برقمك ({st.session_state["verified_phone"]}).<br>
-            يرجى تفقد تطبيق التلغرام وإدخال الكود أدناه لتأكيد هويتك والوصول للأجهزة.
+            تم إرسال كود سري إلى حساب التلغرام المرتبط برقمك ({st.session_state["verified_phone"]}).
         </p>
     </div>
     """, unsafe_allow_html=True)
     
-    entered_otp = st.text_input("", placeholder="أدخل كود الـ OTP المتكون من 4 أرقام هنا...", key="otp_field", label_visibility="collapsed")
+    entered_otp = st.text_input("", placeholder="أدخل كود الـ OTP هنا...", key="otp_field", label_visibility="collapsed")
     
     col_confirm, col_cancel = st.columns(2)
     with col_confirm:
         if st.button("✅ تأكيد الرمز والدخول"):
             if entered_otp.strip() == st.session_state["generated_otp"]:
                 st.session_state["auth_step"] = "display_devices"
-                st.success("🔓 تم تأكيد الهوية بنجاح!")
                 st.rerun()
             else:
-                st.error("❌ الكود السري غير صحيح! يرجى التثبت والمحاولة مجدداً.")
+                st.error("❌ الكود السري غير صحيح!")
                 
     with col_cancel:
         if st.button("🔄 إلغاء والعودة للخلف"):
             st.session_state["auth_step"] = "input_phone"
-            st.session_state["generated_otp"] = None
-            st.session_state["secured_devices"] = []
+            st.session_state["hide_tg_button"] = False  # نرجعو نظهروه كي يلغي العملية
             st.rerun()
 
-# --- المرحلة 3: عرض الأجهزة بعد التحقق الناجح من الهوية ---
+# --- المرحلة 3: عرض الأجهزة بعد التحقق ---
 elif st.session_state["auth_step"] == "display_devices":
     col_title, col_logout = st.columns([3, 1])
     with col_title:
@@ -708,8 +709,7 @@ elif st.session_state["auth_step"] == "display_devices":
     with col_logout:
         if st.button("🚪 خروج وبحث جديد"):
             st.session_state["auth_step"] = "input_phone"
-            st.session_state["generated_otp"] = None
-            st.session_state["secured_devices"] = []
+            st.session_state["hide_tg_button"] = False  # يرجع يبان للبحث الجديد
             st.rerun()
 
     my_devices = st.session_state["secured_devices"]
@@ -729,7 +729,6 @@ elif st.session_state["auth_step"] == "display_devices":
         status_colors = {"prêt": "#2ecc71", "en cours": "#f1c40f", "en attente": "#e67e22", "annulé": "#e74c3c"}
         col_status = status_colors.get(status.lower(), "#3498db")
         
-        # ═══ منطق الشريط الديناميكي وعرض التفاصيل ═══
         status_lower = status.lower().strip()
         livred_statuses = ["livré & payé", "livré (dette)"]
         dynamic_bar_html = ""
@@ -737,60 +736,47 @@ elif st.session_state["auth_step"] == "display_devices":
         if status_lower in livred_statuses:
             if w_stats:
                 if w_stats["is_expired"]:
-                    dynamic_bar_html = f'<div style="color:#94a3b8; font-family:\'Cairo\'; font-size:0.9rem; margin-bottom:6px;">🛡️ شريط الضمان الفني (30 يوم)</div><div class="warranty-expired">🔴 انتهى الضمان منذ {abs(w_stats["days_left"])} أيام (تاريخ الصلاحية: {w_stats["actual_date"]})</div>'
+                    dynamic_bar_html = f'<div class="warranty-expired">🔴 انتهى الضمان منذ {abs(w_stats["days_left"])} أيام ({w_stats["actual_date"]})</div>'
                 else:
-                    warranty_percent = w_stats['percent']
-                    dynamic_bar_html = f'<div style="color:#94a3b8; font-family:\'Cairo\'; font-size:0.9rem; margin-bottom:6px;">🛡️ شريط الضمان الفني (30 يوم)</div><div class="warranty-ok">🟢 الضمان ساري المفعول! متبقي {w_stats["days_left"]} يوم (تنتهي الصلاحية: {w_stats["actual_date"]})</div><div class="warranty-progress-wrap" style="direction:rtl;"><div class="warranty-progress-bar" style="width:{warranty_percent}%; background:#2ecc71;"></div></div>'
+                    dynamic_bar_html = f'<div class="warranty-ok">🟢 الضمان ساري المفعول! متبقي {w_stats["days_left"]} يوم</div><div class="warranty-progress-wrap"><div class="warranty-progress-bar" style="width:{w_stats["percent"]}%;"></div></div>'
         else:
             repair_steps = {
                 "en attente": (0, "#e67e22", "⏳ في الانتظار"),
                 "en cours": (33, "#f1c40f", "🔧 جارٍ الفحص"),
                 "réparable": (66, "#3498db", "✅ قابل للإصلاح"),
                 "prêt": (100, "#2ecc71", "🎉 جاهز للاستلام"),
-                "annulé": (66, "#e74c3c", "❌ ملغى"),
-                "non réparable": (100, "#e74c3c", "❌ غير قابل للإصلاح وجاهز للاستلام"),
+                "annulé": (66, "#e74c3c", "❌ ملغى")
             }
-
             if status_lower in repair_steps:
                 pct, color, label = repair_steps[status_lower]
-                fee_text = " — فشل الإصلاح، تكلفة الفحص: <b>1000 دج</b>" if status_lower in ["annulé"] else f" — {pct}%"
-                
-                dynamic_bar_html = f'''<div style="color:#94a3b8; font-family:'Cairo'; font-size:0.9rem; margin-bottom:6px;">📊 شريط سير الصيانة</div>
-                <div style="text-align:right; direction:rtl; font-family:'Cairo'; color:{color}; font-weight:bold; margin-bottom:6px;">{label}{fee_text}</div>
-                <div class="warranty-progress-wrap" style="direction:rtl;">
-                <div class="warranty-progress-bar" style="width:{pct}%; background:{color};"></div>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#64748b; font-family:'Cairo'; margin-top:4px; text-align:right; direction:rtl;">
-                <span>En Attente</span><span>En Cours</span><span>Réparable</span><span>Prêt ✓</span>
-                </div>'''
+                dynamic_bar_html = f'<div style="color:{color}; font-weight:bold; text-align:right;">{label}</div><div class="warranty-progress-wrap"><div class="warranty-progress-bar" style="width:{pct}%; background:{color};"></div></div>'
 
         st.markdown(f"""
         <div class="device-top-card" dir="rtl">
         <div class="card-container">
         <div style="text-align: right;">
-        <span style="color: #cbd5e1; font-size: 0.85rem; font-family: 'Cairo';">تذكرة #{dev_id}</span>
-        <h4 style="margin: 4px 0; color: #ffffff; font-family: 'Cairo'; font-weight:700;">{brand} - {model}</h4>
+        <span style="color: #cbd5e1; font-size: 0.85rem;">تذكرة #{dev_id}</span>
+        <h4 style="margin: 4px 0; color: #ffffff; font-family: 'Cairo';">{brand} - {model}</h4>
         </div>
-        <div style="background: {col_status}20; border: 1px solid {col_status}; color: {col_status}; padding: 6px 16px; border-radius: 8px; font-weight: bold; font-family: 'Cairo'; font-size: 0.9rem; text-align: center;">{status}</div>
+        <div style="background: {col_status}20; border: 1px solid {col_status}; color: {col_status}; padding: 6px 16px; border-radius: 8px; font-weight: bold;">{status}</div>
         </div>
         </div>
         <details class="device-expander">
-        <summary>📄 عرض تفاصيل العطل والضمان المتقدم لهذا الجهاز</summary>
+        <summary>📄 عرض تفاصيل العطل والتكلفة</summary>
         <div style="padding-bottom: 14px;">
         <div class="detail-row">📌 <span class="detail-label">العطل المشخص:</span> {panne}</div>
         <div class="detail-row">💰 <span class="detail-label">تكلفة الإصلاح:</span> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span></div>
-        <div class="detail-row">📅 <span class="detail-label">تاريخ دخول الجهاز:</span> {date_e}</div>
-        <div class="detail-row">📅 <span class="detail-label">تاريخ خروج الجهاز:</span> {date_s}</div>
-
+        <div class="detail-row">📅 <span class="detail-label">تاريخ الدخول:</span> {date_e}</div>
         {dynamic_bar_html}
         </div>
         </details>
         """, unsafe_allow_html=True)
 
+
 # ==============================================================================
-# عرض الزر العائم ذكياً: يظهر فقط إذا لم يتم تفعيل الإشعارات والدخول بعد
+# التحكم الصارم في ظهور الزر العائم بناءً على المتغير السري hide_tg_button
 # ==============================================================================
-if st.session_state["auth_step"] == "input_phone":
+if st.session_state["hide_tg_button"] == False:
     bot_username = st.secrets.get("BOT_USERNAME", "InfoDocBot")
     current_phone_input = st.session_state.get("verified_phone", "")
     tg_link = f"https://t.me/{bot_username}?start={current_phone_input}" if current_phone_input else f"https://t.me/{bot_username}"
