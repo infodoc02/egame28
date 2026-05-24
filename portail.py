@@ -311,9 +311,9 @@ st.markdown("""
     .hero-brand {
         font-family: 'Orbitron', sans-serif !important;
         color: #3b82f6;
-        font-size: 2.2rem; /* 🎯 تم تصغير الحجم هنا ليناسب تماماً شاشات الهواتف ولا ينقسم */
+        font-size: 2.2rem; 
         font-weight: 900;
-        letter-spacing: 2px; /* تقليص الفراغات للحفاظ على العرض */
+        letter-spacing: 2px;
         text-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
         margin-bottom: 5px;
     }
@@ -630,7 +630,7 @@ if st.session_state["auth_step"] == "input_phone":
                         db_phone = normalize_phone(v.get("Telephone", ""))
                         if db_phone.endswith(norm_phone[-9:]):
                             
-                            # 🎯 التقط معرف التلغرام هنا فوراً قبل أي تخطي
+                            # التقط معرف التلغرام هنا فوراً قبل أي تخطي
                             if v.get("Telegram_ID"):
                                 telegram_id = str(v.get("Telegram_ID"))
                                 st.session_state["hide_tg_button"] = True
@@ -646,7 +646,7 @@ if st.session_state["auth_step"] == "input_phone":
                             
                             my_devices.append(dict(v, _id=k))
 
-                # 🎯 الفحص المعدل والذكي لمنع محو حالة زر التلغرام
+                # الفحص المعدل والذكي لمنع محو حالة زر التلغرام
                 if not my_devices:
                     if telegram_id:
                         st.info("📋 حسابك مرتبط بالبُوت ومفعّل بنجاح! لكن لا توجد أجهزة نشطة حالياً في الورشة.")
@@ -656,7 +656,7 @@ if st.session_state["auth_step"] == "input_phone":
                         st.session_state["hide_tg_button"] = False
                 elif not telegram_id:
                     st.warning("⚠️ رقم الهاتف موجود، لكن حسابك غير مرتبط ببوت التلغرام لإرسال الكود السري.")
-                    st.info("💡 يرجى الضغط على زر **🚀 تفعيل إشعارات التلغرام** الأزرق أسفل الشاشة لربط حسابك بالبوت أولاً، ثم أعد المحاولة.")
+                    st.info("💡 **الخطوة التالية:** بما أنك فعلت البوت الآن، يرجى إعادة الضغط على زر **⚡ أرسل كود التحقق** في الأعلى ليقوم السيرفر بتحديث حالتك فورا وإرسال الكود!")
                     st.session_state["hide_tg_button"] = False
                 else:
                     st.session_state["hide_tg_button"] = True
@@ -685,6 +685,7 @@ if st.session_state["auth_step"] == "input_phone":
 
 # --- المرحلة 2: واجهة إدخال كود الـ OTP ---
 elif st.session_state["auth_step"] == "verify_otp":
+    st.session_state["hide_tg_button"] = True  # 🔐 إلزام بالإخفاء الصارم هنا لمنع ظهور الزر إطلاقا
     st.markdown(f"""
     <div class="otp-container" dir="rtl">
         <h4 style="color: #3b82f6; font-family: 'Cairo'; margin-top:0;">🔐 نظام التحقق ثنائي الخطوات (2FA)</h4>
@@ -713,6 +714,7 @@ elif st.session_state["auth_step"] == "verify_otp":
 
 # --- المرحلة 3: عرض الأجهزة بعد التحقق ---
 elif st.session_state["auth_step"] == "display_devices":
+    st.session_state["hide_tg_button"] = True  # 🔐 إلزام بالإخفاء الصارم هنا لمنع ظهور الزر إطلاقا
     col_title, col_logout = st.columns([3, 1])
     with col_title:
         st.markdown('<h3 style="text-align: right; font-family: \'Cairo\'; color: #2ecc71; font-size: 1.25rem; font-weight:700;">📋 أجهزتك الحالية في الورشة:</h3>', unsafe_allow_html=True)
