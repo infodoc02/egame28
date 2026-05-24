@@ -356,7 +356,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 8. عرض واجهة المستخدم الرسومية العليا (UI Header) - النسخة المحصنة 
+# 8. عرض واجهة المستخدم الرسومية العليا (UI Header) - نسخة مأمنة من الفراغات
 # ==============================================================================
 if not db_status:
     st.error("❌ عذراً، لا يمكن الاتصال بقاعدة البيانات حالياً. يرجى مراجعة إعدادات الخادم الفنية.")
@@ -377,23 +377,20 @@ badge_class = "badge-open" if shop_status else "badge-closed"
 badge_text = '● مـفـتـوح حـالـيـاً - مـرحـبـاً بـكـم في الـورشـة' if shop_status else '● مـغـلـق حـالـيـاً - نـسـتـقـبـلكم في وقـت لاحــق'
 formatted_time = now.strftime("%d/%m/%Y - %H:%M")
 
-header_html = f'''
-    <div class="hero-container" dir="rtl">
-        <div style="color: #64748b; font-size: 0.95rem; font-family: 'Cairo'; font-weight: 300; margin-bottom: 15px;">
-            ✨ {greeting} | 📅 {formatted_time}
-        </div>
-        
-        {logo_html}
-        
-        <div class="hero-subtitle" style="margin-bottom: 15px; margin-top: 10px;">
-            🛠️ الـمـنـصـة الإلـكـتـرونـيـة لـخـدمـات الـصـيـانـة لـورشـة INFODOC
-        </div>
-        <span class="{badge_class}" 
-              style="padding: 12px 30px; border-radius: 14px; font-weight: 900; display: inline-block; font-family: 'Cairo'; font-size: 1.05rem;">
-            {badge_text}
-        </span>
-    </div>
-'''
+# السر هنا: الأسطر راهي لاصقة في الحافة بدون مسافات لتفادي قراءتها كـ Code Block
+header_html = f"""<div class="hero-container" dir="rtl">
+<div style="color: #64748b; font-size: 0.95rem; font-family: 'Cairo'; font-weight: 300; margin-bottom: 15px;">
+✨ {greeting} | 📅 {formatted_time}
+</div>
+{logo_html}
+<div class="hero-subtitle" style="margin-bottom: 15px; margin-top: 10px;">
+🛠️ الـمـنـصـة الإلـكـتـرونـيـة لـخـدمـات الـصـيـانـة لـورشـة INFODOC
+</div>
+<span class="{badge_class}" style="padding: 12px 30px; border-radius: 14px; font-weight: 900; display: inline-block; font-family: 'Cairo'; font-size: 1.05rem;">
+{badge_text}
+</span>
+</div>"""
+
 st.markdown(header_html, unsafe_allow_html=True)
 
 # الروابط الاجتماعية للاتصال سريعاً
