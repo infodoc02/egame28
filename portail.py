@@ -8,7 +8,7 @@ import threading
 import telebot
 import io
 import pytz
-
+import random
 # ==============================================================================
 # 1. إعدادات الصفحة الأساسية ونظام المظهر الفاخر (Configuration & Theme)
 # ==============================================================================
@@ -160,7 +160,7 @@ def get_status_priority(status):
 def start_telegram_bot():
     token = st.secrets.get("TELEGRAM_TOKEN")
     if not token: 
-        return "Missing Token"
+        return None
 
     try:
         bot = telebot.TeleBot(token, parse_mode="Markdown")
@@ -218,16 +218,16 @@ def start_telegram_bot():
 
         thread = threading.Thread(target=bot.infinity_polling, daemon=True)
         thread.start()
-        return "Bot Started Successfully"
+        return bot # ✅ نرجع كائن البوت هنا
     except Exception as e:
-        return f"Error: {e}"
+        return None
 
-# تشغيل البوت الذكي
-if "bot_initialized" not in st.session_state:
+# تشغيل وتخزين البوت في الـ session_state لاستخدامه لاحقاً
+if "bot_instance" not in st.session_state:
     if "TELEGRAM_TOKEN" in st.secrets:
-        status = start_telegram_bot()
-        if "Successfully" in status:
-            st.session_state["bot_initialized"] = True
+        bot_obj = start_telegram_bot()
+        if bot_obj:
+            st.session_state["bot_instance"] = bot_obj
 
 # ==============================================================================
 # 5. نظام تتبع الزوار الذكي الفعلي (Visitor Tracking Execution)
@@ -461,7 +461,7 @@ st.markdown("""
 st.divider()
 
 # ==============================================================================
-# 8. نظام البحث والتتبع المتقدم والملتحم هندسياً (Search Engine)
+# 8. نظام البحث المتقدم والمؤمن بالـ OTP عبر التلغرام (Secure Search Engine)
 # ==============================================================================
 st.markdown("""
 <style>
@@ -473,6 +473,14 @@ div[data-testid="stTextInput"] input {
     background-color: rgba(15, 23, 42, 0.6) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 10px !important;
+}
+.otp-container {
+    background: rgba(30, 41, 59, 0.5) !important;
+    border: 1px dashed #3b82f6 !important;
+    padding: 20px !important;
+    border-radius: 16px !important;
+    text-align: center !important;
+    margin-bottom: 20px !important;
 }
 .device-top-card {
     background: rgba(30, 41, 59, 0.7) !important;
@@ -550,7 +558,7 @@ div[data-testid="stTextInput"] input {
     margin-top: 8px;
     margin-bottom: 12px;
     overflow: hidden;
-    direction: rtl;  /* ← أضف هذا */
+    direction: rtl;
 }
 .warranty-progress-bar {
     background: #2ecc71;
@@ -582,140 +590,214 @@ div[data-testid="stTextInput"] input {
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<h3 style="text-align: right; font-family: \'Cairo\'; color: #e2e8f0; font-size: 1.25rem; font-weight:700;">🔍 تتبع حالة أجهزتك الآن:</h3>', unsafe_allow_html=True)
+# تهيئة متغيرات التحكم في مراحل التحقق من الهوية داخل الـ Session State
+if "auth_step" not in st.session_state:
+    st.session_state["auth_step"] = "input_phone"
+if "generated_otp" not in st.session_state:
+    st.session_state["generated_otp"] = None
+if "secured_devices" not in st.session_state:
+    st.session_state["secured_devices"] = []
+if "target_tg_id" not in st.session_state:
+    st.session_state["target_tg_id"] = None
+if "verified_phone" not in st.session_state:
+    st.session_state["verified_phone"] = ""
 
-with st.form("search_form", clear_on_submit=False):
-    user_phone = st.text_input("", placeholder="أدخل رقم هاتفك هنا (مثال: 0798661900)", label_visibility="collapsed")
-    submit_search = st.form_submit_button("⚡ ابحث عن أجهزتي في الورشة")
+# --- المرحلة 1: إدخال رقم الهاتف وفحص ربط التلغرام ---
+if st.session_state["auth_step"] == "input_phone":
+    st.markdown('<h3 style="text-align: right; font-family: \'Cairo\'; color: #e2e8f0; font-size: 1.25rem; font-weight:700;">🔍 تتبع حالة أجهزتك بأمان:</h3>', unsafe_allow_html=True)
+    
+    user_phone = st.text_input("", placeholder="أدخل رقم هاتفك هنا (مثال: 0798661900)", key="phone_input_key", label_visibility="collapsed")
+    submit_search = st.button("⚡ أرسل كود التحقق إلى حسابي في تلغرام")
 
-if submit_search and user_phone:
-    norm_phone = normalize_phone(user_phone)
-    if len(norm_phone) < 9:
-        st.error("⚠️ يرجى إدخال رقم هاتف صحيح يتكون من 9 أرقام على الأقل.")
-    else:
-        with st.spinner("⏳ جاري فحص قاعدة البيانات ..."):
-            db_ref = db.reference("atelier")
-            all_data = db_ref.get()
+    if submit_search and user_phone:
+        norm_phone = normalize_phone(user_phone)
+        if len(norm_phone) < 9:
+            st.error("⚠️ يرجى إدخال رقم هاتف صحيح يتكون من 9 أرقام على الأقل.")
+        else:
+            with st.spinner("⏳ جارٍ فحص الحساب وقاعدة البيانات..."):
+                db_ref = db.reference("atelier")
+                all_data = db_ref.get()
 
-            my_devices = []
-            if all_data:
-                for k, v in all_data.items():
-                    db_phone = normalize_phone(v.get("Telephone", ""))
-                    if db_phone.endswith(norm_phone[-9:]):
-                        
-                        # --- التعديل الجديد: فلترة الأجهزة منتهية الضمان ---
-                        status_lower = str(v.get("Statut", "")).strip().lower()
-                        date_s = v.get("Date_Sortie", "---")
-                        
-                        # التحقق مما إذا كان الجهاز قد تم تسليمه
-                        if status_lower in ["livré & payé", "livré (dette)"]:
-                            w_stats = get_warranty_stats(date_s)
-                            # إذا انتهت مدة الضمان (أكثر من 30 يوم)، نتخطى الجهاز تماماً
-                            if w_stats and w_stats.get("is_expired"):
-                                continue 
-                        # --------------------------------------------------
-                        
-                        my_devices.append(dict(v, _id=k))
+                my_devices = []
+                telegram_id = None
 
-            if my_devices:
-                my_devices.sort(key=lambda x: get_status_priority(x.get("Statut", "")))
+                if all_data:
+                    for k, v in all_data.items():
+                        db_phone = normalize_phone(v.get("Telephone", ""))
+                        if db_phone.endswith(norm_phone[-9:]):
+                            status_lower = str(v.get("Statut", "")).strip().lower()
+                            date_s = v.get("Date_Sortie", "---")
+                            
+                            # تخطي الأجهزة منتهية الضمان لحماية نظافة الواجهة
+                            if status_lower in ["livré & payé", "livré (dette)"]:
+                                w_stats = get_warranty_stats(date_s)
+                                if w_stats and w_stats.get("is_expired"):
+                                    continue 
+                            
+                            my_devices.append(dict(v, _id=k))
+                            # التقاط معرّف التلغرام إذا كان مربوطاً
+                            if v.get("Telegram_ID"):
+                                telegram_id = str(v.get("Telegram_ID"))
 
-                for dev in my_devices:
-                    dev_id = dev.get("ID", "0000")
-                    brand = dev.get("Marque", "")
-                    model = dev.get("Appareil", "جهاز غير معروف")
-                    status = dev.get("Statut", "En attente")
-                    panne = dev.get("Panne", "غير محدد")
-                    prix = dev.get("Prix", "0")
-                    date_s = dev.get("Date_Sortie", "---")
-                    date_e = dev.get("Date_Entree", "---")
-                    w_stats = get_warranty_stats(date_s)
-
-                    status_colors = {"prêt": "#2ecc71", "en cours": "#f1c40f", "en attente": "#e67e22", "annulé": "#e74c3c"}
-                    col_status = status_colors.get(status.lower(), "#3498db")
+                if not my_devices:
+                    st.error("❌ عذراً، لم نجد أي جهاز نشط مرتبط برقم الهاتف هذا حالياً.")
+                elif not telegram_id:
+                    st.warning("⚠️ رقم الهاتف موجود، لكن حسابك غير مرتبط ببوت التلغرام لإرسال الكود السري.")
+                    st.info("💡 يرجى الضغط على زر **🚀 تفعيل إشعارات التلغرام** الأزرق أسفل الشاشة لربط حسابك بالبوت أولاً، ثم أعد المحاولة لتتمكن من الدخول.")
+                else:
+                    # توليد كود OTP عشوائي من 4 أرقام
+                    otp_code = str(random.randint(1000, 9999))
+                    st.session_state["generated_otp"] = otp_code
+                    st.session_state["secured_devices"] = my_devices
+                    st.session_state["target_tg_id"] = telegram_id
+                    st.session_state["verified_phone"] = norm_phone
                     
-                    # ═══ منطق الشريط الديناميكي ═══
-                    status_lower = status.lower().strip()
-                    livred_statuses = ["livré & payé", "livré (dette)"]
-                    dynamic_bar_html = ""
-
-                    if status_lower in livred_statuses:
-                        # ─── شريط الضمان (30 يوم) ───
-                        if w_stats:
-                            if w_stats["is_expired"]:
-                                dynamic_bar_html = f'<div style="color:#94a3b8; font-family:\'Cairo\'; font-size:0.9rem; margin-bottom:6px;">🛡️ شريط الضمان الفني (30 يوم)</div><div class="warranty-expired">🔴 انتهى الضمان منذ {abs(w_stats["days_left"])} أيام (تاريخ الصلاحية: {w_stats["actual_date"]})</div>'
-                            else:
-                                warranty_percent = w_stats['percent']
-                                dynamic_bar_html = f'<div style="color:#94a3b8; font-family:\'Cairo\'; font-size:0.9rem; margin-bottom:6px;">🛡️ شريط الضمان الفني (30 يوم)</div><div class="warranty-ok">🟢 الضمان ساري المفعول! متبقي {w_stats["days_left"]} يوم (تنتهي الصلاحية: {w_stats["actual_date"]})</div><div class="warranty-progress-wrap" style="direction:rtl;"><div class="warranty-progress-bar" style="width:{warranty_percent}%; background:#2ecc71;"></div></div>'
-                        else:
-                            dynamic_bar_html = ""
+                    # إرسال الكود عبر البوت
+                    bot = st.session_state.get("bot_instance")
+                    if bot:
+                        try:
+                            msg_text = (
+                                f"🔐 *كود تأكيد الهوية لـ بورطاي InfoDoc:*\n\n"
+                                f"كود الدخول الخاص بك هو: `{otp_code}`\n\n"
+                                f"⏱️ _هذا الكود صالح للاستعمال لمرة واحدة فقط في المتصفح، لا تشاركه مع أحد._"
+                            )
+                            bot.send_message(telegram_id, msg_text)
+                            st.session_state["auth_step"] = "verify_otp"
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ فشل السيرفر في إرسال الرسالة إلى حساب التلغرام الخاص بك: {e}")
                     else:
-                        # ─── شريط سير الصيانة ───
-                        repair_steps = {
-                            "en attente": (0, "#e67e22", "⏳ في الانتظار"),
-                            "en cours": (33, "#f1c40f", "🔧 جارٍ الفحص"),
-                            "réparable": (66, "#3498db", "✅ قابل للإصلاح"),
-                            "prêt": (100, "#2ecc71", "🎉 جاهز للاستلام"),
-                            "annulé": (66, "#e74c3c", "❌ ملغى"),
-                            "non réparable": (100, "#e74c3c", "❌ غير قابل للإصلاح وجاهز للاستلام"),
-                        }
+                        st.error("❌ نظام البوت غير متصل حالياً بالسيرفر، يرجى مراجعة الإعدادات.")
 
-                        if status_lower in repair_steps:
-                            pct, color, label = repair_steps[status_lower]
-                            
-                            fee_text = " — فشل الإصلاح، تكلفة الفحص: <b>1000 دج</b>" if status_lower in ["annulé"] else f" — {pct}%"
-                            
-                            dynamic_bar_html = f'''<div style="color:#94a3b8; font-family:'Cairo'; font-size:0.9rem; margin-bottom:6px;">📊 شريط سير الصيانة</div>
-<div style="text-align:right; direction:rtl; font-family:'Cairo'; color:{color}; font-weight:bold; margin-bottom:6px;">{label}{fee_text}</div>
-<div class="warranty-progress-wrap" style="direction:rtl;">
-<div class="warranty-progress-bar" style="width:{pct}%; background:{color};"></div>
-</div>
-<div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#64748b; font-family:'Cairo'; margin-top:4px; text-align:right; direction:rtl;">
-<span>En Attente</span><span>En Cours</span><span>Réparable</span><span>Prêt ✓</span>
-</div>'''
-                        else:
-                            dynamic_bar_html = ""
-                    # بناء قسم الضمان كـ HTML
-                    warranty_html = ""
-                    if w_stats:
-                        if w_stats["is_expired"]:
-                            warranty_html = f"""
-<div class="warranty-expired">🔴 انتهى الضمان منذ {abs(w_stats['days_left'])} أيام (تاريخ الصلاحية: {w_stats['actual_date']})</div>"""
-                        else:
-                                percent = w_stats['percent']  # رقم من 0 إلى 100
-                                dynamic_bar_html = f'<div style="color:#94a3b8; font-family:\'Cairo\'; font-size:0.9rem; margin-bottom:6px;">🛡️ شريط الضمان الفني (30 يوم)</div><div class="warranty-ok">🟢 الضمان ساري المفعول! متبقي {w_stats["days_left"]} يوم (تنتهي الصلاحية: {w_stats["actual_date"]})</div><div class="warranty-progress-wrap" style="direction:rtl;"><div class="warranty-progress-bar" style="width:{percent}%; background:#2ecc71;"></div></div>'
+# --- المرحلة 2: واجهة إدخال كود الـ OTP والتحقق منه ---
+elif st.session_state["auth_step"] == "verify_otp":
+    st.markdown(f"""
+    <div class="otp-container" dir="rtl">
+        <h4 style="color: #3b82f6; font-family: 'Cairo'; margin-top:0;">🔐 نظام التحقق ثنائي الخطوات (2FA)</h4>
+        <p style="color: #94a3b8; font-family: 'Cairo'; font-size:0.95rem;">
+            تم إرسال كود سري متكون من 4 أرقام إلى حساب التلغرام المرتبط برقمك ({st.session_state["verified_phone"]}).<br>
+            يرجى تفقد تطبيق التلغرام وإدخال الكود أدناه لتأكيد هويتك والوصول للأجهزة.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    entered_otp = st.text_input("", placeholder="أدخل كود الـ OTP المتكون من 4 أرقام هنا...", key="otp_field", label_visibility="collapsed")
+    
+    col_confirm, col_cancel = st.columns(2)
+    with col_confirm:
+        if st.button("✅ تأكيد الرمز والدخول"):
+            if entered_otp.strip() == st.session_state["generated_otp"]:
+                st.session_state["auth_step"] = "display_devices"
+                st.success("🔓 تم تأكيد الهوية بنجاح!")
+                st.rerun()
+            else:
+                st.error("❌ الكود السري غير صحيح! يرجى التثبت والمحاولة مجدداً.")
+                
+    with col_cancel:
+        if st.button("🔄 إلغاء والعودة للخلف"):
+            st.session_state["auth_step"] = "input_phone"
+            st.session_state["generated_otp"] = None
+            st.session_state["secured_devices"] = []
+            st.rerun()
 
-                    st.markdown(f"""
-<div class="device-top-card" dir="rtl">
-<div class="card-container">
-<div style="text-align: right;">
-<span style="color: #cbd5e1; font-size: 0.85rem; font-family: 'Cairo';">تذكرة #{dev_id}</span>
-<h4 style="margin: 4px 0; color: #ffffff; font-family: 'Cairo'; font-weight:700;">{brand} - {model}</h4>
-</div>
-<div style="background: {col_status}20; border: 1px solid {col_status}; color: {col_status}; padding: 6px 16px; border-radius: 8px; font-weight: bold; font-family: 'Cairo'; font-size: 0.9rem; text-align: center;">{status}</div>
-</div>
-</div>
-<details class="device-expander">
-<summary>📄 عرض تفاصيل العطل والضمان المتقدم لهذا الجهاز</summary>
-<div style="padding-bottom: 14px;">
-<div class="detail-row">📌 <span class="detail-label">العطل المشخص:</span> {panne}</div>
-<div class="detail-row">💰 <span class="detail-label">تكلفة الإصلاح:</span> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span></div>
-<div class="detail-row">📅 <span class="detail-label">تاريخ دخول الجهاز:</span> {date_e}</div>
-<div class="detail-row">📅 <span class="detail-label">تاريخ خروج الجهاز:</span> {date_s}</div>
+# --- المرحلة 3: عرض الأجهزة بعد التحقق الناجح من الهوية ---
+elif st.session_state["auth_step"] == "display_devices":
+    col_title, col_logout = st.columns([3, 1])
+    with col_title:
+        st.markdown('<h3 style="text-align: right; font-family: \'Cairo\'; color: #2ecc71; font-size: 1.25rem; font-weight:700;">📋 أجهزتك الحالية في الورشة:</h3>', unsafe_allow_html=True)
+    with col_logout:
+        if st.button("🚪 خروج وبحث جديد"):
+            st.session_state["auth_step"] = "input_phone"
+            st.session_state["generated_otp"] = None
+            st.session_state["secured_devices"] = []
+            st.rerun()
 
-{dynamic_bar_html}
-</div>
-</details>
-""", unsafe_allow_html=True)
+    my_devices = st.session_state["secured_devices"]
+    my_devices.sort(key=lambda x: get_status_priority(x.get("Statut", "")))
 
-                bot_username = st.secrets.get("BOT_USERNAME", "InfoDocBot")
-                tg_link = f"https://t.me/{bot_username}?start={norm_phone}"
-                st.markdown(f"""
+    for dev in my_devices:
+        dev_id = dev.get("ID", "0000")
+        brand = dev.get("Marque", "")
+        model = dev.get("Appareil", "جهاز غير معروف")
+        status = dev.get("Statut", "En attente")
+        panne = dev.get("Panne", "غير محدد")
+        prix = dev.get("Prix", "0")
+        date_s = dev.get("Date_Sortie", "---")
+        date_e = dev.get("Date_Entree", "---")
+        w_stats = get_warranty_stats(date_s)
+
+        status_colors = {"prêt": "#2ecc71", "en cours": "#f1c40f", "en attente": "#e67e22", "annulé": "#e74c3c"}
+        col_status = status_colors.get(status.lower(), "#3498db")
+        
+        # ═══ منطق الشريط الديناميكي وعرض التفاصيل ═══
+        status_lower = status.lower().strip()
+        livred_statuses = ["livré & payé", "livré (dette)"]
+        dynamic_bar_html = ""
+
+        if status_lower in livred_statuses:
+            if w_stats:
+                if w_stats["is_expired"]:
+                    dynamic_bar_html = f'<div style="color:#94a3b8; font-family:\'Cairo\'; font-size:0.9rem; margin-bottom:6px;">🛡️ شريط الضمان الفني (30 يوم)</div><div class="warranty-expired">🔴 انتهى الضمان منذ {abs(w_stats["days_left"])} أيام (تاريخ الصلاحية: {w_stats["actual_date"]})</div>'
+                else:
+                    warranty_percent = w_stats['percent']
+                    dynamic_bar_html = f'<div style="color:#94a3b8; font-family:\'Cairo\'; font-size:0.9rem; margin-bottom:6px;">🛡️ شريط الضمان الفني (30 يوم)</div><div class="warranty-ok">🟢 الضمان ساري المفعول! متبقي {w_stats["days_left"]} يوم (تنتهي الصلاحية: {w_stats["actual_date"]})</div><div class="warranty-progress-wrap" style="direction:rtl;"><div class="warranty-progress-bar" style="width:{warranty_percent}%; background:#2ecc71;"></div></div>'
+        else:
+            repair_steps = {
+                "en attente": (0, "#e67e22", "⏳ في الانتظار"),
+                "en cours": (33, "#f1c40f", "🔧 جارٍ الفحص"),
+                "réparable": (66, "#3498db", "✅ قابل للإصلاح"),
+                "prêt": (100, "#2ecc71", "🎉 جاهز للاستلام"),
+                "annulé": (66, "#e74c3c", "❌ ملغى"),
+                "non réparable": (100, "#e74c3c", "❌ غير قابل للإصلاح وجاهز للاستلام"),
+            }
+
+            if status_lower in repair_steps:
+                pct, color, label = repair_steps[status_lower]
+                fee_text = " — فشل الإصلاح، تكلفة الفحص: <b>1000 دج</b>" if status_lower in ["annulé"] else f" — {pct}%"
+                
+                dynamic_bar_html = f'''<div style="color:#94a3b8; font-family:'Cairo'; font-size:0.9rem; margin-bottom:6px;">📊 شريط سير الصيانة</div>
+                <div style="text-align:right; direction:rtl; font-family:'Cairo'; color:{color}; font-weight:bold; margin-bottom:6px;">{label}{fee_text}</div>
+                <div class="warranty-progress-wrap" style="direction:rtl;">
+                <div class="warranty-progress-bar" style="width:{pct}%; background:{color};"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#64748b; font-family:'Cairo'; margin-top:4px; text-align:right; direction:rtl;">
+                <span>En Attente</span><span>En Cours</span><span>Réparable</span><span>Prêt ✓</span>
+                </div>'''
+
+        st.markdown(f"""
+        <div class="device-top-card" dir="rtl">
+        <div class="card-container">
+        <div style="text-align: right;">
+        <span style="color: #cbd5e1; font-size: 0.85rem; font-family: 'Cairo';">تذكرة #{dev_id}</span>
+        <h4 style="margin: 4px 0; color: #ffffff; font-family: 'Cairo'; font-weight:700;">{brand} - {model}</h4>
+        </div>
+        <div style="background: {col_status}20; border: 1px solid {col_status}; color: {col_status}; padding: 6px 16px; border-radius: 8px; font-weight: bold; font-family: 'Cairo'; font-size: 0.9rem; text-align: center;">{status}</div>
+        </div>
+        </div>
+        <details class="device-expander">
+        <summary>📄 عرض تفاصيل العطل والضمان المتقدم لهذا الجهاز</summary>
+        <div style="padding-bottom: 14px;">
+        <div class="detail-row">📌 <span class="detail-label">العطل المشخص:</span> {panne}</div>
+        <div class="detail-row">💰 <span class="detail-label">تكلفة الإصلاح:</span> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span></div>
+        <div class="detail-row">📅 <span class="detail-label">تاريخ دخول الجهاز:</span> {date_e}</div>
+        <div class="detail-row">📅 <span class="detail-label">تاريخ خروج الجهاز:</span> {date_s}</div>
+
+        {dynamic_bar_html}
+        </div>
+        </details>
+        """, unsafe_allow_html=True)
+
+# الروابط العائمة لبوت التلغرام تبقى دائماً أسفل الشاشة لمساعدة الزبائن غير المسجلين
+bot_username = st.secrets.get("BOT_USERNAME", "InfoDocBot")
+# نمرر رقم الهاتف في الرابط فقط في حالة كان المستخدم قد أدخل شيئاً ما لتسهيل الربط التلقائي
+current_phone_input = st.session_state.get("verified_phone", "")
+tg_link = f"https://t.me/{bot_username}?start={current_phone_input}" if current_phone_input else f"https://t.me/{bot_username}"
+
+st.markdown(f"""
 <a href="{tg_link}" target="_blank" class="floating-tg-button" style="z-index: 999999 !important;">
 <i class="fa-brands fa-telegram" style="font-size: 1.4rem;"></i>
 <span>🚀 تفعيل إشعارات التلغرام</span>
 </a>
 """, unsafe_allow_html=True)
-            else:
-                st.error("❌ عذراً، لم نجد أي جهاز مرتبط برقم الهاتف هذا حالياً في قاعدة البيانات.")
-st.empty() 
+
+st.empty()
