@@ -9,6 +9,8 @@ import telebot
 import io
 import pytz
 import random
+import base64
+import os
 
 # ==============================================================================
 # 1. إعدادات الصفحة الأساسية ونظام المظهر الفاخر (Configuration & Theme)
@@ -123,6 +125,19 @@ def get_status_priority(status):
     else: 
         return 99
 
+def render_hero_logo():
+    """تحويل الشعار الشخصي إلى صيغة متوافقة مع الـ HTML أو عرض أيقونة بديلة لحماية الواجهة."""
+    logo_path = "logo.png"  # تأكد من وجود ملف شعارك بهذا الاسم بجانب السكريبت
+    if os.path.exists(logo_path):
+        try:
+            with open(logo_path, "rb") as f:
+                data = f.read()
+                encoded = base64.b64encode(data).decode()
+            return f'<img src="data:image/png;base64,{encoded}" class="hero-logo-animated">'
+        except:
+            pass
+    return '<div class="hero-logo-animated" style="font-size: 4.5rem; color: #3b82f6;"><i class="fa-solid fa-microchip"></i></div>'
+
 # ==============================================================================
 # 4. تشغيل بوت التلغرام الاحترافي (المطور لـ InfoDoc)
 # ==============================================================================
@@ -232,7 +247,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 7. نظام الـ CSS الكامل والمطور (The Premium Glassmorphism UI مع أنيميشن اللوغو)
+# 7. نظام الـ CSS الكامل والمطور (The Premium Glassmorphism UI مع حركات اللوغو)
 # ==============================================================================
 st.markdown("""
     <style>
@@ -272,24 +287,24 @@ st.markdown("""
         box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
     
-    /* الأنيميشن الخاصة باللوغو المطور لـ InfoDoc */
+    /* أنيميشن اللوغو المطور */
     .hero-logo-animated {
-        width: 100px; /* تحكم في حجم اللوغو من هنا */
+        width: 105px;
         height: auto;
-        margin-bottom: 15px;
-        filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.6));
+        margin: 0 auto 10px auto;
+        filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
         animation: floatLogo 3s ease-in-out infinite, glowPulse 2s ease-in-out infinite alternate;
     }
 
     @keyframes floatLogo {
         0% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
+        50% { transform: translateY(-8px); }
         100% { transform: translateY(0px); }
     }
 
     @keyframes glowPulse {
-        0% { filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5)); }
-        100% { filter: drop-shadow(0 0 22px rgba(96, 165, 250, 0.9)); }
+        0% { filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.4)); }
+        100% { filter: drop-shadow(0 0 18px rgba(96, 165, 250, 0.8)); }
     }
 
     .hero-subtitle {
@@ -333,29 +348,13 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 8. عرض واجهة المستخدم الرسومية العليا (UI Header & Animated Logo) - نسخة مأمنة
+# 8. عرض واجهة المستخدم الرسومية العليا (UI Header) - النسخة المحصنة 
 # ==============================================================================
 if not db_status:
     st.error("❌ عذراً، لا يمكن الاتصال بقاعدة البيانات حالياً. يرجى مراجعة إعدادات الخادم الفنية.")
     st.stop()
 
-# دالة ذكية لتحويل اللوغو الشخصي إلى قراءة متوافقة مع الـ HTML دون مشاكل مسارات
-import base64
-import os
-
-def render_hero_logo():
-    logo_path = "logo.png" # حط إسم ملف اللوغو تاعك هنا (png أو jpg) في نفس مجلد السكريبت
-    if os.path.exists(logo_path):
-        with open(logo_path, "rb") as f:
-            data = f.read()
-            encoded = base64.b64encode(data).decode()
-        return f'<img src="data:image/png;base64,{encoded}" class="hero-logo-animated">'
-    else:
-        # لوغو احتياطي تقني (أيقونة معالج مجهري مضيئة) في حال غياب الملف
-        return '<div class="hero-logo-animated" style="font-size: 4.5rem; color: #3b82f6;"><i class="fa-solid fa-microchip"></i></div>'
-
 logo_html = render_hero_logo()
-
 algeria_tz = pytz.timezone('Africa/Algiers')
 now = datetime.now(algeria_tz)
 greeting = "عزيزي الزبون، صباح الخير ☀️" if 5 <= now.hour < 12 else "عزيزي الزبون، مساء الخير ✨"
@@ -366,14 +365,14 @@ try:
 except:
     shop_status = False
 
-# الحساب المسبق لتفادي أي خطأ في الفرز أو علامات التنصيص داخل الـ HTML
 badge_class = "badge-open" if shop_status else "badge-closed"
 badge_text = '● مـفـتـوح حـالـيـاً - مـرحـبـاً بـكـم في الـورشـة' if shop_status else '● مـغـلـق حـالـيـاً - نـسـتـقـبـلكم في وقـت لاحــق'
+formatted_time = now.strftime("%d/%m/%Y - %H:%M")
 
-st.markdown(f'''
+header_html = f'''
     <div class="hero-container" dir="rtl">
         <div style="color: #64748b; font-size: 0.95rem; font-family: 'Cairo'; font-weight: 300; margin-bottom: 15px;">
-            ✨ {greeting} | 📅 {now.strftime("%d/%m/%Y - %H:%M")}
+            ✨ {greeting} | 📅 {formatted_time}
         </div>
         
         {logo_html}
@@ -386,8 +385,10 @@ st.markdown(f'''
             {badge_text}
         </span>
     </div>
-''', unsafe_allow_html=True)
+'''
+st.markdown(header_html, unsafe_allow_html=True)
 
+# الروابط الاجتماعية للاتصال سريعاً
 st.markdown("""
     <div class="contact-grid" dir="rtl">
         <a href="tel:0798661900" class="portal-contact-btn btn-phone">
@@ -409,6 +410,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# لوحة شروط وملاحظات الصيانة الهامة لقوننة التعامل
 st.markdown("""
 <style>
 @keyframes gold-glow {
@@ -455,7 +457,7 @@ st.markdown("""
 <details class="glow-expander">
 <summary>⚠️ اضغط هنا لقراءة ملاحظات وشروط الصيانة الهامة</summary>
 <div style="margin-top: 15px;">
-<div class="rule-card">1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span class="hl">رفض الزبون ذلك</span>، يتم دفع <span class="hl">1000 دج</span> ثمن الفحص والقياسات.</div>
+<div class="rule-card">1️⃣ إذا تم فحص الجهاز وتبين أنه قابل للتصليح و<span class="hl">رفض الزبون ذلك</span>, يتم دفع <span class="hl">1000 دج</span> ثمن الفحص والقياسات.</div>
 <div class="rule-card">2️⃣ أسعار العمل على <span class="hl">البطاقة الأم (Carte Mère)</span> والمكونات الإلكترونية المجهرية تبدأ من <span class="hl">3000 دج</span>.</div>
 <div class="rule-card">3️⃣ أسعار <span class="hl">تفليش البيوس وبرمجة السوبر آي أو (Flash BIOS / SIO)</span> تبدأ من <span class="hl">1500 دج</span>.</div>
 <div class="rule-card">4️⃣ <span class="hl">سياسة الموافقة التلقائية:</span> نقوم بالإصلاح مباشرة وبدون الاتصال بك إذا كانت التكلفة الإجمالية بين <span class="hl">3000 دج و 4000 دج</span>.</div>
@@ -608,7 +610,6 @@ div[data-testid="stTextInput"] input {
 </style>
 """, unsafe_allow_html=True)
 
-# إدارة الـ Session State وإخفاء الزر العائم تلقائياً
 if "auth_step" not in st.session_state:
     st.session_state["auth_step"] = "input_phone"
 if "generated_otp" not in st.session_state:
@@ -748,7 +749,7 @@ elif st.session_state["auth_step"] == "not_linked":
             st.session_state["hide_tg_button"] = True
             st.rerun()
 
-# --- المرحلة 3: واجهة إدخال كود الـ OTP المحدثة والتلقائية ---
+# --- المرحلة 3: واجهة إدخل كود الـ OTP المحدثة والتلقائية ---
 elif st.session_state["auth_step"] == "verify_otp":
     st.session_state["hide_tg_button"] = True  
     st.markdown(f"""
@@ -762,7 +763,6 @@ elif st.session_state["auth_step"] == "verify_otp":
     
     entered_otp = st.text_input("", placeholder="أدخل كود الـ OTP المتكون من 4 أرقام هنا...", key="otp_field", label_visibility="collapsed")
     
-    # 💥 تجربة مستخدم فورية وسريعة: التحقق التلقائي بمجرد وصول الطول لـ 4 أرقام
     if len(entered_otp.strip()) == 4:
         if entered_otp.strip() == st.session_state["generated_otp"]:
             st.session_state["auth_step"] = "display_devices"
@@ -804,7 +804,7 @@ elif st.session_state["auth_step"] == "verify_otp":
             st.session_state["hide_tg_button"] = True  
             st.rerun()
 
-# --- المرحلة 4: جلب وعرض الأجهزة حياً ومباشرة من قاعدة البيانات (Live Fetching Solution) ---
+# --- المرحلة 4: جلب وعرض الأجهزة حياً ومباشرة من قاعدة البيانات ---
 elif st.session_state["auth_step"] == "display_devices":
     st.session_state["hide_tg_button"] = True  
     
@@ -817,7 +817,6 @@ elif st.session_state["auth_step"] == "display_devices":
             st.session_state["hide_tg_button"] = True  
             st.rerun()
 
-    # 🔗 قراءة حية وآنية تمنع تجمد البيانات الميتة في متصفح العميل
     phone_query = st.session_state["verified_phone"]
     
     with st.spinner("⏳ جارٍ تحديث حالة الأجهزة مباشرة من السيرفر..."):
@@ -832,7 +831,6 @@ elif st.session_state["auth_step"] == "display_devices":
                     status_lower = str(v.get("Statut", "")).strip().lower()
                     date_s = v.get("Date_Sortie", "---")
                     
-                    # الفرز الذكي: إخفاء المسلم والمدفوع الذي تجاوز 30 يوماً أوتوماتيكياً
                     if status_lower in ["livré & payé", "livré (dette)"]:
                         w_stats = get_warranty_stats(date_s)
                         if w_stats and w_stats.get("is_expired"):
@@ -904,7 +902,7 @@ elif st.session_state["auth_step"] == "display_devices":
             """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 10. حقن زر التلغرام العائم ذكياً وبناءً على شروط الأمان الصارمة والنهائية
+# 10. حقن زر التلغرام العائم ذكياً
 # ==============================================================================
 if not st.session_state.get("hide_tg_button", True):
     current_phone = st.session_state.get("verified_phone", "")
