@@ -787,17 +787,19 @@ elif st.session_state["auth_step"] == "display_devices":
         </details>
         """, unsafe_allow_html=True)
 
-# الروابط العائمة لبوت التلغرام تبقى دائماً أسفل الشاشة لمساعدة الزبائن غير المسجلين
-bot_username = st.secrets.get("BOT_USERNAME", "InfoDocBot")
-# نمرر رقم الهاتف في الرابط فقط في حالة كان المستخدم قد أدخل شيئاً ما لتسهيل الربط التلقائي
-current_phone_input = st.session_state.get("verified_phone", "")
-tg_link = f"https://t.me/{bot_username}?start={current_phone_input}" if current_phone_input else f"https://t.me/{bot_username}"
+# ==============================================================================
+# عرض الزر العائم ذكياً: يظهر فقط إذا لم يتم تفعيل الإشعارات والدخول بعد
+# ==============================================================================
+if st.session_state["auth_step"] == "input_phone":
+    bot_username = st.secrets.get("BOT_USERNAME", "InfoDocBot")
+    current_phone_input = st.session_state.get("verified_phone", "")
+    tg_link = f"https://t.me/{bot_username}?start={current_phone_input}" if current_phone_input else f"https://t.me/{bot_username}"
 
-st.markdown(f"""
-<a href="{tg_link}" target="_blank" class="floating-tg-button" style="z-index: 999999 !important;">
-<i class="fa-brands fa-telegram" style="font-size: 1.4rem;"></i>
-<span>🚀 تفعيل إشعارات التلغرام</span>
-</a>
-""", unsafe_allow_html=True)
+    st.markdown(f"""
+    <a href="{tg_link}" target="_blank" class="floating-tg-button" style="z-index: 999999 !important;">
+    <i class="fa-brands fa-telegram" style="font-size: 1.4rem;"></i>
+    <span>🚀 تفعيل إشعارات التلغرام</span>
+    </a>
+    """, unsafe_allow_html=True)
 
 st.empty()
