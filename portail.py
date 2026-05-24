@@ -232,7 +232,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 7. نظام الـ CSS الكامل والمطور (The Premium Glassmorphism UI)
+# 7. نظام الـ CSS الكامل والمطور (The Premium Glassmorphism UI مع أنيميشن اللوغو)
 # ==============================================================================
 st.markdown("""
     <style>
@@ -271,16 +271,27 @@ st.markdown("""
         margin-bottom: 25px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-    .hero-brand {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 3.5rem;
-        font-weight: 900;
-        background: linear-gradient(135deg, #3b82f6, #60a5fa);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: 3px;
-        margin-bottom: 5px;
+    
+    /* الأنيميشن الخاصة باللوغو المطور لـ InfoDoc */
+    .hero-logo-animated {
+        width: 100px; /* تحكم في حجم اللوغو من هنا */
+        height: auto;
+        margin-bottom: 15px;
+        filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.6));
+        animation: floatLogo 3s ease-in-out infinite, glowPulse 2s ease-in-out infinite alternate;
     }
+
+    @keyframes floatLogo {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+    }
+
+    @keyframes glowPulse {
+        0% { filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5)); }
+        100% { filter: drop-shadow(0 0 22px rgba(96, 165, 250, 0.9)); }
+    }
+
     .hero-subtitle {
         color: #94a3b8;
         font-family: 'Cairo', sans-serif;
@@ -322,12 +333,28 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 8. عرض واجهة المستخدم الرسومية العليا (UI Header & Social Stats)
+# 8. عرض واجهة المستخدم الرسومية العليا (UI Header & Animated Logo)
 # ==============================================================================
-# 🔒 حماية وحقن أمني: إيقاف السيرفر مبكراً في حالة فشل قاعدة البيانات لمنع الـ Traceback للمستخدم
 if not db_status:
     st.error("❌ عذراً، لا يمكن الاتصال بقاعدة البيانات حالياً. يرجى مراجعة إعدادات الخادم الفنية.")
     st.stop()
+
+# دالة ذكية لتحويل اللوغو الشخصي إلى قراءة متوافقة مع الـ HTML دون مشاكل مسارات
+import base64
+import os
+
+def render_hero_logo():
+    logo_path = "logo.png" # حط إسم ملف اللوغو تاعك هنا (png أو jpg) في نفس مجلد السكريبت
+    if os.path.exists(logo_path):
+        with open(logo_path, "rb") as f:
+            data = f.read()
+            encoded = base64.b64encode(data).decode()
+        return f'<img src="data:image/png;base64,{encoded}" class="hero-logo-animated">'
+    else:
+        # لوغو احتياطي تقني (أيقونة معالج مجهري مضيئة) في حال غياب الملف
+        return '<div class="hero-logo-animated" style="font-size: 4.5rem; color: #3b82f6;"><i class="fa-solid fa-microchip"></i></div>'
+
+logo_html = render_hero_logo()
 
 algeria_tz = pytz.timezone('Africa/Algiers')
 now = datetime.now(algeria_tz)
@@ -341,12 +368,14 @@ except:
 
 st.markdown(f'''
     <div class="hero-container" dir="rtl">
-        <div style="color: #64748b; font-size: 0.95rem; font-family: 'Cairo'; font-weight: 300; margin-bottom: 10px;">
+        <div style="color: #64748b; font-size: 0.95rem; font-family: 'Cairo'; font-weight: 300; margin-bottom: 15px;">
             ✨ {greeting} | 📅 {now.strftime("%d/%m/%Y - %H:%M")}
         </div>
-        <div class="hero-brand">INFODOC</div>
-        <div class="hero-subtitle" style="margin-bottom: 15px;">
-            🛠️ الـمـنـصـة الإلـكـتـرونـيـة لـخـدمـات الـصـيـانـة 
+        
+        {logo_html}
+        
+        <div class="hero-subtitle" style="margin-bottom: 15px; margin-top: 10px;">
+            🛠️ الـمـنـصـة الإلـكـتـرونـيـة لـخـدمـات الـصـيـانـة لـورشـة INFODOC
         </div>
         <span class="{"badge-open" if shop_status else "badge-closed"}" 
               style="padding: 12px 30px; border-radius: 14px; font-weight: 900; display: inline-block; font-family: 'Cairo'; font-size: 1.05rem;">
