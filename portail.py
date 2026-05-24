@@ -767,13 +767,6 @@ elif st.session_state["auth_step"] == "verify_otp":
     """, unsafe_allow_html=True)
     
     entered_otp = st.text_input("", placeholder="أدخل كود الـ OTP المتكون من 4 أرقام هنا...", key="otp_field", label_visibility="collapsed")
-    
-    if len(entered_otp.strip()) == 4:
-        if entered_otp.strip() == st.session_state["generated_otp"]:
-            st.session_state["auth_step"] = "display_devices"
-            st.rerun()
-        else:
-            st.error("❌ الكود السري غير صحيح!")
 
     col_confirm, col_resend, col_cancel = st.columns(3)
     with col_confirm:
