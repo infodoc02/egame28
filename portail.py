@@ -808,7 +808,7 @@ elif st.session_state["auth_step"] == "display_devices":
     
     col_title, col_logout = st.columns([3, 1])
     with col_title:
-        st.markdown('<h3 style="text-align: right; font-family: \'Cairo\'; color: #2ecc71; font-size: 1.25rem; font-weight:700;">📋 أجهزتك الحالية في الورشة حية ومباشرة:</h3>', unsafe_allow_html=True)
+        st.markdown('<h3 style="text-align: right; font-family: \'Cairo\'; color: #2ecc71; font-size: 1.25rem; font-weight:700;">📋 أجهزتك الحالية في الورشة :</h3>', unsafe_allow_html=True)
     with col_logout:
         if st.button("🚪 خروج وبحث جديد"):
             st.session_state["auth_step"] = "input_phone"
