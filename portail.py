@@ -333,7 +333,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 8. عرض واجهة المستخدم الرسومية العليا (UI Header & Animated Logo)
+# 8. عرض واجهة المستخدم الرسومية العليا (UI Header & Animated Logo) - نسخة مأمنة
 # ==============================================================================
 if not db_status:
     st.error("❌ عذراً، لا يمكن الاتصال بقاعدة البيانات حالياً. يرجى مراجعة إعدادات الخادم الفنية.")
@@ -366,6 +366,10 @@ try:
 except:
     shop_status = False
 
+# الحساب المسبق لتفادي أي خطأ في الفرز أو علامات التنصيص داخل الـ HTML
+badge_class = "badge-open" if shop_status else "badge-closed"
+badge_text = '● مـفـتـوح حـالـيـاً - مـرحـبـاً بـكـم في الـورشـة' if shop_status else '● مـغـلـق حـالـيـاً - نـسـتـقـبـلكم في وقـت لاحــق'
+
 st.markdown(f'''
     <div class="hero-container" dir="rtl">
         <div style="color: #64748b; font-size: 0.95rem; font-family: 'Cairo'; font-weight: 300; margin-bottom: 15px;">
@@ -377,9 +381,9 @@ st.markdown(f'''
         <div class="hero-subtitle" style="margin-bottom: 15px; margin-top: 10px;">
             🛠️ الـمـنـصـة الإلـكـتـرونـيـة لـخـدمـات الـصـيـانـة لـورشـة INFODOC
         </div>
-        <span class="{"badge-open" if shop_status else "badge-closed"}" 
+        <span class="{badge_class}" 
               style="padding: 12px 30px; border-radius: 14px; font-weight: 900; display: inline-block; font-family: 'Cairo'; font-size: 1.05rem;">
-            {'● مـفـتـوح حـالـيـاً - مـرحـبـاً بـكـم في الـورشـة' if shop_status else '● مـغـلـق حـالـيـاً - نـسـتـقـبـلكم في وقـت لاحــق'}
+            {badge_text}
         </span>
     </div>
 ''', unsafe_allow_html=True)
