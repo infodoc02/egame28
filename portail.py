@@ -9,6 +9,7 @@ import telebot
 import io
 import pytz
 import random
+
 # ==============================================================================
 # 1. إعدادات الصفحة الأساسية ونظام المظهر الفاخر (Configuration & Theme)
 # ==============================================================================
@@ -124,7 +125,7 @@ def get_warranty_stats(date_sortie_str):
         percent = max(0, min((remaining_days / 30) * 100, 100))
         
         return {
-            "percent": int(percent),  # ✅ هنا percent معرّف صحيح
+            "percent": int(percent),  
             "is_expired": diff_days > 30, 
             "days_left": remaining_days, 
             "actual_date": date_s.strftime("%d/%m/%Y")
@@ -218,7 +219,7 @@ def start_telegram_bot():
 
         thread = threading.Thread(target=bot.infinity_polling, daemon=True)
         thread.start()
-        return bot # ✅ نرجع كائن البوت هنا
+        return bot 
     except Exception as e:
         return None
 
@@ -310,9 +311,9 @@ st.markdown("""
     .hero-brand {
         font-family: 'Orbitron', sans-serif !important;
         color: #3b82f6;
-        font-size: 3.8rem;
+        font-size: 2.2rem; /* 🎯 تم تصغير الحجم هنا ليناسب تماماً شاشات الهواتف ولا ينقسم */
         font-weight: 900;
-        letter-spacing: 4px;
+        letter-spacing: 2px; /* تقليص الفراغات للحفاظ على العرض */
         text-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
         margin-bottom: 5px;
     }
@@ -581,6 +582,7 @@ div[data-testid="stTextInput"] input {
     display: flex;
     align-items: center;
     gap: 8px;
+    z-index: 999999;
     animation: tg-bounce 2.5s infinite ease-in-out;
 }
 @keyframes tg-bounce {
@@ -602,7 +604,7 @@ if "target_tg_id" not in st.session_state:
 if "verified_phone" not in st.session_state:
     st.session_state["verified_phone"] = ""
 if "hide_tg_button" not in st.session_state:
-    st.session_state["hide_tg_button"] = False  # المتغير المسؤول عن إخفاء الزر ذكياً
+    st.session_state["hide_tg_button"] = False
 
 # --- المرحلة 1: إدخال رقم الهاتف وفحص ربط التلغرام ---
 if st.session_state["auth_step"] == "input_phone":
@@ -628,15 +630,15 @@ if st.session_state["auth_step"] == "input_phone":
                         db_phone = normalize_phone(v.get("Telephone", ""))
                         if db_phone.endswith(norm_phone[-9:]):
                             
-                            # 🎯 التعديل الجوهري: التقط معرف التلغرام هنا فوراً قبل أي تخطي أو فحص للضمان
+                            # 🎯 التقط معرف التلغرام هنا فوراً قبل أي تخطي
                             if v.get("Telegram_ID"):
                                 telegram_id = str(v.get("Telegram_ID"))
-                                st.session_state["hide_tg_button"] = True  # نخفوا الزر علابالنا بلي راه مفعل
+                                st.session_state["hide_tg_button"] = True
 
                             status_lower = str(v.get("Statut", "")).strip().lower()
                             date_s = v.get("Date_Sortie", "---")
                             
-                            # تخطي الأجهزة منتهية الضمان لحماية نظافة الواجهة (الآن مسموح التخطي بأمان)
+                            # تخطي الأجهزة منتهية الضمان
                             if status_lower in ["livré & payé", "livré (dette)"]:
                                 w_stats = get_warranty_stats(date_s)
                                 if w_stats and w_stats.get("is_expired"):
@@ -644,18 +646,21 @@ if st.session_state["auth_step"] == "input_phone":
                             
                             my_devices.append(dict(v, _id=k))
 
+                # 🎯 الفحص المعدل والذكي لمنع محو حالة زر التلغرام
                 if not my_devices:
-                    st.error("❌ عذراً، لم نجد أي جهاز نشط مرتبط برقم الهاتف هذا حالياً.")
-                    st.session_state["hide_tg_button"] = False
+                    if telegram_id:
+                        st.info("📋 حسابك مرتبط بالبُوت ومفعّل بنجاح! لكن لا توجد أجهزة نشطة حالياً في الورشة.")
+                        st.session_state["hide_tg_button"] = True
+                    else:
+                        st.error("❌ عذراً، لم نجد أي جهاز مرتبط برقم الهاتف هذا حالياً.")
+                        st.session_state["hide_tg_button"] = False
                 elif not telegram_id:
                     st.warning("⚠️ رقم الهاتف موجود، لكن حسابك غير مرتبط ببوت التلغرام لإرسال الكود السري.")
                     st.info("💡 يرجى الضغط على زر **🚀 تفعيل إشعارات التلغرام** الأزرق أسفل الشاشة لربط حسابك بالبوت أولاً، ثم أعد المحاولة.")
                     st.session_state["hide_tg_button"] = False
                 else:
-                    # تأكيد إخفاء الزر لوجود المعرف والانتقال لـ OTP
                     st.session_state["hide_tg_button"] = True
                     
-                    import random 
                     otp_code = str(random.randint(1000, 9999))
                     st.session_state["generated_otp"] = otp_code
                     st.session_state["secured_devices"] = my_devices
@@ -703,7 +708,7 @@ elif st.session_state["auth_step"] == "verify_otp":
     with col_cancel:
         if st.button("🔄 إلغاء والعودة للخلف"):
             st.session_state["auth_step"] = "input_phone"
-            st.session_state["hide_tg_button"] = False  # نرجعو نظهروه كي يلغي العملية
+            st.session_state["hide_tg_button"] = False  
             st.rerun()
 
 # --- المرحلة 3: عرض الأجهزة بعد التحقق ---
@@ -714,7 +719,7 @@ elif st.session_state["auth_step"] == "display_devices":
     with col_logout:
         if st.button("🚪 خروج وبحث جديد"):
             st.session_state["auth_step"] = "input_phone"
-            st.session_state["hide_tg_button"] = False  # يرجع يبان للبحث الجديد
+            st.session_state["hide_tg_button"] = False  
             st.rerun()
 
     my_devices = st.session_state["secured_devices"]
@@ -758,39 +763,35 @@ elif st.session_state["auth_step"] == "display_devices":
 
         st.markdown(f"""
         <div class="device-top-card" dir="rtl">
-        <div class="card-container">
-        <div style="text-align: right;">
-        <span style="color: #cbd5e1; font-size: 0.85rem;">تذكرة #{dev_id}</span>
-        <h4 style="margin: 4px 0; color: #ffffff; font-family: 'Cairo';">{brand} - {model}</h4>
-        </div>
-        <div style="background: {col_status}20; border: 1px solid {col_status}; color: {col_status}; padding: 6px 16px; border-radius: 8px; font-weight: bold;">{status}</div>
-        </div>
+            <div class="card-container">
+                <div style="text-align: right;">
+                    <span style="color: #cbd5e1; font-size: 0.85rem;">تذكرة #{dev_id}</span>
+                    <h4 style="margin: 4px 0; color: #ffffff; font-family: 'Cairo';">{brand} - {model}</h4>
+                </div>
+                <div style="background: {col_status}20; border: 1px solid {col_status}; color: {col_status}; padding: 6px 16px; border-radius: 8px; font-weight: bold;">{status}</div>
+            </div>
         </div>
         <details class="device-expander">
-        <summary>📄 عرض تفاصيل العطل والتكلفة</summary>
-        <div style="padding-bottom: 14px;">
-        <div class="detail-row">📌 <span class="detail-label">العطل المشخص:</span> {panne}</div>
-        <div class="detail-row">💰 <span class="detail-label">تكلفة الإصلاح:</span> <span style="color: #2ecc71; font-weight: bold;">{prix} دج</span></div>
-        <div class="detail-row">📅 <span class="detail-label">تاريخ الدخول:</span> {date_e}</div>
-        {dynamic_bar_html}
-        </div>
+            <summary>📄 عرض تفاصيل العطل والتكلفة</summary>
+            <div style="padding-bottom: 14px;">
+                <div class="detail-row">📌 <span class="detail-label">العطل المشخص:</span> {panne}</div>
+                <div class="detail-row">💰 <span class="detail-label">تكلفة الإصلاح:</span> <span style="color:#2ecc71; font-weight:bold;">{prix} دج</span></div>
+                <div class="detail-row">📅 <span class="detail-label">تاريخ الاستلام:</span> {date_e}</div>
+                <div class="detail-row">📅 <span class="detail-label">تاريخ الخروج:</span> {date_s}</div>
+                {dynamic_bar_html}
+            </div>
         </details>
         """, unsafe_allow_html=True)
 
-
 # ==============================================================================
-# التحكم الصارم في ظهور الزر العائم بناءً على المتغير السري hide_tg_button
+# 9. حقن زر التلغرام العائم ذكياً (Floating Telegram Button HTML Injection)
 # ==============================================================================
-if st.session_state["hide_tg_button"] == False:
-    bot_username = st.secrets.get("BOT_USERNAME", "InfoDocBot")
-    current_phone_input = st.session_state.get("verified_phone", "")
-    tg_link = f"https://t.me/{bot_username}?start={current_phone_input}" if current_phone_input else f"https://t.me/{bot_username}"
-
+if not st.session_state.get("hide_tg_button", False):
+    current_phone = st.session_state.get("phone_input_key", "")
+    target_link = f"https://t.me/InfoDoc02_bot?start={current_phone}" if current_phone else "https://t.me/InfoDoc02_bot"
     st.markdown(f"""
-    <a href="{tg_link}" target="_blank" class="floating-tg-button" style="z-index: 999999 !important;">
-    <i class="fa-brands fa-telegram" style="font-size: 1.4rem;"></i>
-    <span>🚀 تفعيل إشعارات التلغرام</span>
-    </a>
+        <a href="{target_link}" target="_blank" class="floating-tg-button">
+            <i class="fa-brands fa-telegram"></i>
+            <span>🚀 تفعيل إشعارات التلغرام</span>
+        </a>
     """, unsafe_allow_html=True)
-
-st.empty()
