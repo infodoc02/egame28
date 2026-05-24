@@ -366,7 +366,7 @@ st.markdown("""
 
 st.markdown(f'''
     <div class="hero-container" dir="rtl">
-        <div style="color: #64748b; font-size: 0.95rem; font-family: 'Cairo'; font-weight: 700; margin-bottom: 12px;">
+        <div style="color: #64748b; font-size: 0.95rem; font-family: 'Cairo'; font-weight: 500; margin-bottom: 12px;">
             ✨ {greeting} | 📅 {now.strftime("%d/%m/%Y - %H:%M")}
         </div>
         <div class="hero-brand">INFODOC</div>
@@ -375,7 +375,7 @@ st.markdown(f'''
         </div>
         <span class="{"badge-open" if shop_status else "badge-closed"}" 
               style="padding: 12px 30px; border-radius: 14px; font-weight: 900; display: inline-block; font-family: 'Cairo'; font-size: 1.05rem;">
-            {'● مـفـتـوح حـالـيـاً - مـرحـبـاً بـكـم في الـورشـة' if shop_status else '● مـغـلـق حـالـيـاً - نـسـتـقـبـلكم في أوقـات الـعـمـل'}
+            {'● مـفـتـوح حـالـيـاً - مـرحـبـاً بـكـم في الـورشـة' if shop_status else '● مـغـلـق حـالـيـاً - نـسـتـقـبـلكم في وقـت لاحــق'}
         </span>
     </div>
 ''', unsafe_allow_html=True)
@@ -627,27 +627,32 @@ if st.session_state["auth_step"] == "input_phone":
                     for k, v in all_data.items():
                         db_phone = normalize_phone(v.get("Telephone", ""))
                         if db_phone.endswith(norm_phone[-9:]):
+                            
+                            # 🎯 التعديل الجوهري: التقط معرف التلغرام هنا فوراً قبل أي تخطي أو فحص للضمان
+                            if v.get("Telegram_ID"):
+                                telegram_id = str(v.get("Telegram_ID"))
+                                st.session_state["hide_tg_button"] = True  # نخفوا الزر علابالنا بلي راه مفعل
+
                             status_lower = str(v.get("Statut", "")).strip().lower()
                             date_s = v.get("Date_Sortie", "---")
                             
+                            # تخطي الأجهزة منتهية الضمان لحماية نظافة الواجهة (الآن مسموح التخطي بأمان)
                             if status_lower in ["livré & payé", "livré (dette)"]:
                                 w_stats = get_warranty_stats(date_s)
                                 if w_stats and w_stats.get("is_expired"):
                                     continue 
                             
                             my_devices.append(dict(v, _id=k))
-                            if v.get("Telegram_ID"):
-                                telegram_id = str(v.get("Telegram_ID"))
 
                 if not my_devices:
                     st.error("❌ عذراً، لم نجد أي جهاز نشط مرتبط برقم الهاتف هذا حالياً.")
                     st.session_state["hide_tg_button"] = False
                 elif not telegram_id:
                     st.warning("⚠️ رقم الهاتف موجود، لكن حسابك غير مرتبط ببوت التلغرام لإرسال الكود السري.")
-                    st.info("💡 يرجى الضغط على زر **🚀 تفعيل إشعارات التلغرام** الأزرق أسفل الشاشة لربط حسابك بالبوت أولاً.")
-                    st.session_state["hide_tg_button"] = False  # نخلوا الزر يبان باش يربط حسابو
+                    st.info("💡 يرجى الضغط على زر **🚀 تفعيل إشعارات التلغرام** الأزرق أسفل الشاشة لربط حسابك بالبوت أولاً، ثم أعد المحاولة.")
+                    st.session_state["hide_tg_button"] = False
                 else:
-                    # 💥 هنا السحر: لقينا الـ ID يعني التلغرام مفعل! نخفو الزر فوراً
+                    # تأكيد إخفاء الزر لوجود المعرف والانتقال لـ OTP
                     st.session_state["hide_tg_button"] = True
                     
                     import random 
@@ -669,9 +674,9 @@ if st.session_state["auth_step"] == "input_phone":
                             st.session_state["auth_step"] = "verify_otp"
                             st.rerun()
                         except Exception as e:
-                            st.error(f"❌ فشل السيرفر في إرسال الرسالة إلى تلغرام: {e}")
+                            st.error(f"❌ فشل السيرفر في إرسال الرسالة إلى حساب التلغرام الخاص بك: {e}")
                     else:
-                        st.error("❌ نظام البوت غير متصل حالياً بالسيرفر.")
+                        st.error("❌ نظام البوت غير متصل حالياً بالسيرفر، يرجى مراجعة الإعدادات.")
 
 # --- المرحلة 2: واجهة إدخال كود الـ OTP ---
 elif st.session_state["auth_step"] == "verify_otp":
