@@ -366,7 +366,7 @@ st.markdown("""
 
 st.markdown(f'''
     <div class="hero-container" dir="rtl">
-        <div style="color: #64748b; font-size: 0.95rem; font-family: 'Cairo'; font-weight: 500; margin-bottom: 12px;">
+        <div style="color: #64748b; font-size: 0.95rem; font-family: 'Cairo'; font-weight: 300; margin-bottom: 10px;">
             ✨ {greeting} | 📅 {now.strftime("%d/%m/%Y - %H:%M")}
         </div>
         <div class="hero-brand">INFODOC</div>
