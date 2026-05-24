@@ -671,7 +671,7 @@ if st.session_state["auth_step"] == "input_phone":
                         if bot:
                             try:
                                 msg_text = (
-                                    f"🔐 *كود تأكيد الهوية لـ بورطاي InfoDoc:*\n\n"
+                                    f"🔐 *كود تأكيد الهوية لـبوابة زبائن InfoDoc:*\n\n"
                                     f"كود الدخول الخاص بك هو: `{otp_code}`\n\n"
                                     f"⏱️ _هذا الكود صالح للاستعمال لمرة واحدة فقط في المتصفح._"
                                 )
