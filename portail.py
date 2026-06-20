@@ -384,7 +384,7 @@ header_html = f"""<div class="hero-container" dir="rtl">
 </div>
 {logo_html}
 <div class="hero-subtitle" style="margin-bottom: 15px; margin-top: 10px;">
-🛠️ الـمـنـصـة الإلـكـتـرونـيـة لـخـدمـات الـصـيـانـة لـورشـة INFODOC
+🛠️ رابط المنصة الجديدة infodoc.streamlit.app INFODOC
 </div>
 <span class="{badge_class}" style="padding: 12px 30px; border-radius: 14px; font-weight: 900; display: inline-block; font-family: 'Cairo'; font-size: 1.05rem;">
 {badge_text}
