@@ -86,6 +86,7 @@ st.markdown("""
     <div class="message">
         البوابة القديمة لم تعد في الخدمة <br>
         لقد انتقلنا إلى منصة جديدة كلياً
+        رابطها infodoc.streamlit.app
     </div>
     <a href="https://infodoc.streamlit.app" target="_blank" class="new-link">
         ✨ زيارة المنصة الجديدة
